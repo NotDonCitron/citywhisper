@@ -1,0 +1,1685 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CityWhisper – Pitch Deck</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Groto:wght@400;500;700&display=swap"
+    rel="stylesheet">
+  <style>
+    /* ===== RESET & BASE ===== */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Inter', sans-serif;
+      background: #0a0a0f;
+      color: #e8e8ed;
+    }
+
+    /* ===== DESIGN TOKENS ===== */
+    :root {
+      --bg-primary: #0a0a0f;
+      --bg-card: rgba(255, 255, 255, 0.04);
+      --bg-card-hover: rgba(255, 255, 255, 0.08);
+      --accent: #f97316;
+      --accent2: #06b6d4;
+      --accent3: #a855f7;
+      --accent4: #22c55e;
+      --text-primary: #f0f0f5;
+      --text-secondary: #9ca3af;
+      --text-muted: #6b7280;
+      --gradient-main: linear-gradient(135deg, #f97316, #f43f5e, #a855f7);
+      --gradient-teal: linear-gradient(135deg, #06b6d4, #22c55e);
+      --gradient-card: linear-gradient(135deg, rgba(249, 115, 22, 0.1), rgba(168, 85, 247, 0.05));
+      --glass: rgba(255, 255, 255, 0.05);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      --radius: 16px;
+      --radius-sm: 10px;
+      --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    /* ===== SLIDE SYSTEM ===== */
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 60px 80px;
+      opacity: 0;
+      transform: translateX(60px);
+      pointer-events: none;
+      transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .slide.active {
+      opacity: 1;
+      transform: translateX(0);
+      pointer-events: all;
+    }
+
+    .slide.exit-left {
+      opacity: 0;
+      transform: translateX(-60px);
+    }
+
+    /* ===== ANIMATED GRADIENT BG ===== */
+    .bg-glow {
+      position: fixed;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(ellipse at 30% 20%, rgba(249, 115, 22, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 70% 80%, rgba(168, 85, 247, 0.06) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(6, 182, 212, 0.04) 0%, transparent 60%);
+      animation: glowShift 15s ease-in-out infinite alternate;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    @keyframes glowShift {
+      0% {
+        transform: translate(0, 0) rotate(0deg);
+      }
+
+      100% {
+        transform: translate(-5%, 3%) rotate(3deg);
+      }
+    }
+
+    /* ===== TYPOGRAPHY ===== */
+    .slide-number {
+      position: absolute;
+      top: 28px;
+      right: 40px;
+      font-size: 14px;
+      color: var(--text-muted);
+      font-weight: 500;
+      letter-spacing: 1px;
+    }
+
+    h1 {
+      font-size: 3.4rem;
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+
+    h1 .gradient-text {
+      background: var(--gradient-main);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    h2 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      line-height: 1.2;
+    }
+
+    h3 {
+      font-size: 1.4rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--accent);
+    }
+
+    .subtitle {
+      font-size: 1.3rem;
+      color: var(--text-secondary);
+      font-weight: 300;
+      line-height: 1.6;
+      max-width: 700px;
+    }
+
+    .tagline {
+      font-size: 1.6rem;
+      font-weight: 300;
+      color: var(--text-secondary);
+      margin-top: 8px;
+    }
+
+    .big-number {
+      font-size: 4rem;
+      font-weight: 900;
+      background: var(--gradient-main);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .big-emoji {
+      font-size: 3.5rem;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .small-label {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    /* ===== CARDS & GRIDS ===== */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius);
+      padding: 28px;
+      backdrop-filter: blur(12px);
+      transition: transform 0.3s, background 0.3s, box-shadow 0.3s;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      background: var(--bg-card-hover);
+      box-shadow: var(--shadow);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      width: 100%;
+      max-width: 1000px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 24px;
+      width: 100%;
+      max-width: 1100px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 20px;
+      width: 100%;
+      max-width: 1100px;
+    }
+
+    .flex-center {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 32px;
+      flex-wrap: wrap;
+    }
+
+    .text-center {
+      text-align: center;
+    }
+
+    /* ===== COMPARISON TABLE ===== */
+    .comp-table {
+      width: 100%;
+      max-width: 900px;
+      border-collapse: separate;
+      border-spacing: 0;
+      overflow: hidden;
+      border-radius: var(--radius);
+      border: 1px solid var(--glass-border);
+    }
+
+    .comp-table th {
+      background: rgba(249, 115, 22, 0.15);
+      padding: 14px 18px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .comp-table th:first-child {
+      text-align: left;
+    }
+
+    .comp-table td {
+      padding: 12px 18px;
+      border-top: 1px solid var(--glass-border);
+      text-align: center;
+      font-size: 0.95rem;
+    }
+
+    .comp-table td:first-child {
+      text-align: left;
+      font-weight: 500;
+    }
+
+    .comp-table tr:nth-child(even) td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .comp-table .highlight-col {
+      background: rgba(249, 115, 22, 0.08) !important;
+    }
+
+    /* ===== FLOW DIAGRAM ===== */
+    .flow-vertical {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .flow-box {
+      background: var(--bg-card);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-sm);
+      padding: 14px 28px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      min-width: 300px;
+      text-align: center;
+      backdrop-filter: blur(8px);
+    }
+
+    .flow-box.accent {
+      border-color: var(--accent);
+      background: rgba(249, 115, 22, 0.1);
+    }
+
+    .flow-arrow {
+      color: var(--accent);
+      font-size: 1.4rem;
+    }
+
+    .flow-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-left: 12px;
+    }
+
+    /* ===== STEP CARDS ===== */
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--gradient-main);
+      color: white;
+      font-weight: 800;
+      font-size: 1.1rem;
+      margin-bottom: 12px;
+    }
+
+    /* ===== MOCKUP IMAGES ===== */
+    .mockup-row {
+      display: flex;
+      gap: 40px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mockup-img {
+      width: 310px;
+      border-radius: 24px;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.6);
+      border: 2px solid var(--glass-border);
+      transition: transform 0.4s;
+    }
+
+    .mockup-img:hover {
+      transform: scale(1.03);
+    }
+
+    .mockup-label {
+      text-align: center;
+      margin-top: 10px;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .arrow-between {
+      font-size: 2rem;
+      color: var(--accent);
+      animation: pulseArrow 2s ease-in-out infinite;
+    }
+
+    @keyframes pulseArrow {
+
+      0%,
+      100% {
+        opacity: 0.4;
+      }
+
+      50% {
+        opacity: 1;
+      }
+    }
+
+    /* ===== WORLD MAP ===== */
+    .world-map-container {
+      position: relative;
+      width: 100%;
+      height: 260px;
+      margin-top: 36px;
+      background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+      background-size: 20px 20px;
+      background-position: center;
+      border-radius: 20px;
+      border: 1px dashed rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .map-bg {
+      position: absolute;
+      font-size: 15rem;
+      opacity: 0.05;
+      z-index: 0;
+      user-select: none;
+    }
+
+    .map-dot {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      background: var(--accent);
+      border-radius: 50%;
+      box-shadow: 0 0 15px var(--accent);
+      transform: translate(-50%, -50%);
+      animation: pulseDot 2s infinite;
+      z-index: 2;
+    }
+
+    .map-dot::after {
+      content: attr(data-city);
+      position: absolute;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.75rem;
+      color: var(--text-main);
+      white-space: nowrap;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    /* Different dot colors */
+    .md-launch {
+      background: var(--accent);
+      box-shadow: 0 0 15px var(--accent);
+    }
+
+    .md-launch::after {
+      color: var(--accent);
+    }
+
+    .md-phase2 {
+      background: var(--accent2);
+      box-shadow: 0 0 15px var(--accent2);
+    }
+
+    .md-phase2::after {
+      color: var(--accent2);
+    }
+
+    .md-phase3 {
+      background: var(--accent3);
+      box-shadow: 0 0 15px var(--accent3);
+    }
+
+    .md-phase3::after {
+      color: var(--accent3);
+    }
+
+    .map-line {
+      position: absolute;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), transparent);
+      opacity: 0.6;
+      transform-origin: 0 50%;
+      animation: shootLine 3s infinite;
+      z-index: 1;
+    }
+
+    @keyframes pulseDot {
+      0% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4);
+      }
+
+      70% {
+        box-shadow: 0 0 0 15px rgba(255, 255, 255, 0);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+      }
+    }
+
+    @keyframes shootLine {
+      0% {
+        width: 0;
+        opacity: 1;
+        filter: hue-rotate(0deg);
+      }
+
+      50% {
+        filter: hue-rotate(45deg);
+      }
+
+      100% {
+        width: 300px;
+        opacity: 0;
+        filter: hue-rotate(90deg);
+      }
+    }
+
+    /* ===== MARKET NUMBERS ===== */
+    .stat-card {
+      text-align: center;
+      padding: 32px 20px;
+    }
+
+    .stat-card .big-number {
+      font-size: 3rem;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .stat-card .stat-label {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    /* ===== COMPETITOR MATRIX ===== */
+    .matrix-container {
+      position: relative;
+      width: 500px;
+      height: 380px;
+      margin: 0 auto;
+    }
+
+    .matrix-bg {
+      position: absolute;
+      inset: 0;
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius);
+      background: var(--bg-card);
+    }
+
+    .matrix-axis-x,
+    .matrix-axis-y {
+      position: absolute;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .matrix-axis-x.left {
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .matrix-axis-x.right {
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .matrix-axis-y.top {
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .matrix-axis-y.bottom {
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .matrix-dot {
+      position: absolute;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .matrix-line-h,
+    .matrix-line-v {
+      position: absolute;
+      background: var(--glass-border);
+    }
+
+    .matrix-line-h {
+      width: 100%;
+      height: 1px;
+      top: 50%;
+    }
+
+    .matrix-line-v {
+      height: 100%;
+      width: 1px;
+      left: 50%;
+    }
+
+    /* ===== REVENUE CARDS ===== */
+    .revenue-icon {
+      font-size: 2.8rem;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .revenue-pct {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    /* ===== TIMELINE / PHASES ===== */
+    .timeline {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      width: 100%;
+      max-width: 900px;
+    }
+
+    .timeline-phase {
+      flex: 1;
+      text-align: center;
+      padding: 20px 16px;
+      position: relative;
+    }
+
+    .timeline-phase::after {
+      content: '→';
+      position: absolute;
+      right: -12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.5rem;
+      color: var(--accent);
+    }
+
+    .timeline-phase:last-child::after {
+      display: none;
+    }
+
+    .phase-badge {
+      display: inline-block;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    /* ===== LEGAL CARD ===== */
+    .legal-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 14px;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    .legal-icon {
+      font-size: 1.2rem;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    /* ===== NAV BAR ===== */
+    .nav-bar {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      z-index: 100;
+      background: rgba(10, 10, 15, 0.85);
+      border: 1px solid var(--glass-border);
+      border-radius: 40px;
+      padding: 10px 24px;
+      backdrop-filter: blur(16px);
+    }
+
+    .nav-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--glass-border);
+      color: var(--text-primary);
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: all 0.2s;
+    }
+
+    .nav-btn:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .nav-dots {
+      display: flex;
+      gap: 6px;
+      margin: 0 8px;
+    }
+
+    .nav-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .nav-dot.active {
+      background: var(--accent);
+      width: 24px;
+      border-radius: 4px;
+    }
+
+    .nav-counter {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      min-width: 50px;
+      text-align: center;
+    }
+
+    .fs-btn {
+      background: none;
+      border: 1px solid var(--glass-border);
+      color: var(--text-muted);
+      border-radius: 8px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+      margin-left: 8px;
+    }
+
+    .fs-btn:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    /* ===== ITEM ANIMATIONS ===== */
+    .slide.active .anim-item {
+      animation: fadeUp 0.5s ease-out both;
+    }
+
+    .anim-item:nth-child(1) {
+      animation-delay: 0.1s;
+    }
+
+    .anim-item:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .anim-item:nth-child(3) {
+      animation-delay: 0.3s;
+    }
+
+    .anim-item:nth-child(4) {
+      animation-delay: 0.4s;
+    }
+
+    .anim-item:nth-child(5) {
+      animation-delay: 0.5s;
+    }
+
+    .anim-item:nth-child(6) {
+      animation-delay: 0.6s;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(24px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ===== CTA BUTTON ===== */
+    .cta-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--gradient-main);
+      color: white;
+      padding: 16px 36px;
+      border-radius: 40px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 8px 30px rgba(249, 115, 22, 0.3);
+      transition: transform 0.3s, box-shadow 0.3s;
+      text-decoration: none;
+      margin-top: 20px;
+    }
+
+    .cta-btn:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 12px 40px rgba(249, 115, 22, 0.4);
+    }
+
+    /* ===== SLIDE-SPECIFIC ===== */
+    .slide-title {
+      padding: 40px 80px;
+    }
+
+    .name-options {
+      display: flex;
+      gap: 16px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    .name-chip {
+      padding: 10px 22px;
+      border-radius: 30px;
+      border: 1px solid var(--glass-border);
+      background: var(--bg-card);
+      font-size: 1rem;
+      font-weight: 500;
+    }
+
+    .name-chip.selected {
+      border-color: var(--accent);
+      background: rgba(249, 115, 22, 0.15);
+      color: var(--accent);
+    }
+
+    /* ===== PROTOTYPE IFRAME ===== */
+    .proto-container {
+      position: relative;
+      width: 100%;
+      max-width: 460px;
+      height: 640px;
+      margin: 0 auto;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 2px solid rgba(14, 165, 233, 0.3);
+      box-shadow: 0 0 60px rgba(14, 165, 233, 0.15), 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+
+    .proto-container iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: #0a0e1a;
+    }
+
+    .proto-hint {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 16px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      animation: pulseHint 2s ease-in-out infinite;
+    }
+
+    @keyframes pulseHint {
+
+      0%,
+      100% {
+        opacity: 0.5;
+      }
+
+      50% {
+        opacity: 1;
+      }
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 900px) {
+      .slide {
+        padding: 40px 28px;
+      }
+
+      h1 {
+        font-size: 2.4rem;
+      }
+
+      h2 {
+        font-size: 1.6rem;
+      }
+
+      .grid-3,
+      .grid-4 {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .mockup-row {
+        flex-direction: column;
+      }
+
+      .comp-table {
+        font-size: 0.8rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="bg-glow"></div>
+
+  <!-- =================== SLIDE 1: TITLE =================== -->
+  <div class="slide active" data-slide="0">
+    <div class="text-center">
+      <div class="anim-item" style="font-size:4rem; margin-bottom: 8px;">🌍</div>
+      <h1 class="anim-item"><span class="gradient-text">CityWhisper</span></h1>
+      <p class="tagline anim-item">Deine Stadt. Deine Interessen. Dein Erlebnis.</p>
+      <div class="name-options anim-item" style="justify-content:center; margin-top: 28px;">
+        <span class="name-chip selected">CityWhisper</span>
+        <span class="name-chip">UrbanEcho</span>
+        <span class="name-chip">SpotSense</span>
+        <span class="name-chip">WanderMind</span>
+      </div>
+      <p class="anim-item" style="color: var(--text-muted); margin-top: 24px; font-size: 0.9rem;">
+        Von Amsterdam bis Tokio – deine Interessen, deine Route.
+      </p>
+    </div>
+    <span class="slide-number">01 / 15</span>
+  </div>
+
+  <!-- =================== SLIDE 2: ORIGIN STORY =================== -->
+  <div class="slide" data-slide="1">
+    <div style="max-width: 800px; width: 100%;">
+      <p class="small-label anim-item">Wie alles begann</p>
+      <h2 class="anim-item">Letztes Wochenende in Holland… 🇳🇱</h2>
+      <div style="margin-top: 28px;">
+        <div class="card anim-item" style="margin-bottom: 16px; border-left: 3px solid var(--accent);">
+          <p style="font-size: 1.1rem; line-height: 1.7;">
+            Wir wollten <strong>Kunst, Coffeeshops, gutes Essen</strong> – alles an einem Tag in Amsterdam erleben.
+            Aber kein einziges Tool konnte unsere <em>komplett verschiedenen Interessen</em> zu einer smarten Route
+            kombinieren.
+          </p>
+        </div>
+        <div class="card anim-item" style="margin-bottom: 16px; border-left: 3px solid var(--accent2);">
+          <p style="font-size: 1.1rem; line-height: 1.7;">
+            Google Maps? Kann routen, aber kennt unsere Interessen nicht.<br>
+            Audio-Guides? Nur für Museen, nicht für Food + Nightlife.<br>
+            TripAdvisor? Keine optimierte Route, nur einzelne Bewertungen.
+          </p>
+        </div>
+        <div class="card anim-item" style="background: rgba(249,115,22,0.08); border: 1px solid rgba(249,115,22,0.3);">
+          <p style="font-size: 1.3rem; font-weight: 600; text-align: center;">
+            💡 „Was wäre, wenn es eine App gäbe, die das <span style="color:var(--accent);">überall auf der Welt</span>
+            kann?"
+          </p>
+        </div>
+      </div>
+    </div>
+    <span class="slide-number">02 / 15</span>
+  </div>
+
+  <!-- =================== SLIDE 3: PROBLEM =================== -->
+  <div class="slide" data-slide="2">
+    <div style="max-width: 900px; width: 100%;">
+      <p class="small-label anim-item">Das Problem</p>
+      <h2 class="anim-item">Reisen planen ist ein <span style="color:var(--accent);">Albtraum</span> 😤</h2>
+      <div class="grid-3" style="margin-top: 32px;">
+        <div class="card text-center anim-item">
+          <div style="font-size: 3rem; margin-bottom: 16px;">🗺️</div>
+          <h3>Fragmentierung</h3>
+          <p style="color:var(--text-secondary); font-size: 0.95rem; line-height: 1.6;">
+            Ständiges Wechseln zwischen Google Maps, TripAdvisor, Wikipedia und Instagram
+          </p>
+        </div>
+        <div class="card text-center anim-item">
+          <div style="font-size: 3rem; margin-bottom: 16px;">👥</div>
+          <h3>Standard-Touren</h3>
+          <p style="color:var(--text-secondary); font-size: 0.95rem; line-height: 1.6;">
+            Langweilige Massentouren mit Regenschirm-Guides – unpersönlich und unflexibel
+          </p>
+        </div>
+        <div class="card text-center anim-item">
+          <div style="font-size: 3rem; margin-bottom: 16px;">🔀</div>
+          <h3>Keine Smart-Kombi</h3>
+          <p style="color:var(--text-secondary); font-size: 0.95rem; line-height: 1.6;">
+            Kunst + Food + Nightlife + Geheimtipps in einer Route? Geht nirgends.<br>
+            <em style="font-size: 0.85rem; color: var(--text-muted);">(Silo = Isoliertes Thema ohne
+              Berührungspunkte)</em>
+          </p>
+        </div>
+      </div>
+      <div class="anim-item" style="margin-top: 28px; text-align: center;">
+        <div class="card"
+          style="display: inline-block; background: rgba(249,115,22,0.08); border-color: rgba(249,115,22,0.2); padding: 16px 32px;">
+          <span style="font-size: 2.2rem; font-weight: 800; color: var(--accent);">78%</span>
+          <span style="color: var(--text-secondary); margin-left: 12px;">der Millennials bevorzugen individuelle
+            Reiseerlebnisse
+            <br><span style="font-size: 0.8rem; color: var(--text-muted);">(Quelle: Booking.com Travel Trends
+              2024)</span></span>
+        </div>
+      </div>
+    </div>
+    <span class="slide-number">03 / 15</span>
+  </div>
+
+  <!-- =================== SLIDE 4: SOLUTION =================== -->
+  <div class="slide" data-slide="3">
+    <div style="max-width: 900px; width: 100%;">
+      <p class="small-label anim-item">Die Lösung</p>
+      <h2 class="anim-item">Eine App. Alle Interessen. <span class="gradient-text"
+          style="font-size:inherit;font-weight:inherit;">Überall.</span></h2>
+      <div class="grid-3" style="margin-top: 36px;">
+        <div class="card text-center anim-item">
+          <div class="step-number">1</div>
+          <h3>Präferenzen wählen</h3>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 12px;">
+            <span class="name-chip" style="font-size:0.85rem; padding: 6px 14px;">🎨 Kunst</span>
+            <span class="name-chip" style="font-size:0.85rem; padding: 6px 14px;">🍜 Food</span>
+            <span class="name-chip" style="font-size:0.85rem; padding: 6px 14px;">🌙 Nightlife</span>
+            <span class="name-chip" style="font-size:0.85rem; padding: 6px 14px;">🏛️ Geschichte</span>
+            <span class="name-chip" style="font-size:0.85rem; padding: 6px 14px;">🌿 Natur</span>
+            <span class="name-chip"
+              style="font-size:0.85rem; padding: 6px 14px; border-color: var(--accent); color: var(--accent); border-style: dashed;">⭐
+              Must-Sees</span>
+          </div>
+        </div>
+        <div class="card text-center anim-item">
+          <div class="step-number">2</div>
+          <h3>Route wird generiert</h3>
+          <p style="color:var(--text-secondary); margin-top: 12px; line-height: 1.6;">
+            KI berechnet die <strong>optimale Route</strong> – kein Zick-Zack, logische Reihenfolge, mit Öffnungszeiten
+          </p>
+        </div>
+        <div class="card text-center anim-item">
+          <div class="step-number">3</div>
+          <h3>Entdecken & Erleben</h3>
+          <p style="color:var(--text-secondary); margin-top: 12px; line-height: 1.6;">
+            Detailinfos, Bewertungen & <strong>optional KI-Audio</strong> an jedem Spot per GPS
+          </p>
+        </div>
+      </div>
+    </div>
+    <span class="slide-number">04 / 15</span>
+  </div>
+
+  <!-- =================== SLIDE 5: LIVE DEMO =================== -->
+  <div class="slide" data-slide="4">
+    <div style="max-width: 1200px; width: 100%;">
+      <p class="small-label anim-item">Live Demo</p>
+      <h2 class="anim-item">So funktioniert's 📱</h2>
+      <div class="mockup-row anim-item" style="margin-top: 28px;">
+        <div>
+          <img src="img_preferences.png" alt="Präferenzen wählen" class="mockup-img">
+          <p class="mockup-label">1. Interessen wählen</p>
+        </div>
+        <span class="arrow-between">→</span>
+        <div>
+          <img src="img_route.png" alt="Route generiert" class="mockup-img">
+          <p class="mockup-label">2. Route wird berechnet</p>
+        </div>
+        <span class="arrow-between">→</span>
+        <div>
+          <img src="img_detail.png" alt="Spot Details" class="mockup-img">
+          <p class="mockup-label">3. Spot entdecken</p>
+        </div>
+      </div>
+      <div class="anim-item" style="margin-top: 24px; display: flex; justify-content: center;">
+        <div class="card"
+          style="padding: 18px 28px; border-color: rgba(6,182,212,0.3); background: rgba(6,182,212,0.05); max-width: 800px; text-align: left;">
+          <div style="display: flex; gap: 16px; align-items: flex-start;">
+            <span style="color: var(--accent2); font-size: 1.8rem;">🎧</span>
+            <div>
+              <p style="color: var(--text-primary); font-size: 1rem; font-weight: 600; margin-bottom: 6px;">
+                Wie funktioniert dynamisches KI-Audio?
+              </p>
+              <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; margin-bottom: 12px;">
+                Statt starrer, vorab aufgenommener Texte liest die App deine GPS-Position und deine Vorlieben. Eine KI
+                (LLM) generiert live einen passenden Text, der <em>in Echtzeit</em> durch eine lebensechte KI-Stimme
+                (TTS) vorgelesen wird.
+              </p>
+
+              <div
+                style="background: rgba(0,0,0,0.3); border: 1px dashed rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+                <p
+                  style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">
+                  Beispiel: Rijksmuseum</p>
+                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px;">
+                  🎩 <strong>Historiker:</strong> <em>"Erbaut 1885 von Pierre Cuypers, verbindet dieses Meisterwerk
+                    Gotik und Renaissance..."</em>
+                </div>
+                <div style="font-size: 0.85rem; color: var(--text-secondary);">
+                  🍻 <strong>Local Guide:</strong> <em>"Da sind wir am Rijksmuseum! Kleiner Insider-Tipp: Die perfekten
+                    Fotos machst du von der Rückseite..."</em>
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 8px;">
+                <div style="flex: 1;">
+                  <p style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500; margin-bottom: 6px;">🎩
+                    <strong>Historiker</strong>
+                  </p>
+                  <audio controls style="height: 36px; outline: none; width: 100%; border-radius: 8px;">
+                    <source src="audio_historian.mp3" type="audio/mpeg">
+                    Dein Browser unterstützt kein Audio.
+                  </audio>
+                </div>
+                <div style="flex: 1;">
+                  <p style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500; margin-bottom: 6px;">🍻
+                    <strong>Local Guide</strong>
+                  </p>
+                  <audio controls style="height: 36px; outline: none; width: 100%; border-radius: 8px;">
+                    <source src="audio_local.mp3" type="audio/mpeg">
+                    Dein Browser unterstützt kein Audio.
+                  </audio>
+                </div>
+              </div>
+              <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px;">Wähle oben aus den zwei
+                generierten Stimmen, um den Unterschied zu hören.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <span class="slide-number">05 / 15</span>
+  </div>
+
+  <!-- =================== SLIDE 6: LIVE PROTOTYP (interaktiv) =================== -->
+  <div class="slide" data-slide="5">
+    <div style="max-width: 1000px; width: 100%;">
+      <p class="small-label anim-item">Interaktiver Prototyp</p>
+      <h2 class="anim-item">Probier's selbst aus! 🗺️</h2>
+      <p class="anim-item" style="color: var(--text-secondary); margin: 8px 0 24px; font-size: 0.95rem;">
+        Klicke auf Pins, filtere nach Kategorien, starte den Audio-Guide – alles live und interaktiv.
+      </p>
+      <div class="proto-container anim-item">
+        <iframe src="citywhisper_prototype.html" loading="lazy" title="CityWhisper Prototype" allow="autoplay"></iframe>
+      </div>
+      <div class="proto-hint anim-item">
+        <span>👆</span> Klicke, zoome & interagiere direkt im Prototyp
+      </div>
+    </div>
+    <span class="slide-number">06 / 15</span>
+  </div>
+
+  <!-- =================== SLIDE 7: TECHNOLOGY =================== -->
+  <div class="slide" data-slide="6">
+    <div style="max-width: 700px; width: 100%;">
+      <p class="small-label anim-item">Technologie</p>
+      <h2 class="anim-item">Unter der Haube: KI + Open Data 🤖</h2>
+      <div class="flow-vertical" style="margin-top: 28px;">
+        <div class="flow-box accent anim-item">👤 Nutzer-Präferenzen</div>
+        <span class="flow-arrow anim-item">↓</span>
+        <div class="flow-box anim-item">🧠 KI-Routenoptimierung <span class="flow-label">Google Routes API /
+            Mapbox</span></div>
+        <span class="flow-arrow anim-item">↓</span>
+        <div class="flow-box anim-item">📊 Open Data Aggregation <span class="flow-label">Rijksmuseum API, PDOK,
+            OSM</span></div>
+        <span class="flow-arrow anim-item">↓</span>
+        <div class="flow-box anim-item">✨ RAG + LLM Content <span class="flow-label">GPT-4 + verifizierte Fakten</span>
+        </div>
+        <span class="flow-arrow anim-item">↓</span>
+        <div class="flow-box anim-item">🔊 Text-to-Speech (optional) <span class="flow-label">ElevenLabs / Google
+            TTS</span></div>
+        <span class="flow-arrow anim-item">↓</span>
+        <div class="flow-box accent anim-item">📍 GPS-Geofencing → Infos am Spot</div>
+      </div>
+      <p class="anim-item"
+        style="text-align: center; margin-top: 20px; color: var(--text-muted); font-style: italic; font-size: 0.9rem;">
+        „Wir erfinden das Rad nicht neu – wir kombinieren existierende Tech auf eine neue Art."
+      </p>
+    </div>
+    <span class="slide-number">07 / 15</span>
+  </div>
+
+  <!-- =================== SLIDE 8: USP =================== -->
+  <div class="slide" data-slide="7">
+    <div style="max-width: 920px; width: 100%;">
+      <p class="small-label anim-item">Unique Selling Proposition</p>
+      <h2 class="anim-item">Warum CityWhisper? 💎</h2>
+      <div class="anim-item" style="margin-top: 28px; overflow-x: auto;">
+        <table class="comp-table">
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th>Google Maps</th>
+              <th>Standard Audio-Guide</th>
+              <th class="highlight-col" style="color: var(--accent);">⭐ CityWhisper</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Personalisierte Route</td>
+              <td>❌</td>
+              <td>❌</td>
+              <td class="highlight-col">✅</td>
+            </tr>
+            <tr>
+              <td>Mixed-Interest Touren</td>
+              <td>❌</td>
+              <td>❌</td>
+              <td class="highlight-col">✅</td>
+            </tr>
+            <tr>
+              <td>KI-generierte Infos</td>
+              <td>❌</td>
+              <td>❌</td>
+              <td class="highlight-col">✅ (Live generiert)</td>
+            </tr>
+            <tr>
+              <td>Optionales KI-Audio</td>
+              <td>❌</td>
+              <td>✅ (statisch)</td>
+              <td class="highlight-col">✅ (dynamisch)</td>
+            </tr>
+            <tr>
+              <td>Offline-Modus</td>
+              <td>✅</td>
+              <td>✅</td>
+              <td class="highlight-col">✅</td>
+            </tr>
+            <tr>
+              <td>Weltweit einsetzbar</td>
+              <td>✅ (ohne Guide)</td>
+              <td>❌ (limitiert)</td>
+              <td class="highlight-col">✅</td>
+            </tr>
+            <tr>
+              <td>Coffeeshop-Integration</td>
+              <td>❌</td>
+              <td>❌</td>
+              <td class="highlight-col">✅</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="anim-item" style="margin-top: 24px; text-align: center;">
+        <p style="color: var(--accent); font-weight: 600; font-size: 1.1rem;">
+          „CityWhisper bricht thematische Silos auf – Kunst + Food + Subkultur in EINER nahtlosen Tour."
+        </p>
+      </div>
+    </div>
+    <span class="slide-number">08 / 15</span>
+  </div>
+
+  <!-- =================== SLIDE 9: MARKET =================== -->
+  <div class="slide" data-slide="8">
+    <div style="max-width: 1000px; width: 100%;">
+      <p class="small-label anim-item">Marktpotenzial</p>
+      <h2 class="anim-item">Ein Markt, der <span class="gradient-text"
+          style="font-size:inherit;font-weight:inherit;">RIESIG</span> ist 📊</h2>
+      <div class="grid-4 anim-item" style="margin-top: 32px;">
+        <div class="card stat-card">
+          <span style="font-size: 2rem;">💰</span>
+          <span class="big-number" style="font-size:2.6rem;">€111 Mrd</span>
+          <span class="stat-label">Tourismus-Umsatz<br>in den Niederlanden (2024)</span>
+        </div>
+        <div class="card stat-card">
+          <span style="font-size: 2rem;">🌍</span>
+          <span class="big-number" style="font-size:2.6rem;">20,3 Mio</span>
+          <span class="stat-label">Touristen in den<br>Niederlanden pro Jahr</span>
+        </div>
+        <div class="card stat-card">
+          <span style="font-size: 2rem;">📈</span>
+          <span class="big-number" style="font-size:2.6rem;">€134 Mrd</span>
+          <span class="stat-label">Erwartetes Wachstum<br>für die NL bis 2034</span>
+        </div>
+        <div class="card stat-card">
+          <span style="font-size: 2rem;">🎮</span>
+          <span class="big-number" style="font-size:2.6rem;">$90 Mrd</span>
+          <span class="stat-label">Interaktiver Erlebnismarkt<br>(z.B. Scavenger Hunts, Stadt-Rätsel)</span>
+        </div>
+      </div>
+      <div class="anim-item" style="margin-top: 16px; text-align: center; color: var(--text-muted); font-size: 0.8rem;">
+        Quellen: NBTC Holland Marketing, Statista Thematischer Tourismus 2024
+      </div>
+      <div class="anim-item" style="margin-top: 20px; text-align: center;">
+        <p style="color: var(--text-secondary); font-size: 1rem;">
+          Der Markt wächst – und <strong style="color: var(--text-primary);">individualisierte Erlebnisse</strong> sind
+          der Megatrend. 🚀
+        </p>
+      </div>
+    </div>
+    <span class="slide-number">09 / 15</span>
+  </div>
+
+  <!-- =================== SLIDE 10: COMPETITION =================== -->
+  <div class="slide" data-slide="9">
+    <div style="max-width: 1000px; width: 100%;">
+      <p class="small-label anim-item">Wettbewerb</p>
+      <h2 class="anim-item">Wir kennen die Konkurrenz 🥊</h2>
+      <div class="grid-2 anim-item" style="margin-top: 24px; align-items: start;">
+        <!-- Matrix -->
+        <div class="matrix-container" style="width:100%; height: 340px;">
+          <div class="matrix-bg">
+            <div class="matrix-line-h"></div>
+            <div class="matrix-line-v"></div>
+            <div class="matrix-axis-y top" style="font-size: 0.7rem;">↑ Hohe Personalisierung</div>
+            <div class="matrix-axis-y bottom" style="font-size: 0.7rem;">↓ Niedrige Personalisierung</div>
+            <div class="matrix-axis-x left"
+              style="font-size: 0.7rem; writing-mode: vertical-rl; transform: rotate(180deg);">← Nur Planung</div>
+            <div class="matrix-axis-x right" style="font-size: 0.7rem; writing-mode: vertical-rl;">Planung + Audio →
+            </div>
+            <!-- Dots -->
+            <div class="matrix-dot"
+              style="top: 25%; left: 22%; background: rgba(6,182,212,0.2); color: var(--accent2);">DocentPro</div>
+            <div class="matrix-dot"
+              style="top: 65%; left: 20%; background: rgba(168,85,247,0.2); color: var(--accent3);">Layla.ai</div>
+            <div class="matrix-dot"
+              style="top: 60%; right: 15%; background: rgba(34,197,94,0.2); color: var(--accent4);">VoiceMap</div>
+            <div class="matrix-dot"
+              style="top: 45%; right: 22%; background: rgba(34,197,94,0.2); color: var(--accent4);">SmartGuide</div>
+            <div class="matrix-dot"
+              style="top: 12%; right: 12%; background: rgba(249,115,22,0.3); color: var(--accent); border: 2px solid var(--accent); font-size: 0.9rem;">
+              ⭐ CityWhisper</div>
+          </div>
+        </div>
+        <!-- List -->
+        <div>
+          <div class="card" style="margin-bottom: 12px; padding: 16px 20px;">
+            <strong style="color: var(--accent4);">VoiceMap</strong>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px;">GPS Audio in 400+ Städten –
+              aber statische, vordefinierte Routen</p>
+          </div>
+          <div class="card" style="margin-bottom: 12px; padding: 16px 20px;">
+            <strong style="color: var(--accent4);">SmartGuide</strong>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px;">KI-Empfehlungen + AR – aber
+              keine Mixed-Interest-Fusion</p>
+          </div>
+          <div class="card" style="margin-bottom: 12px; padding: 16px 20px;">
+            <strong style="color: var(--accent2);">DocentPro</strong>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px;">All-in-One Planer – aber kein
+              dynamisches KI-Audio</p>
+          </div>
+          <div class="card" style="padding: 16px 20px;">
+            <strong style="color: var(--accent3);">Questo</strong>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px;">Gamification & Rätsel – aber
+              keine Routenoptimierung</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <span class="slide-number">10 / 15</span>
+  </div>
+
+  <!-- =================== SLIDE 11: BUSINESS MODEL =================== -->
+  <div class="slide" data-slide="10">
+    <div style="max-width: 1000px; width: 100%;">
+      <p class="small-label anim-item">Geschäftsmodell</p>
+      <h2 class="anim-item">Wie verdienen wir Geld? 💰</h2>
+      <div class="grid-3" style="margin-top: 32px;">
+        <div class="card text-center anim-item">
+          <span class="revenue-icon">🎫</span>
+          <h3>Affiliate-Provisionen</h3>
+          <p class="revenue-pct" style="margin: 12px 0;">8–12%</p>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6;">
+            Pro Buchung über Viator, GetYourGuide, Tiqets. <br>
+            <strong>Beispiel:</strong> 2 Tickets à €50 = €8–12 für uns
+          </p>
+        </div>
+        <div class="card text-center anim-item">
+          <span class="revenue-icon">💎</span>
+          <h3>Freemium / Premium</h3>
+          <p class="revenue-pct" style="margin: 12px 0;">€4,99<span
+              style="font-size: 0.9rem; font-weight: 400;">/Monat</span></p>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6;">
+            Gratis: Basis-Route + Text<br>
+            Premium: KI-Audio, Offline, erweiterte POIs
+          </p>
+        </div>
+        <div class="card text-center anim-item">
+          <span class="revenue-icon">🏢</span>
+          <h3>Technologie-Partner</h3>
+          <p class="revenue-pct" style="margin: 12px 0;">SaaS-Lizenz</p>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6;">
+            Wir vermieten unsere KI & Routen-Software an Städte, Museen & DMOs (B2B).
+          </p>
+        </div>
+      </div>
+      <div class="anim-item" style="margin-top: 24px; text-align: center;">
+        <div class="card"
+          style="display: inline-block; padding: 14px 28px; border-color: rgba(34,197,94,0.3); background: rgba(34,197,94,0.05);">
+          <span style="font-size: 1.3rem;">📊</span>
+          <span style="color: var(--text-secondary);">Skalierbare Einnahmen – Grenzkosten pro neuer Stadt nahe <strong
+              style="color: var(--accent4);">Null</strong></span>
+        </div>
+      </div>
+    </div>
+    <span class="slide-number">11 / 15</span>
+  </div>
+
+  <!-- =================== SLIDE 12: COFFEESHOP LEGAL =================== -->
+  <div class="slide" data-slide="11">
+    <div style="max-width: 800px; width: 100%;">
+      <p class="small-label anim-item">Compliance</p>
+      <h2 class="anim-item">Die Coffeeshop-Frage ⚖️</h2>
+      <p class="anim-item" style="color: var(--text-secondary); margin: 8px 0 24px; font-size: 1rem;">
+        Ja, Coffeeshops sind drin. Und ja, es ist <span style="color: var(--accent4); font-weight: 600;">legal</span>.
+      </p>
+      <div class="grid-2 anim-item" style="align-items: start;">
+        <div>
+          <div class="card" style="border-left: 3px solid #ef4444; margin-bottom: 16px;">
+            <h3 style="color: #ef4444;">⚠️ Das Problem</h3>
+            <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; margin-top: 8px;">
+              Striktes <strong>Werbeverbot</strong> in NL – Apps dürfen Coffeeshops nicht aktiv bewerben oder
+              priorisieren.
+            </p>
+          </div>
+          <div class="card" style="border-left: 3px solid var(--accent2);">
+            <h3 style="color: var(--accent2);">📌 Vorbild: Greenmeister</h3>
+            <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; margin-top: 8px;">
+              Erfolgreiche NL-App – fungiert als neutrales Verzeichnis, nicht als Werbeplattform.
+            </p>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="border-left: 3px solid var(--accent4);">
+            <h3 style="color: var(--accent4);">✅ Unsere Lösung</h3>
+            <div style="margin-top: 12px;">
+              <div class="legal-item"><span class="legal-icon">✅</span> Coffeeshops als <strong>neutrale
+                  Navigationspunkte</strong></div>
+              <div class="legal-item"><span class="legal-icon">✅</span> Audio über <strong>Geschichte der
+                  Toleranzpolitik</strong></div>
+              <div class="legal-item"><span class="legal-icon">✅</span> Integration des <strong>Hash Museum</strong> als
+                kultureller Punkt</div>
+              <div class="legal-item"><span class="legal-icon">❌</span> Keine Sponsored Listings</div>
+              <div class="legal-item"><span class="legal-icon">❌</span> Keine Produktwerbung</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="anim-item"
+        style="text-align: center; margin-top: 20px; color: var(--accent); font-weight: 600; font-size: 1rem;">
+        „Wir informieren. Wir werben nicht."
+      </p>
+    </div>
+    <span class="slide-number">12 / 15</span>
+  </div>
+
+  <!-- =================== SLIDE 13: FUTURE VISIONS =================== -->
+  <div class="slide" data-slide="12">
+    <div style="max-width: 1000px; width: 100%;">
+      <p class="small-label anim-item">Zukunftsvision</p>
+      <h2 class="anim-item">Wohin kann CityWhisper sich entwickeln? 🔮</h2>
+      <div class="grid-3" style="margin-top: 32px;">
+        <div class="card anim-item" style="border-top: 3px solid var(--accent);">
+          <div style="font-size: 3rem; text-align: center; margin-bottom: 16px;">🎮</div>
+          <h3 style="text-align: center;">Interaktive Stadt-Spiele</h3>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; margin-top: 10px;">
+            Scavenger Hunts, Rätsel-Touren, Team-Events.
+            <strong>B2B-Potenzial:</strong> Corporate Team-Building, Schulausflüge – höhere Margen!
+          </p>
+        </div>
+        <div class="card anim-item" style="border-top: 3px solid var(--accent3);">
+          <div style="font-size: 3rem; text-align: center; margin-bottom: 16px;">🤝</div>
+          <h3 style="text-align: center;">Local Connect</h3>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; margin-top: 10px;">
+            Wir matchen Nutzer anhand ihrer Routen mit echten Locals.
+            <strong>Die Vision:</strong> Ein soziales Netzwerk für spontane Meetups und Insider-Events in der besuchten
+            Stadt.
+          </p>
+        </div>
+        <div class="card anim-item" style="border-top: 3px solid var(--accent2);">
+          <div style="font-size: 3rem; text-align: center; margin-bottom: 16px;">📸</div>
+          <h3 style="text-align: center;">Real-Time Vision</h3>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; margin-top: 10px;">
+            Kamera auf Gebäude richten → sofort KI-Audio via GPT-4 Vision.
+            <strong>Kein Pre-Mapping nötig!</strong>
+          </p>
+        </div>
+      </div>
+    </div>
+    <span class="slide-number">13 / 15</span>
+  </div>
+
+  <!-- =================== SLIDE 14: SCALING =================== -->
+  <div class="slide" data-slide="13">
+    <div style="max-width: 900px; width: 100%;">
+      <p class="small-label anim-item">Skalierung</p>
+      <h2 class="anim-item">Jede Stadt der Welt. <span style="color: var(--accent);">Ab Tag 1.</span> 🌍</h2>
+      <div class="timeline anim-item" style="margin-top: 36px;">
+        <div class="timeline-phase">
+          <div class="phase-badge" style="background: rgba(249,115,22,0.2); color: var(--accent);">🚀 Launch</div>
+          <p style="font-weight: 600; margin: 8px 0;">Amsterdam, Berlin, Barcelona</p>
+          <p style="color: var(--text-muted); font-size: 0.85rem;">Erste Fokus-Städte 🇪🇺</p>
+        </div>
+        <div class="timeline-phase">
+          <div class="phase-badge" style="background: rgba(6,182,212,0.2); color: var(--accent2);">📈 Phase 2</div>
+          <p style="font-weight: 600; margin: 8px 0;">London, Paris, Wien, Prag, Lissabon</p>
+          <p style="color: var(--text-muted); font-size: 0.85rem;">Europa-Expansion 🌍</p>
+        </div>
+        <div class="timeline-phase">
+          <div class="phase-badge" style="background: rgba(168,85,247,0.2); color: var(--accent3);">🌏 Phase 3</div>
+          <p style="font-weight: 600; margin: 8px 0;">New York, Tokio, Bangkok</p>
+          <p style="color: var(--text-muted); font-size: 0.85rem;">Weltweit 🌏</p>
+        </div>
+      </div>
+
+      <!-- INTERACTIVE MAP SIMULATION -->
+      <div class="world-map-container anim-item">
+        <div class="map-bg">🌍</div>
+
+        <!-- Launch Phase -->
+        <div class="map-dot md-launch" style="top: 38%; left: 48%; animation-delay: 0s;" data-city="Amsterdam"></div>
+        <div class="map-dot md-launch" style="top: 40%; left: 50%; animation-delay: 0.3s;" data-city="Berlin"></div>
+        <div class="map-dot md-launch" style="top: 45%; left: 47%; animation-delay: 0.6s;" data-city="Barcelona"></div>
+
+        <!-- Phase 2 -->
+        <div class="map-dot md-phase2" style="top: 35%; left: 45%; animation-delay: 1.2s;" data-city="London"></div>
+        <div class="map-dot md-phase2" style="top: 42%; left: 46%; animation-delay: 1.5s;" data-city="Paris"></div>
+
+        <!-- Phase 3 -->
+        <div class="map-dot md-phase3" style="top: 40%; left: 25%; animation-delay: 2s;" data-city="New York"></div>
+        <div class="map-dot md-phase3" style="top: 45%; left: 85%; animation-delay: 2.5s;" data-city="Tokio"></div>
+
+        <!-- Animated connection lines originating from Amsterdam -->
+        <div class="map-line" style="top: 38%; left: 48%; transform: rotate(180deg); animation-duration: 4s;"></div>
+        <!-- Towards NY -->
+        <div class="map-line" style="top: 38%; left: 48%; transform: rotate(10deg); animation-duration: 5s;"></div>
+        <!-- Towards Tokio -->
+        <div class="map-line"
+          style="top: 38%; left: 48%; transform: rotate(30deg); animation-duration: 3s; width: 100px;"></div>
+        <!-- Local Europe -->
+      </div>
+      <div class="grid-3 anim-item" style="margin-top: 32px;">
+        <div class="card text-center" style="padding: 20px;">
+          <span style="font-size: 2rem;">📡</span>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 8px;">
+            <strong>Open Data</strong> (OSM, Wikipedia) für jede Stadt
+          </p>
+        </div>
+        <div class="card text-center" style="padding: 20px;">
+          <span style="font-size: 2rem;">🤖</span>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 8px;">
+            <strong>KI-Content</strong> on-the-fly für jede Location
+          </p>
+        </div>
+        <div class="card text-center" style="padding: 20px;">
+          <span style="font-size: 2rem;">💸</span>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 8px;">
+            <strong>Grenzkosten</strong> pro neue Stadt ≈ <span style="color: var(--accent4);">Null</span>
+          </p>
+        </div>
+      </div>
+    </div>
+    <span class="slide-number">14 / 15</span>
+  </div>
+
+  <!-- =================== SLIDE 15: CTA =================== -->
+  <div class="slide" data-slide="14">
+    <div class="text-center">
+      <div class="anim-item" style="font-size: 4.5rem; margin-bottom: 20px;">🌍🎧✨</div>
+      <h1 class="anim-item"><span class="gradient-text">Bereit, Städte neu zu erleben?</span></h1>
+
+      <div class="anim-item"
+        style="margin-top: 30px; display: flex; justify-content: center; gap: 40px; align-items: center; flex-wrap: wrap;">
+
+        <!-- Left side: Summary cards -->
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <div class="card"
+            style="padding: 16px 24px; text-align: left; min-width: 200px; display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 1.5rem;">🎯</span> <strong>100% Personalisiert</strong>
+          </div>
+          <div class="card"
+            style="padding: 16px 24px; text-align: left; min-width: 200px; display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 1.5rem;">🤖</span> <strong>KI-Generiert Live</strong>
+          </div>
+          <div class="card"
+            style="padding: 16px 24px; text-align: left; min-width: 200px; display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 1.5rem;">🤝</span> <strong>Local Connect</strong>
+          </div>
+        </div>
+
+        <!-- Right side: QR Code for Waitlist -->
+        <div class="card"
+          style="padding: 24px; background: rgba(14, 165, 233, 0.05); border-color: rgba(14, 165, 233, 0.3); text-align: center;">
+          <p style="font-weight: 800; color: white; margin-bottom: 4px; font-size: 1.2rem;">Werde Teil der Vision! 🚀
+          </p>
+          <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 16px;">Scanne den Code und
+            sichere<br>dir den Beta-Zugang.</p>
+          <div style="background: white; padding: 12px; border-radius: 12px; display: inline-block;">
+            <img src="qr_waitlist.png" alt="QR Code für Warteliste"
+              style="width: 140px; height: 140px; display: block;">
+          </div>
+        </div>
+
+      </div>
+
+      <p class="anim-item" style="margin-top: 40px; color: var(--text-muted); font-size: 1rem; font-style: italic;">
+        „Das nächste Mal navigiert CityWhisper für uns!"
+      </p>
+    </div>
+    <span class="slide-number">15 / 15</span>
+  </div>
+
+  <!-- ===== NAVIGATION ===== -->
+  <div class="nav-bar" id="navbar">
+    <button class="nav-btn" onclick="prevSlide()" title="Vorherige Slide (←)">◀</button>
+    <div class="nav-dots" id="navDots"></div>
+    <button class="nav-btn" onclick="nextSlide()" title="Nächste Slide (→)">▶</button>
+    <span class="nav-counter" id="navCounter">1 / 15</span>
+    <button class="fs-btn" onclick="toggleFullscreen()" title="Vollbild (F)">⛶</button>
+  </div>
+
+  <script>
+    // ===== SLIDE NAVIGATION =====
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    let currentSlide = 0;
+
+    // Create dots
+    const dotsContainer = document.getElementById('navDots');
+    for (let i = 0; i < totalSlides; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'nav-dot' + (i === 0 ? ' active' : '');
+      dot.onclick = () => goToSlide(i);
+      dotsContainer.appendChild(dot);
+    }
+
+    function updateSlide(direction) {
+      const dots = document.querySelectorAll('.nav-dot');
+
+      // Reset animations on all items
+      slides[currentSlide].querySelectorAll('.anim-item').forEach(el => {
+        el.style.animation = 'none';
+        el.offsetHeight; // trigger reflow
+        el.style.animation = '';
+      });
+
+      slides.forEach((slide, i) => {
+        slide.classList.remove('active', 'exit-left');
+        if (i < currentSlide) slide.classList.add('exit-left');
+      });
+      slides[currentSlide].classList.add('active');
+
+      dots.forEach((dot, i) => {
+        dot.classList.toggle('active', i === currentSlide);
+      });
+
+      document.getElementById('navCounter').textContent = `${currentSlide + 1} / ${totalSlides}`;
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides - 1) { currentSlide++; updateSlide('next'); }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 0) { currentSlide--; updateSlide('prev'); }
+    }
+
+    function goToSlide(index) {
+      currentSlide = index; updateSlide('jump');
+    }
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextSlide(); }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); prevSlide(); }
+      if (e.key === 'f' || e.key === 'F') { e.preventDefault(); toggleFullscreen(); }
+      if (e.key === 'Home') { e.preventDefault(); goToSlide(0); }
+      if (e.key === 'End') { e.preventDefault(); goToSlide(totalSlides - 1); }
+    });
+
+    // Touch / swipe support
+    let touchStartX = 0;
+    document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; });
+    document.addEventListener('touchend', e => {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      if (Math.abs(dx) > 60) { dx < 0 ? nextSlide() : prevSlide(); }
+    });
+
+    // Fullscreen
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => { });
+      } else {
+        document.exitFullscreen();
+      }
+    }
+  </script>
+</body>
+
+</html>
