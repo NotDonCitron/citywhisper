@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CityWhisper – Schönau Edition</title>
+    <title>CityWhisper – Schönau & Mannheim</title>
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#0ea5e9">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -24,6 +24,7 @@
         .audio-player { background: rgba(255,255,255,0.05); border-radius: 16px; padding: 15px; margin-top: 15px; }
         .progress-bar { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin: 10px 0; overflow: hidden; }
         .progress-fill { height: 100%; background: #0ea5e9; width: 0%; transition: width 0.1s linear; }
+        .city-switcher { position: absolute; top: 80px; left: 16px; z-index: 200; }
     </style>
 </head>
 <body>
@@ -33,37 +34,34 @@
         <!-- Top Bar -->
         <div class="p-4 flex justify-between items-center pointer-all bg-gradient-to-b from-[#0a0e1a] to-transparent">
             <div class="bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
-                <span class="font-bold text-[#0ea5e9]">City</span>Whisper <span class="text-xs opacity-50 ml-2">v0.1 Schönau</span>
+                <span class="font-bold text-[#0ea5e9]">City</span>Whisper <span class="text-xs opacity-50 ml-2">v0.2 Live</span>
             </div>
+        </div>
+
+        <!-- City Switcher -->
+        <div class="city-switcher flex gap-2 pointer-all">
+            <button onclick="gotoCity('Schoenau')" class="bg-white/10 backdrop-blur-md px-3 py-1 rounded-full text-xs border border-white/10 hover:bg-[#0ea5e9]/20">🏘️ Schönau</button>
+            <button onclick="gotoCity('Mannheim')" class="bg-white/10 backdrop-blur-md px-3 py-1 rounded-full text-xs border border-white/10 hover:bg-[#0ea5e9]/20">🏙️ Mannheim</button>
         </div>
 
         <!-- Start Button -->
         <div class="start-overlay" id="startBtnContainer">
             <button onclick="startTour()" class="pointer-all bg-[#0ea5e9] text-white px-8 py-4 rounded-full font-bold shadow-2xl hover:scale-105 active:scale-95 transition-transform flex items-center gap-3">
-                <span>🚀</span> Tour in Schönau starten
+                <span>🚀</span> CityWhisper starten
             </button>
         </div>
 
         <!-- Bottom Sheet -->
         <div id="bottomSheet" class="bottom-sheet pointer-all shadow-2xl">
             <div class="w-12 h-1 bg-white/20 rounded-full mx-auto mb-4" onclick="closeSheet()"></div>
-            <div id="sheetContent">
-                <!-- Dynamic Content -->
-            </div>
+            <div id="sheetContent"></div>
         </div>
     </div>
 
     <audio id="audioElement"></audio>
 
     <script>
-        // PWA Service Worker Registration
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(reg => console.log('Service Worker registered', reg))
-                    .catch(err => console.log('Service Worker failed', err));
-            });
-        }
+        if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js'); }); }
 
         const BACKEND_URL = window.location.origin;
         let pois = [];
@@ -72,23 +70,19 @@
         let lastTriggeredPoiId = null;
         const GEOFENCE_RADIUS = 50; 
 
-        const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([49.4355, 8.8090], 16);
+        const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([49.4355, 8.8090], 13);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
         async function loadData() {
             try {
                 const res = await fetch(`${BACKEND_URL}/pois`);
                 pois = await res.json();
-            } catch (e) {
-                pois = [
-                    {id: 'klosterkirche', name: 'Klosterkirche', lat: 49.4355, lng: 8.8095, emoji: '⛪'},
-                    {id: 'rathaus', name: 'Rathaus', lat: 49.4348, lng: 8.8088, emoji: '🏛️'}
-                ];
-            }
-            renderMarkers();
+                renderMarkers();
+            } catch (e) { console.error("Data load failed", e); }
         }
 
         function renderMarkers() {
+            markers.forEach(m => map.removeLayer(m.marker));
             pois.forEach(poi => {
                 const icon = L.divIcon({
                     html: `<div class="custom-marker"><div class="marker-dot">${poi.emoji || '📍'}</div></div>`,
@@ -99,12 +93,17 @@
             });
         }
 
+        function gotoCity(city) {
+            if (city === 'Schoenau') map.setView([49.4355, 8.8090], 16);
+            else if (city === 'Mannheim') map.setView([49.4836, 8.4660], 15);
+        }
+
         async function openSheet(poi) {
             const sheet = document.getElementById('bottomSheet');
             const content = document.getElementById('sheetContent');
             const audio = document.getElementById('audioElement');
             
-            content.innerHTML = `<h2 class="text-2xl font-bold mb-2">${poi.name}</h2><p class="opacity-60 mb-4">Schönau (Odenwald)</p>
+            content.innerHTML = `<h2 class="text-2xl font-bold mb-2">${poi.name}</h2><p class="opacity-60 mb-4">${poi.city}</p>
                 <div id="scriptText" class="text-sm italic opacity-80 mb-4 border-l-2 border-[#0ea5e9] pl-4">KI-Guide schreibt die Geschichte...</div>
                 <div class="audio-player">
                     <div class="flex items-center gap-4 mb-2">
@@ -119,18 +118,13 @@
             try {
                 const res = await fetch(`${BACKEND_URL}/poi/${poi.id}/audio`);
                 const data = await res.json();
-                
-                // Text anzeigen
-                if (data.script) {
-                    document.getElementById('scriptText').innerText = data.script;
-                }
-
-                audio.src = `${BACKEND_URL}${data.audio_url}`;
+                if (data.script) document.getElementById('scriptText').innerText = data.script;
+                let finalUrl = data.audio_url;
+                if (!finalUrl.startsWith('http')) finalUrl = `${BACKEND_URL}${finalUrl}`;
+                audio.src = finalUrl;
                 audio.play();
                 updateProgress();
-            } catch (e) {
-                console.warn("Audio load failed");
-            }
+            } catch (e) { console.warn("Audio load failed"); }
         }
 
         function updateProgress() {
@@ -141,7 +135,7 @@
                     const pct = (audio.currentTime / audio.duration) * 100;
                     if (fill) fill.style.width = pct + '%';
                 }
-                if (audio.ended) clearInterval(interval);
+                if (audio.ended || audio.paused) clearInterval(interval);
             }, 100);
         }
 
@@ -152,14 +146,8 @@
 
         function startTour() {
             document.getElementById('startBtnContainer').style.display = 'none';
-            
-            // Audio-Kontext freischalten (Wichtig!)
             const audio = document.getElementById('audioElement');
-            audio.play().then(() => {
-                audio.pause();
-                audio.currentTime = 0;
-                console.log("Audio Engine unlocked");
-            }).catch(e => console.warn("Audio unlock failed:", e));
+            audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(e => {});
 
             if (navigator.geolocation) {
                 navigator.geolocation.watchPosition(pos => {
@@ -169,19 +157,18 @@
                     if (!userLocationMarker) {
                         const userIcon = L.divIcon({ html: '<div class="user-location-dot"></div>', className: '', iconSize: [20, 20], iconAnchor: [10, 10] });
                         userLocationMarker = L.marker(latlng, { icon: userIcon }).addTo(map);
-                        map.setView(latlng, 17);
+                        map.setView(latlng, 16);
                     } else {
                         userLocationMarker.setLatLng(latlng);
                     }
-                    
                     checkGeofences(latitude, longitude);
-                }, err => console.error(err), { enableHighAccuracy: true });
+                }, err => {}, { enableHighAccuracy: true });
             }
         }
 
         function checkGeofences(uLat, uLng) {
             pois.forEach(poi => {
-                const dist = Math.sqrt(Math.pow(uLat - poi.lat, 2) + Math.pow(uLng - poi.lng, 2)) * 111320; // Simple approximation
+                const dist = Math.sqrt(Math.pow(uLat - poi.lat, 2) + Math.pow(uLng - poi.lng, 2)) * 111320;
                 if (dist < GEOFENCE_RADIUS && lastTriggeredPoiId !== poi.id) {
                     lastTriggeredPoiId = poi.id;
                     openSheet(poi);

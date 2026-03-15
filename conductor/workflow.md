@@ -17,10 +17,16 @@ CityWhisper follows an iterative **Research -> Strategy -> Execution** lifecycle
 - **Act:** Apply surgical, idiomatic changes.
 - **Validate:** Run tests and standards to confirm success.
 
+## 🤖 Autonomous Verification (Self-Control)
+Gemini CLI verifies its own changes before reporting completion:
+1. **Backend Tests:** Run `pytest` on all API endpoints.
+2. **UI Validation:** Use `chrome-devtools` to verify visual elements and interactions.
+3. **Log Monitoring:** Check backend logs for errors after deployment.
+4. **No Unverified Commits:** Every feature must be verified through at least one automated test or browser-snapshot.
+
 ## 🧪 Testing & Quality
-- **Automated Tests:** Mandatory for all new features and bug fixes.
-- **Visual Testing:** Manual verification of UI changes in the browser.
-- **API Validation:** Rigorous checks for third-party service responses.
+- **Automated Tests:** Mandatory for all new features (using `pytest` for backend).
+- **Visual Testing:** Manual verification of UI changes in the browser using `take_screenshot`.
 
 ## 📦 Version Control
 - **Commits:** Clear, concise messages focusing on "why".
