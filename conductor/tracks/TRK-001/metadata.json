@@ -1,0 +1,10 @@
+{
+  "id": "TRK-001",
+  "label": "Initial Prototype Setup",
+  "status": "In Progress",
+  "priority": "High",
+  "owner": "Gemini CLI",
+  "tags": ["prototype", "UI", "mapping", "audio"],
+  "created_at": "2026-03-14",
+  "updated_at": "2026-03-14"
+}

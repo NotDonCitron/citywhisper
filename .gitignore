@@ -1,3 +1,7 @@
 .env
+backend/venv/
+backend/__pycache__/
+backend/static/audio/*.mp3
+backend/static/audio/*.txt
 node_modules/
 .claude/
