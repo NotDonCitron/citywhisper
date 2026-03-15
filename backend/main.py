@@ -108,6 +108,14 @@ async def root():
         return FileResponse(html_path)
     return {"message": "CityWhisper Backend active"}
 
+@app.get("/manifest.json")
+async def manifest():
+    return FileResponse("manifest.json")
+
+@app.get("/sw.js")
+async def service_worker():
+    return FileResponse("sw.js", media_type="application/javascript")
+
 @app.get("/pois", response_model=List[POI])
 async def get_pois():
     return CURRENT_POIS

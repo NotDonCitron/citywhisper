@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CityWhisper – Schönau Edition</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0ea5e9">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -54,7 +56,16 @@
     <audio id="audioElement"></audio>
 
     <script>
-        const BACKEND_URL = 'http://localhost:8000'; // Ändere dies zu deiner Laptop-IP für Handy-Tests!
+        // PWA Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('Service Worker registered', reg))
+                    .catch(err => console.log('Service Worker failed', err));
+            });
+        }
+
+        const BACKEND_URL = window.location.origin;
         let pois = [];
         let markers = [];
         let userLocationMarker = null;
