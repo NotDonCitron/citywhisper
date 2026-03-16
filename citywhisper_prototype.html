@@ -304,6 +304,44 @@
             margin-top: 10px;
         }
 
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: rgba(20, 24, 39, 0.85);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 500;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-item.active {
+            color: #0ea5e9;
+        }
+
+        .nav-icon {
+            font-size: 20px;
+        }
+
         .persona-btn {
             width: 42px;
             height: 42px;
@@ -348,34 +386,37 @@
     <div id="backdrop" class="backdrop pointer-all" onclick="closeAll()"></div>
 
     <div class="ui-layer">
-        <div
-            class="p-4 flex justify-between items-center pointer-all bg-gradient-to-b from-[#0a0e1a]/80 to-transparent">
-            <div class="bg-white/10 px-4 py-2 rounded-full border border-white/10 flex items-center gap-2 shadow-lg">
+        <!-- Top Bar -->
+        <div class="fixed top-0 left-0 right-0 p-4 flex justify-between items-center z-[100] pointer-events-none">
+            <div
+                class="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 pointer-events-auto flex items-center gap-2">
                 <span class="font-bold text-[#0ea5e9]">City</span>Whisper
-                <div class="flex items-center gap-1 ml-1">
-                    <span id="offlineIndicator" class="w-2 h-2 rounded-full bg-red-500 hidden animate-pulse"></span>
-                    <span id="onlineIndicator" class="w-2 h-2 rounded-full bg-green-500"></span>
-                </div>
+                <span id="activePersonaBadge" class="ml-1 opacity-50 text-xs">📜</span>
             </div>
-
-            <div class="flex gap-1 bg-white/5 p-1 rounded-full border border-white/10 shadow-lg" id="personaSelector">
-                <button onclick="selectPersona('historian')" class="persona-btn" title="Historiker">📜</button>
-                <button onclick="selectPersona('insider')" class="persona-btn active" title="Insiderin">🕶️</button>
-            </div>
-
-            <div class="flex gap-2">
-                <button id="prefsBtn" onclick="togglePreferences()" class="control-btn off pointer-all"
-                    title="Interessen">⚙️</button>
-                <button id="discoverBtn" onclick="toggleDiscovery()" class="control-btn off pointer-all"
-                    title="Entdecken">✨</button>
+            <div id="statusIndicators" class="flex gap-1 pointer-events-auto">
+                <span id="offlineIndicator" class="w-2 h-2 rounded-full bg-red-500 hidden animate-pulse"></span>
+                <span id="onlineIndicator" class="w-2 h-2 rounded-full bg-green-500"></span>
             </div>
         </div>
 
-        <div class="absolute top-20 right-4 flex flex-col gap-2 pointer-all">
-            <button id="autoPlayBtn" onclick="toggleAutoPlay()" class="control-btn on" title="Auto-Play">⚡</button>
-            <button id="audioMasterBtn" onclick="toggleAudioMaster()" class="control-btn on"
-                title="Ton an/aus">🔊</button>
-            <button id="routeBtn" onclick="toggleRouteBuilder()" class="control-btn off" title="Route">🗺️</button>
+        <!-- Bottom Nav -->
+        <div class="bottom-nav pointer-events-auto">
+            <div class="nav-item active" onclick="switchTab('map')">
+                <span class="nav-icon">📍</span>
+                <span>Karte</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('discover')">
+                <span class="nav-icon">✨</span>
+                <span>Entdecken</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('tour')">
+                <span class="nav-icon">🗺️</span>
+                <span>Tour</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('prefs')">
+                <span class="nav-icon">👤</span>
+                <span>Profil</span>
+            </div>
         </div>
 
         <!-- Discovery Modal -->
@@ -402,25 +443,44 @@
 
         <!-- Preferences Modal -->
         <div id="preferencesModal" class="app-modal">
-            <div class="modal-content">
-                <div class="sheet-handle mb-2"></div>
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold">Interessen</h2>
-                    <button onclick="togglePreferences()"
-                        class="p-2 opacity-50 hover:opacity-100 transition-opacity">✕</button>
-                </div>
-                <p class="text-sm opacity-60 mb-6">Wähle aus, was dich interessiert. Wir personalisieren deine
-                    Entdeckungstour.</p>
+            <div class="modal-content !pb-24">
+                <div class="sheet-handle mb-4"></div>
+                <h2 class="text-2xl font-bold mb-6">Dein Profil 👤</h2>
 
-                <div id="categoryGrid" class="grid grid-cols-2 gap-3 mb-8">
-                    <!-- Categories will be injected here -->
+                <!-- Section 1: Persona -->
+                <div class="mb-8">
+                    <h3 class="text-xs font-bold uppercase tracking-widest opacity-40 mb-4">Erzähl-Stil</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div onclick="selectPersona('historian')" id="p-historian"
+                            class="p-4 rounded-2xl border-2 border-white/5 bg-white/5 transition-all cursor-pointer">
+                            <div class="text-2xl mb-2">📜</div>
+                            <div class="font-bold text-sm">Historiker</div>
+                            <div class="text-[10px] opacity-50">Faktisch & Präzise</div>
+                        </div>
+                        <div onclick="selectPersona('insider')" id="p-insider"
+                            class="p-4 rounded-2xl border-2 border-white/5 bg-white/5 transition-all cursor-pointer">
+                            <div class="text-2xl mb-2">🕶️</div>
+                            <div class="font-bold text-sm">Insiderin</div>
+                            <div class="text-[10px] opacity-50">Locker & Modern</div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="mt-8 pt-8 border-t border-white/10">
-                    <h3 class="text-lg font-bold mb-4 flex items-center gap-2">💾 Offline-Daten</h3>
+                <!-- Section 2: Kategorien -->
+                <div class="mb-8">
+                    <h3 class="text-xs font-bold uppercase tracking-widest opacity-40 mb-4">Interessen</h3>
+                    <div id="categoryGrid" class="grid grid-cols-2 gap-2">
+                        <!-- Categories will be injected here -->
+                    </div>
+                </div>
+
+                <!-- Section 3: System / Offline -->
+                <div class="mb-8 pt-8 border-t border-white/10">
+                    <h3 class="text-xs font-bold uppercase tracking-widest opacity-40 mb-4">System & Offline</h3>
                     <div id="storageInfo" class="text-xs opacity-50 mb-4">Speicher wird berechnet...</div>
                     <div class="space-y-3" id="downloadControls">
-                        <div class="flex items-center justify-between bg-white/5 p-3 rounded-2xl border border-white/10">
+                        <div
+                            class="flex items-center justify-between bg-white/5 p-3 rounded-2xl border border-white/10">
                             <div>
                                 <div class="font-bold text-sm">Mannheim</div>
                                 <div class="text-[10px] opacity-40 uppercase" id="status-Mannheim">Bereit</div>
@@ -428,7 +488,8 @@
                             <button onclick="startCityDownload('Mannheim')" id="btn-Mannheim"
                                 class="bg-[#0ea5e9]/20 text-[#0ea5e9] px-4 py-2 rounded-xl text-xs font-bold border border-[#0ea5e9]/30">Download</button>
                         </div>
-                        <div class="flex items-center justify-between bg-white/5 p-3 rounded-2xl border border-white/10">
+                        <div
+                            class="flex items-center justify-between bg-white/5 p-3 rounded-2xl border border-white/10">
                             <div>
                                 <div class="font-bold text-sm">Schönau</div>
                                 <div class="text-[10px] opacity-40 uppercase" id="status-Schoenau">Bereit</div>
@@ -437,8 +498,20 @@
                                 class="bg-[#0ea5e9]/20 text-[#0ea5e9] px-4 py-2 rounded-xl text-xs font-bold border border-[#0ea5e9]/30">Download</button>
                         </div>
                     </div>
+                    <div class="flex flex-col gap-2 mt-4">
+                        <div
+                            class="flex justify-between items-center bg-white/5 p-3 rounded-2xl border border-white/10">
+                            <span class="text-sm font-bold">Auto-Play ⚡</span>
+                            <button id="autoPlayToggle" onclick="toggleAutoPlay()" class="text-xl">🔘</button>
+                        </div>
+                        <div
+                            class="flex justify-between items-center bg-white/5 p-3 rounded-2xl border border-white/10">
+                            <span class="text-sm font-bold">Ton an/aus 🔊</span>
+                            <button id="audioMasterToggle" onclick="toggleAudioMaster()" class="text-xl">🔊</button>
+                        </div>
+                    </div>
                     <button onclick="clearOfflineData()"
-                        class="w-full mt-4 text-[10px] opacity-30 uppercase font-bold tracking-widest hover:opacity-100 transition-opacity">Alle
+                        class="w-full mt-6 text-[10px] opacity-30 uppercase font-bold tracking-widest hover:opacity-100 transition-opacity">Alle
                         Offline-Daten löschen</button>
                 </div>
 
@@ -544,28 +617,98 @@
             document.getElementById('bottomSheet').classList.remove('open');
             document.getElementById('discoveryModal').classList.remove('open');
             document.getElementById('preferencesModal').classList.remove('open');
+            document.getElementById('routeBuilder').classList.add('hidden');
             document.getElementById('backdrop').classList.remove('open');
             document.getElementById('audioElement').pause();
 
-            // Sync buttons
-            const discoverBtn = document.getElementById('discoverBtn');
+            // Reset nav items
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            document.querySelectorAll('.nav-item')[0].classList.add('active'); // Default to map
+        }
+
+        // Bottom Navigation Switch Function
+        function switchTab(tab) {
+            // Reset all nav items
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+
+            // Close all modals first
+            document.getElementById('discoveryModal').classList.remove('open');
+            document.getElementById('preferencesModal').classList.remove('open');
+            document.getElementById('routeBuilder').classList.add('hidden');
+            document.getElementById('backdrop').classList.remove('open');
+
+            const navItems = document.querySelectorAll('.nav-item');
+
+            if (tab === 'map') {
+                navItems[0].classList.add('active');
+                // Just close everything and show map
+            } else if (tab === 'discover') {
+                navItems[1].classList.add('active');
+                toggleDiscovery();
+            } else if (tab === 'tour') {
+                navItems[2].classList.add('active');
+                toggleRouteBuilder();
+            } else if (tab === 'prefs') {
+                navItems[3].classList.add('active');
+                togglePreferences();
+            }
+        }
+
+        // Update Persona UI for badge
+        function updatePersonaUI() {
+            const badge = document.getElementById('activePersonaBadge');
+            const pHistorian = document.getElementById('p-historian');
+            const pInsider = document.getElementById('p-insider');
+
+            if (badge) {
+                badge.innerText = selectedPersona === 'historian' ? '📜' : '🕶️';
+            }
+
+            // Update preference modal selections if elements exist
+            if (pHistorian && pInsider) {
+                pHistorian.classList.toggle('border-[#0ea5e9]', selectedPersona === 'historian');
+                pHistorian.classList.toggle('bg-[#0ea5e9]/10', selectedPersona === 'historian');
+                pInsider.classList.toggle('border-[#0ea5e9]', selectedPersona === 'insider');
+                pInsider.classList.toggle('bg-[#0ea5e9]/10', selectedPersona === 'insider');
+            }
+        }
+
+        // Sync buttons
+        const discoverBtn = document.getElementById('discoverBtn');
+        if (discoverBtn) {
             discoverBtn.classList.remove('on');
             discoverBtn.classList.add('off');
         }
 
         function toggleAudioMaster() {
             isAudioMasterOn = !isAudioMasterOn;
-            const btn = document.getElementById('audioMasterBtn');
-            btn.innerText = isAudioMasterOn ? '🔊' : '🔇';
-            btn.classList.toggle('on', isAudioMasterOn);
+            // Try to update old button if exists
+            const oldBtn = document.getElementById('audioMasterBtn');
+            if (oldBtn) {
+                oldBtn.innerText = isAudioMasterOn ? '🔊' : '🔇';
+                oldBtn.classList.toggle('on', isAudioMasterOn);
+            }
+            // Update new toggle in preferences modal
+            const newToggle = document.getElementById('audioMasterToggle');
+            if (newToggle) {
+                newToggle.innerText = isAudioMasterOn ? '🔊' : '🔇';
+            }
             if (!isAudioMasterOn) document.getElementById('audioElement').pause();
         }
 
         function toggleAutoPlay() {
             isAutoPlayOn = !isAutoPlayOn;
-            const btn = document.getElementById('autoPlayBtn');
-            btn.innerText = isAutoPlayOn ? '⚡' : '🔘';
-            btn.classList.toggle('on', isAutoPlayOn);
+            // Try to update old button if exists
+            const oldBtn = document.getElementById('autoPlayBtn');
+            if (oldBtn) {
+                oldBtn.innerText = isAutoPlayOn ? '⚡' : '🔘';
+                oldBtn.classList.toggle('on', isAutoPlayOn);
+            }
+            // Update new toggle in preferences modal
+            const newToggle = document.getElementById('autoPlayToggle');
+            if (newToggle) {
+                newToggle.innerText = isAutoPlayOn ? '⚡' : '🔘';
+            }
         }
 
         window.addEventListener('online', updateOnlineStatus);
@@ -746,10 +889,32 @@
         }
 
         function updatePersonaUI() {
+            // Update top bar badge
+            const badge = document.getElementById('activePersonaBadge');
+            if (badge) {
+                badge.innerText = selectedPersona === 'historian' ? '📜' : '🕶️';
+            }
+
+            // Update old persona buttons if they exist
             document.querySelectorAll('.persona-btn').forEach(btn => {
                 const isActive = btn.getAttribute('onclick').includes(selectedPersona);
                 btn.classList.toggle('active', isActive);
             });
+
+            // Update new preference modal selections
+            const pHistorian = document.getElementById('p-historian');
+            const pInsider = document.getElementById('p-insider');
+            if (pHistorian && pInsider) {
+                pHistorian.classList.toggle('border-[#0ea5e9]', selectedPersona === 'historian');
+                pHistorian.classList.toggle('bg-[#0ea5e9]/10', selectedPersona === 'historian');
+                pHistorian.classList.toggle('border-white/5', selectedPersona !== 'historian');
+                pHistorian.classList.toggle('bg-white/5', selectedPersona !== 'historian');
+
+                pInsider.classList.toggle('border-[#0ea5e9]', selectedPersona === 'insider');
+                pInsider.classList.toggle('bg-[#0ea5e9]/10', selectedPersona === 'insider');
+                pInsider.classList.toggle('border-white/5', selectedPersona !== 'insider');
+                pInsider.classList.toggle('bg-white/5', selectedPersona !== 'insider');
+            }
         }
 
         async function loadPoiImage(imgElement, imageData) {
@@ -808,10 +973,10 @@
                 const catParam = selectedCategories.join(',');
                 const res = await fetch(`${BACKEND_URL}/poi/${poi.id}/audio?persona=${selectedPersona}&categories=${catParam}`);
                 const data = await res.json();
-                
+
                 clearTimeout(timeoutId);
                 playBtn.classList.remove('pulse-blue');
-                
+
                 document.getElementById('scriptText').innerText = data.script;
                 if (data.image) await loadPoiImage(img, data.image);
                 else img.src = `${BACKEND_URL}/static/fallback.svg`;
