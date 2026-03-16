@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1f2e"/>
+      <stop offset="100%" style="stop-color:#0a0e1a"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#bg)"/>
+  <!-- Building silhouette -->
+  <path d="M200 600 L200 350 L250 350 L250 300 L300 300 L300 380 L320 380 L320 280 L380 280 L380 400 L400 400 L400 320 L450 320 L450 600 Z" fill="#2d3748" opacity="0.8"/>
+  <path d="M450 600 L450 360 L480 360 L480 280 L550 280 L550 400 L580 400 L580 600 Z" fill="#374151" opacity="0.7"/>
+  <!-- Tower -->
+  <rect x="580" y="200" width="40" height="400" fill="#4a5568"/>
+  <polygon points="580,200 620,200 600,150" fill="#2d3748"/>
+  <circle cx="600" cy="150" r="8" fill="#fbbf24"/>
+  <!-- Ground -->
+  <rect x="0" y="550" width="800" height="50" fill="#1f2937"/>
+  <!-- Stars -->
+  <circle cx="100" cy="80" r="2" fill="#fff" opacity="0.5"/>
+  <circle cx="250" cy="120" r="1.5" fill="#fff" opacity="0.4"/>
+  <circle cx="400" cy="60" r="2" fill="#fff" opacity="0.6"/>
+  <circle cx="550" cy="100" r="1" fill="#fff" opacity="0.3"/>
+  <circle cx="700" cy="70" r="2.5" fill="#fff" opacity="0.5"/>
+  <!-- Moon -->
+  <circle cx="680" cy="100" r="30" fill="#fcd34d" opacity="0.9"/>
+  <circle cx="670" cy="95" r="30" fill="url(#bg)"/>
+  <!-- Placeholder text -->
+  <text x="400" y="320" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" fill="#64748b">Bild nicht verfügbar</text>
+  <text x="400" y="350" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#475569">Image not available</text>
+</svg>

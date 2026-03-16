@@ -16,11 +16,11 @@ def test_get_pois():
     assert response.status_code == 200
     data = response.json()
     assert len(data) > 0
-    assert data[0]["id"] == "klosterkirche"
+    assert data[0]["id"] == "wasserturm"
 
 def test_get_audio_endpoint():
     """Prüft ob der Audio-Endpunkt eine URL zurückgibt."""
-    response = client.get("/poi/rathaus/audio")
+    response = client.get("/poi/wasserturm/audio")
     assert response.status_code == 200
     data = response.json()
     assert "audio_url" in data

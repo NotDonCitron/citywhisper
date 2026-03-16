@@ -1,0 +1,13 @@
+{
+  "wasserturm": "backend/static/images/wasserturm.jpg",
+  "schloss_mannheim": "backend/static/images/schloss_mannheim.jpg",
+  "fernmeldeturm": "backend/static/images/fernmeldeturm.jpg",
+  "jesuitenkirche": "backend/static/images/jesuitenkirche.jpg",
+  "paradeplatz": "backend/static/images/paradeplatz.jpg",
+  "luisenpark": "backend/static/images/luisenpark.jpg",
+  "reiss_engelhorn_museen": "backend/static/images/reiss_engelhorn_museen.png",
+  "nationaltheater": "backend/static/images/nationaltheater.jpg",
+  "kunsthalle": "backend/static/images/kunsthalle.jpg",
+  "water_tower_park": "backend/static/images/water_tower_park.jpg",
+  "jungbusch": "backend/static/images/jungbusch.jpg"
+}

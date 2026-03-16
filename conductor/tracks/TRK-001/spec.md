@@ -14,6 +14,6 @@ Replace the hardcoded routes in the prototype with a dynamic routing system that
    - Display markers for the optimized sequence of stops.
 
 ## ✅ Success Criteria
-- [ ] User can pick 3-4 spots in Mannheim on the map/list.
-- [ ] Clicking "Generate Route" fetches an optimized path.
-- [ ] The map updates instantly with the new route.
+- [x] User can pick 3-4 spots in Mannheim on the map/list.
+- [x] Clicking "Generate Route" fetches an optimized path.
+- [x] The map updates instantly with the new route.
