@@ -342,6 +342,30 @@
             font-size: 20px;
         }
 
+        .poi-chip {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            pointer-events: auto;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .poi-chip:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        .poi-chip.selected {
+            background: #0ea5e9;
+            border-color: #0ea5e9;
+        }
+
         .persona-btn {
             width: 42px;
             height: 42px;
@@ -419,9 +443,10 @@
             </div>
         </div>
 
-        <!-- Discovery Modal -->
-        <div id="discoveryModal" class="app-modal">
-            <div class="modal-content">
+        <!-- Discovery Modal - Centered for Desktop -->
+        <div id="discoveryModal" class="app-modal centered"
+            style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 90%; max-height: 90vh; width: 500px;">
+            <div class="modal-content" style="max-height: 85vh; overflow-y: auto;">
                 <div class="sheet-handle mb-2"></div>
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold">Entdeckungen ✨</h2>
@@ -524,7 +549,8 @@
             class="absolute bottom-10 right-6 pointer-all bg-[#0ea5e9] text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-xl hover:scale-110 transition-all hidden"
             style="z-index: 200;">🎯</button>
 
-        <div id="routeBuilder" class="absolute bottom-24 left-1/2 -translate-x-1/2 pointer-all hidden w-[92%] max-w-sm">
+        <div id="routeBuilder" class="absolute bottom-24 left-1/2 -translate-x-1/2 pointer-all hidden w-[92%] max-w-sm"
+            style="z-index: 250;">
             <div class="bg-[#141827]/95 p-6 rounded-[32px] border border-white/10 shadow-2xl">
                 <h3 class="text-sm font-bold mb-4 flex items-center gap-2">📍 Tour zusammenstellen</h3>
                 <div id="poiList" class="flex flex-wrap gap-2 mb-6 max-h-40 overflow-y-auto pr-1"></div>
@@ -801,9 +827,9 @@
         function renderPoiChips() {
             const list = document.getElementById('poiList');
             list.innerHTML = pois.map(poi => `
-                <div class="poi-chip ${selectedPoiIds.includes(poi.id) ? 'selected' : ''}" onclick="togglePoiSelection('${poi.id}')">
+                <button type="button" class="poi-chip ${selectedPoiIds.includes(poi.id) ? 'selected' : ''}" onclick="togglePoiSelection('${poi.id}')">
                     ${poi.emoji} ${poi.name.split(' ')[0]}
-                </div>`).join('');
+                </button>`).join('');
         }
 
         function togglePoiSelection(id) {
