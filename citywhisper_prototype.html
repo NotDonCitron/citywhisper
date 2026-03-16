@@ -20,6 +20,7 @@
             margin: 0;
             overflow: hidden;
             height: 100vh;
+            -webkit-tap-highlight-color: transparent;
         }
 
         #map {
@@ -33,8 +34,7 @@
         }
 
         .leaflet-tile-container img {
-            box-shadow: 0 0 1px rgba(0, 0, 0, 0.05);
-            border: none !important;
+            filter: brightness(0.8) contrast(1.2) saturate(0.8);
         }
 
         .leaflet-container {
@@ -56,10 +56,24 @@
             pointer-events: auto;
         }
 
+        /* Better Marker Animations */
+        @keyframes fadeInScale {
+            0% {
+                opacity: 0;
+                transform: scale(0.5) translateY(10px);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
         .custom-marker {
             position: relative;
             width: 40px;
             height: 40px;
+            animation: fadeInScale 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
 
         .marker-dot {
@@ -72,56 +86,104 @@
             align-items: center;
             justify-content: center;
             font-size: 18px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .custom-marker:active .marker-dot {
+            transform: scale(0.9);
         }
 
         .user-location-dot {
-            width: 20px;
-            height: 20px;
+            width: 22px;
+            height: 22px;
             background: #4285F4;
             border: 3px solid white;
             border-radius: 50%;
-            box-shadow: 0 0 15px rgba(66, 133, 244, 0.8);
+            box-shadow: 0 0 20px rgba(66, 133, 244, 0.6);
+            position: relative;
         }
 
-        .bottom-sheet {
+        .user-location-dot::after {
+            content: '';
             position: absolute;
-            bottom: 24px;
-            left: 50%;
-            transform: translateX(-50%) translateY(150%);
-            width: 92%;
-            max-width: 420px;
-            background: rgba(20, 24, 39, 0.95);
-            backdrop-blur: 30px;
-            border-radius: 32px;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            border-radius: 50%;
+            background: rgba(66, 133, 244, 0.2);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: scale(2.5);
+                opacity: 0;
+            }
+        }
+
+        /* Backdrop - removed for better visibility */
+
+        /* Better Bottom Sheet */
+        .bottom-sheet {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            background: #141827;
+            border-radius: 32px 32px 0 0;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border-bottom: none;
+            transform: translateY(100%);
+            transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
             z-index: 300;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7);
-            max-height: 80vh;
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+            max-height: 92vh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
 
         .bottom-sheet.open {
-            transform: translateX(-50%) translateY(0);
+            transform: translateY(0);
+        }
+
+        .sheet-handle {
+            width: 40px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            margin: 12px auto;
+            flex-shrink: 0;
         }
 
         .poi-hero-img {
             position: relative;
             width: 100%;
-            height: 220px;
+            height: 240px;
             overflow: hidden;
             background: #1a1f2e;
+            flex-shrink: 0;
         }
 
         .poi-hero-img img {
-            width: 100% !important;
-            height: 100% !important;
-            object-fit: cover !important;
-            display: block !important;
-            opacity: 1 !important;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.8s ease;
+        }
+
+        .bottom-sheet.open .poi-hero-img img {
+            transform: scale(1.05);
         }
 
         .poi-hero-img::after {
@@ -130,23 +192,57 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 50%;
-            background: linear-gradient(to top, rgba(20, 24, 39, 1), transparent);
+            height: 60%;
+            background: linear-gradient(to top, #141827, transparent);
+        }
+
+        /* Native Modals */
+        .app-modal {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 400;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            pointer-events: none;
+            height: 100vh;
+        }
+
+        .modal-content {
+            width: 100%;
+            max-width: 500px;
+            background: #141827;
+            border-radius: 32px 32px 0 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 24px;
+            transform: translateY(105%);
+            transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+            pointer-events: auto;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 -20px 50px rgba(0, 0, 0, 0.6);
+        }
+
+        .app-modal.open .modal-content {
+            transform: translateY(0);
         }
 
         .audio-player {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 20px;
-            padding: 12px 16px;
-            margin: 15px 0;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 24px;
+            padding: 16px;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         .progress-bar {
-            height: 6px;
+            height: 4px;
             background: rgba(255, 255, 255, 0.1);
-            border-radius: 3px;
-            margin: 10px 0;
+            border-radius: 2px;
+            margin: 14px 0 0 0;
             overflow: hidden;
         }
 
@@ -158,153 +254,259 @@
         }
 
         .control-btn {
-            width: 42px;
-            height: 42px;
+            width: 46px;
+            height: 46px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .control-btn:active {
+            transform: scale(0.9);
+            background: rgba(255, 255, 255, 0.15);
         }
 
         .control-btn.on {
             background: #0ea5e9;
             color: white;
-            border-color: transparent;
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
         }
 
-        .control-btn.off {
+        @keyframes pulse-blue {
+            0% {
+                box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 15px rgba(14, 165, 233, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(14, 165, 233, 0);
+            }
+        }
+
+        .pulse-blue {
+            animation: pulse-blue 2s infinite;
+            border-color: #0ea5e9 !important;
+        }
+
+        .download-progress-container {
             background: rgba(255, 255, 255, 0.05);
-            color: rgba(255, 255, 255, 0.4);
-        }
-
-        .city-switcher {
-            position: absolute;
-            top: 80px;
-            left: 16px;
-            z-index: 200;
-        }
-
-        .route-controls {
-            position: absolute;
-            top: 130px;
-            left: 16px;
-            z-index: 200;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .poi-chip {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 6px 14px;
-            border-radius: 14px;
-            font-size: 13px;
-            cursor: pointer;
-        }
-
-        .poi-chip.selected {
-            background: #0ea5e9;
-            border-color: white;
+            border-radius: 16px;
+            padding: 12px;
+            margin-top: 10px;
         }
 
         .persona-btn {
-            width: 40px;
-            height: 40px;
+            width: 42px;
+            height: 42px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.05);
+            background: transparent;
             border: 2px solid transparent;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 20px;
             cursor: pointer;
+            transition: all 0.2s;
         }
 
         .persona-btn.active {
-            border-color: #0ea5e9;
-            background: rgba(14, 165, 233, 0.15);
+            background: #0ea5e9;
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);
+        }
+
+        /* Glass Cards */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+        }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
         }
     </style>
 </head>
 
 <body>
     <div id="map"></div>
+    <div id="backdrop" class="backdrop pointer-all" onclick="closeAll()"></div>
+
     <div class="ui-layer">
-        <div class="p-4 flex justify-between items-center pointer-all bg-gradient-to-b from-[#0a0e1a] to-transparent">
-            <div
-                class="bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 flex items-center gap-2">
+        <div
+            class="p-4 flex justify-between items-center pointer-all bg-gradient-to-b from-[#0a0e1a]/80 to-transparent">
+            <div class="bg-white/10 px-4 py-2 rounded-full border border-white/10 flex items-center gap-2 shadow-lg">
                 <span class="font-bold text-[#0ea5e9]">City</span>Whisper
-                <span id="offlineIndicator" class="ml-2 w-2 h-2 rounded-full bg-red-500 hidden" title="Offline"></span>
-                <span id="onlineIndicator" class="ml-2 w-2 h-2 rounded-full bg-green-500" title="Online"></span>
+                <div class="flex items-center gap-1 ml-1">
+                    <span id="offlineIndicator" class="w-2 h-2 rounded-full bg-red-500 hidden animate-pulse"></span>
+                    <span id="onlineIndicator" class="w-2 h-2 rounded-full bg-green-500"></span>
+                </div>
             </div>
-            <div class="flex gap-2 bg-white/5 backdrop-blur-md p-1.5 rounded-full border border-white/10"
-                id="personaSelector">
+
+            <div class="flex gap-1 bg-white/5 p-1 rounded-full border border-white/10 shadow-lg" id="personaSelector">
                 <button onclick="selectPersona('historian')" class="persona-btn" title="Historiker">📜</button>
                 <button onclick="selectPersona('insider')" class="persona-btn active" title="Insiderin">🕶️</button>
             </div>
+
             <div class="flex gap-2">
-                <button id="autoPlayBtn" onclick="toggleAutoPlay()" class="control-btn on pointer-all">⚡</button>
-                <button id="audioMasterBtn" onclick="toggleAudioMaster()" class="control-btn on pointer-all">🔊</button>
-                <button id="routeBtn" onclick="toggleRouteBuilder()" class="control-btn off pointer-all">🗺️</button>
+                <button id="prefsBtn" onclick="togglePreferences()" class="control-btn off pointer-all"
+                    title="Interessen">⚙️</button>
+                <button id="discoverBtn" onclick="toggleDiscovery()" class="control-btn off pointer-all"
+                    title="Entdecken">✨</button>
             </div>
         </div>
+
+        <div class="absolute top-20 right-4 flex flex-col gap-2 pointer-all">
+            <button id="autoPlayBtn" onclick="toggleAutoPlay()" class="control-btn on" title="Auto-Play">⚡</button>
+            <button id="audioMasterBtn" onclick="toggleAudioMaster()" class="control-btn on"
+                title="Ton an/aus">🔊</button>
+            <button id="routeBtn" onclick="toggleRouteBuilder()" class="control-btn off" title="Route">🗺️</button>
+        </div>
+
+        <!-- Discovery Modal -->
+        <div id="discoveryModal" class="app-modal">
+            <div class="modal-content">
+                <div class="sheet-handle mb-2"></div>
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold">Entdeckungen ✨</h2>
+                    <button onclick="toggleDiscovery()"
+                        class="p-2 opacity-50 hover:opacity-100 transition-opacity">✕</button>
+                </div>
+                <p class="text-sm opacity-60 mb-6">Basierend auf deinen Interessen haben wir diese Orte für dich
+                    gefunden:</p>
+
+                <div id="discoveryList" class="space-y-3 mb-6 pr-1">
+                    <!-- Discovery items will be injected here -->
+                </div>
+
+                <button onclick="addAllDiscovery()"
+                    class="w-full bg-[#0ea5e9] text-white py-4 rounded-2xl font-bold shadow-lg shadow-[#0ea5e9]/20">Alle
+                    zur Tour hinzufügen</button>
+            </div>
+        </div>
+
+        <!-- Preferences Modal -->
+        <div id="preferencesModal" class="app-modal">
+            <div class="modal-content">
+                <div class="sheet-handle mb-2"></div>
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold">Interessen</h2>
+                    <button onclick="togglePreferences()"
+                        class="p-2 opacity-50 hover:opacity-100 transition-opacity">✕</button>
+                </div>
+                <p class="text-sm opacity-60 mb-6">Wähle aus, was dich interessiert. Wir personalisieren deine
+                    Entdeckungstour.</p>
+
+                <div id="categoryGrid" class="grid grid-cols-2 gap-3 mb-8">
+                    <!-- Categories will be injected here -->
+                </div>
+
+                <div class="mt-8 pt-8 border-t border-white/10">
+                    <h3 class="text-lg font-bold mb-4 flex items-center gap-2">💾 Offline-Daten</h3>
+                    <div id="storageInfo" class="text-xs opacity-50 mb-4">Speicher wird berechnet...</div>
+                    <div class="space-y-3" id="downloadControls">
+                        <div class="flex items-center justify-between bg-white/5 p-3 rounded-2xl border border-white/10">
+                            <div>
+                                <div class="font-bold text-sm">Mannheim</div>
+                                <div class="text-[10px] opacity-40 uppercase" id="status-Mannheim">Bereit</div>
+                            </div>
+                            <button onclick="startCityDownload('Mannheim')" id="btn-Mannheim"
+                                class="bg-[#0ea5e9]/20 text-[#0ea5e9] px-4 py-2 rounded-xl text-xs font-bold border border-[#0ea5e9]/30">Download</button>
+                        </div>
+                        <div class="flex items-center justify-between bg-white/5 p-3 rounded-2xl border border-white/10">
+                            <div>
+                                <div class="font-bold text-sm">Schönau</div>
+                                <div class="text-[10px] opacity-40 uppercase" id="status-Schoenau">Bereit</div>
+                            </div>
+                            <button onclick="startCityDownload('Schoenau')" id="btn-Schoenau"
+                                class="bg-[#0ea5e9]/20 text-[#0ea5e9] px-4 py-2 rounded-xl text-xs font-bold border border-[#0ea5e9]/30">Download</button>
+                        </div>
+                    </div>
+                    <button onclick="clearOfflineData()"
+                        class="w-full mt-4 text-[10px] opacity-30 uppercase font-bold tracking-widest hover:opacity-100 transition-opacity">Alle
+                        Offline-Daten löschen</button>
+                </div>
+
+                <button onclick="savePreferences()"
+                    class="w-full bg-[#0ea5e9] text-white py-4 rounded-2xl font-bold shadow-lg shadow-[#0ea5e9]/20">Speichern</button>
+            </div>
+        </div>
+
         <button id="recenterBtn" onclick="enableFollow()"
-            class="absolute bottom-24 right-6 pointer-all bg-[#0ea5e9] text-white p-4 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all hidden"
+            class="absolute bottom-10 right-6 pointer-all bg-[#0ea5e9] text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-xl hover:scale-110 transition-all hidden"
             style="z-index: 200;">🎯</button>
-        <div id="routeBuilder" class="route-controls pointer-all hidden">
-            <div class="bg-black/70 backdrop-blur-xl p-5 rounded-3xl border border-white/10 w-72 shadow-2xl">
+
+        <div id="routeBuilder" class="absolute bottom-24 left-1/2 -translate-x-1/2 pointer-all hidden w-[92%] max-w-sm">
+            <div class="bg-[#141827]/95 p-6 rounded-[32px] border border-white/10 shadow-2xl">
                 <h3 class="text-sm font-bold mb-4 flex items-center gap-2">📍 Tour zusammenstellen</h3>
-                <div id="poiList" class="flex flex-wrap gap-2 mb-5"></div>
+                <div id="poiList" class="flex flex-wrap gap-2 mb-6 max-h-40 overflow-y-auto pr-1"></div>
                 <div class="flex flex-col gap-2">
                     <button onclick="generateRoute()"
-                        class="w-full bg-[#0ea5e9] text-white py-3 rounded-2xl text-sm font-bold">Weg berechnen</button>
+                        class="w-full bg-[#0ea5e9] text-white py-4 rounded-2xl text-sm font-bold shadow-lg shadow-[#0ea5e9]/20">Weg
+                        berechnen</button>
                     <button id="downloadBtn" onclick="downloadTour()"
-                        class="w-full bg-white/10 text-white py-3 rounded-2xl text-sm font-bold border border-white/10 hidden">Tour offline speichern</button>
+                        class="w-full bg-white/5 text-white py-3 rounded-2xl text-sm font-bold border border-white/10 hidden">Offline
+                        speichern</button>
                 </div>
             </div>
         </div>
-        <div class="city-switcher flex gap-2 pointer-all">
+
+        <div class="absolute bottom-6 left-6 flex gap-2 pointer-all">
             <button onclick="gotoCity('Schoenau')"
-                class="bg-white/10 backdrop-blur-md px-4 py-2 rounded-full text-xs border border-white/10 hover:bg-[#0ea5e9]/20 transition-all">🏘️
+                class="bg-white/10 px-4 py-2.5 rounded-full text-xs font-semibold border border-white/10 shadow-lg">🏘️
                 Schönau</button>
             <button onclick="gotoCity('Mannheim')"
-                class="bg-white/10 backdrop-blur-md px-4 py-2 rounded-full text-xs border border-white/10 hover:bg-[#0ea5e9]/20 transition-all">🏙️
+                class="bg-white/10 px-4 py-2.5 rounded-full text-xs font-semibold border border-white/10 shadow-lg">🏙️
                 Mannheim</button>
             <button onclick="startDemoWalk()"
-                class="bg-[#0ea5e9]/20 backdrop-blur-md px-4 py-2 rounded-full text-xs border border-[#0ea5e9]/30 text-[#0ea5e9] font-bold">🏃
+                class="bg-[#0ea5e9]/20 px-4 py-2.5 rounded-full text-xs border border-[#0ea5e9]/30 text-[#0ea5e9] font-bold shadow-lg">🏃
                 Demo</button>
         </div>
+
         <div id="bottomSheet" class="bottom-sheet pointer-all">
+            <div class="sheet-handle" onclick="closeSheet()"></div>
             <div class="poi-hero-img"><img src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" id="poiImg"
                     alt=""></div>
-            <div class="px-6 pb-8 overflow-y-auto">
-                <div class="w-12 h-1.5 bg-white/20 rounded-full mx-auto my-4 cursor-pointer" onclick="closeSheet()">
-                </div>
-                <h2 class="text-2xl font-bold mb-1 leading-tight" id="poiName">POI Name</h2>
-                <p class="text-[#0ea5e9] text-sm font-bold tracking-wide uppercase mb-4" id="poiCity">Stadt</p>
-                <div class="audio-player">
+            <div class="px-6 pb-10 overflow-y-auto">
+                <h2 class="text-3xl font-black mb-1 leading-tight mt-2" id="poiName">POI Name</h2>
+                <p class="text-[#0ea5e9] text-xs font-black tracking-[0.1em] uppercase mb-5" id="poiCity">Stadt</p>
+
+                <div class="audio-player shadow-inner">
                     <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div class="bg-[#0ea5e9]/20 text-[#0ea5e9] p-2.5 rounded-xl text-xl">🎙️</div>
+                        <div class="flex items-center gap-4">
+                            <div
+                                class="bg-[#0ea5e9] text-white w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-lg shadow-[#0ea5e9]/30">
+                                🎙️</div>
                             <div>
-                                <div class="text-[10px] font-black uppercase tracking-widest opacity-40">Guide Audio
-                                </div>
-                                <div class="text-xs font-semibold" id="audioStatus">Bereit</div>
+                                <div class="text-[10px] font-black uppercase tracking-[0.15em] opacity-30 mb-0.5">Guide
+                                    Audio</div>
+                                <div class="text-sm font-bold text-white/90" id="audioStatus">Bereit</div>
                             </div>
                         </div>
                         <button onclick="togglePlayback()" id="playPauseBtn"
-                            class="bg-white text-black w-11 h-11 rounded-full flex items-center justify-center text-xl font-bold shadow-xl">▶️</button>
+                            class="bg-white text-black w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold shadow-xl">▶️</button>
                     </div>
                     <div class="progress-bar">
                         <div id="progressFill" class="progress-fill"></div>
                     </div>
                 </div>
-                <div id="scriptText" class="text-[15px] leading-relaxed opacity-70 font-medium"></div>
+
+                <div id="scriptText" class="text-[16px] leading-[1.6] opacity-70 font-medium pb-8"></div>
             </div>
         </div>
     </div>
@@ -312,18 +514,59 @@
     <script>
         const BACKEND_URL = window.location.origin;
         const GEOFENCE_RADIUS = 50;
+        const ALL_CATEGORIES = ['History', 'Art', 'Subculture', 'Architecture', 'Nature', 'Food', 'Nightlife', 'Religion', 'Urban', 'Views', 'Family', 'Culture'];
         let pois = [], markers = [], userLocationMarker = null, lastTriggeredPoiId = null, selectedPoiIds = [], currentRouteLayer = null;
-        let selectedPersona = 'insider', isAppInitialized = false, shouldFollowUser = true, isAudioMasterOn = true, isAutoPlayOn = true, lastCalculatedRoutePoints = [];
+        let selectedPersona = 'insider', isAppInitialized = false, shouldFollowUser = true, isAudioMasterOn = true, isAutoPlayOn = true, lastCalculatedRoutePoints = [], selectedCategories = [];
 
-        const map = L.map('map', { zoomControl: false, attributionControl: false, fadeAnimation: true }).setView([49.4355, 8.8090], 13);
+        const map = L.map('map', { zoomControl: false, attributionControl: false, fadeAnimation: true }).setView([49.4836, 8.4660], 15);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png').addTo(map);
 
-        map.on('dragstart', () => { shouldFollowUser = false; document.getElementById('recenterBtn').classList.remove('hidden'); });
+        map.on('dragstart', () => {
+            shouldFollowUser = false;
+            document.getElementById('recenterBtn').classList.remove('hidden');
+        });
 
-        function enableFollow() { initApp(); shouldFollowUser = true; document.getElementById('recenterBtn').classList.add('hidden'); if (userLocationMarker) map.panTo(userLocationMarker.getLatLng()); }
-        function initApp() { if (isAppInitialized) return; isAppInitialized = true; const audio = document.getElementById('audioElement'); audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(e => { }); }
-        function toggleAudioMaster() { isAudioMasterOn = !isAudioMasterOn; const btn = document.getElementById('audioMasterBtn'); btn.innerText = isAudioMasterOn ? '🔊' : '🔇'; btn.classList.toggle('on', isAudioMasterOn); btn.classList.toggle('off', !isAudioMasterOn); if (!isAudioMasterOn) document.getElementById('audioElement').pause(); }
-        function toggleAutoPlay() { isAutoPlayOn = !isAutoPlayOn; const btn = document.getElementById('autoPlayBtn'); btn.innerText = isAutoPlayOn ? '⚡' : '🔘'; btn.classList.toggle('on', isAutoPlayOn); btn.classList.toggle('off', !isAutoPlayOn); }
+        function enableFollow() {
+            initApp();
+            shouldFollowUser = true;
+            document.getElementById('recenterBtn').classList.add('hidden');
+            if (userLocationMarker) map.panTo(userLocationMarker.getLatLng());
+        }
+
+        function initApp() {
+            if (isAppInitialized) return;
+            isAppInitialized = true;
+            const audio = document.getElementById('audioElement');
+            audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(e => { });
+        }
+
+        function closeAll() {
+            document.getElementById('bottomSheet').classList.remove('open');
+            document.getElementById('discoveryModal').classList.remove('open');
+            document.getElementById('preferencesModal').classList.remove('open');
+            document.getElementById('backdrop').classList.remove('open');
+            document.getElementById('audioElement').pause();
+
+            // Sync buttons
+            const discoverBtn = document.getElementById('discoverBtn');
+            discoverBtn.classList.remove('on');
+            discoverBtn.classList.add('off');
+        }
+
+        function toggleAudioMaster() {
+            isAudioMasterOn = !isAudioMasterOn;
+            const btn = document.getElementById('audioMasterBtn');
+            btn.innerText = isAudioMasterOn ? '🔊' : '🔇';
+            btn.classList.toggle('on', isAudioMasterOn);
+            if (!isAudioMasterOn) document.getElementById('audioElement').pause();
+        }
+
+        function toggleAutoPlay() {
+            isAutoPlayOn = !isAutoPlayOn;
+            const btn = document.getElementById('autoPlayBtn');
+            btn.innerText = isAutoPlayOn ? '⚡' : '🔘';
+            btn.classList.toggle('on', isAutoPlayOn);
+        }
 
         window.addEventListener('online', updateOnlineStatus);
         window.addEventListener('offline', updateOnlineStatus);
@@ -342,11 +585,10 @@
 
         async function loadData() {
             try {
-                // Initialize Database
                 await initDB();
                 updateOnlineStatus();
+                updateStorageInfo();
 
-                // Load Settings
                 const savedPersona = await getSetting('selectedPersona');
                 if (savedPersona) {
                     selectedPersona = savedPersona;
@@ -360,11 +602,18 @@
                     map.setView(coords, zoom);
                 }
 
-                // Load POIs
+                const savedPrefs = await getSetting('userPreferences');
+                if (savedPrefs && savedPrefs.length > 0) {
+                    selectedCategories = savedPrefs;
+                } else {
+                    selectedCategories = [];
+                    setTimeout(() => togglePreferences(), 1000);
+                }
+                renderCategories();
+
                 try {
                     const res = await fetch(`${BACKEND_URL}/pois`);
                     pois = await res.json();
-                    // Save to offline storage
                     await savePOIs(pois);
                 } catch (fetchError) {
                     console.warn('Network failed, loading POIs from offline storage');
@@ -373,19 +622,18 @@
 
                 renderMarkers();
                 renderPoiChips();
-                preloadPoiImages();
                 startGpsTracking();
 
-                // Load Last Route
                 const lastRoute = await getLastRoute();
                 if (lastRoute) {
                     selectedPoiIds = lastRoute.poi_ids;
                     lastCalculatedRoutePoints = lastRoute.points;
                     renderPoiChips();
                     if (currentRouteLayer) map.removeLayer(currentRouteLayer);
-                    currentRouteLayer = L.geoJSON(lastRoute.geometry, { style: { color: '#0ea5e9', weight: 8, opacity: 0.9, dashArray: '1, 15', lineCap: 'round' } }).addTo(map);
+                    currentRouteLayer = L.geoJSON(lastRoute.geometry, {
+                        style: { color: '#0ea5e9', weight: 8, opacity: 0.9, dashArray: '1, 15', lineCap: 'round' }
+                    }).addTo(map);
                 }
-
             } catch (e) { console.error('Initialization error:', e); }
         }
 
@@ -394,117 +642,105 @@
                 navigator.geolocation.watchPosition(pos => {
                     const { latitude, longitude } = pos.coords;
                     const latlng = [latitude, longitude];
-                    if (!userLocationMarker) { userLocationMarker = L.marker(latlng, { icon: L.divIcon({ html: '<div class="user-location-dot"></div>', className: '', iconSize: [20, 20] }) }).addTo(map); }
-                    else { userLocationMarker.setLatLng(latlng); }
+                    if (!userLocationMarker) {
+                        userLocationMarker = L.marker(latlng, {
+                            icon: L.divIcon({ html: '<div class="user-location-dot"></div>', className: '', iconSize: [22, 22] })
+                        }).addTo(map);
+                    } else {
+                        userLocationMarker.setLatLng(latlng);
+                    }
                     if (shouldFollowUser) map.panTo(latlng);
                     if (isAppInitialized) checkGeofences(latitude, longitude);
                 }, err => { }, { enableHighAccuracy: true });
             }
         }
 
-        function renderPoiChips() { const list = document.getElementById('poiList'); list.innerHTML = pois.map(poi => `<div class="poi-chip ${selectedPoiIds.includes(poi.id) ? 'selected' : ''}" onclick="togglePoiSelection('${poi.id}')">${poi.emoji} ${poi.name.split(' ')[0]}</div>`).join(''); }
-        function togglePoiSelection(id) { initApp(); if (selectedPoiIds.includes(id)) selectedPoiIds = selectedPoiIds.filter(i => i !== id); else { if (selectedPoiIds.length >= 12) return alert("Max 12 POIs"); selectedPoiIds.push(id); } renderPoiChips(); }
-        function toggleRouteBuilder() { initApp(); document.getElementById('routeBuilder').classList.toggle('hidden'); document.getElementById('routeBtn').classList.toggle('on'); document.getElementById('routeBtn').classList.toggle('off'); }
+        function renderPoiChips() {
+            const list = document.getElementById('poiList');
+            list.innerHTML = pois.map(poi => `
+                <div class="poi-chip ${selectedPoiIds.includes(poi.id) ? 'selected' : ''}" onclick="togglePoiSelection('${poi.id}')">
+                    ${poi.emoji} ${poi.name.split(' ')[0]}
+                </div>`).join('');
+        }
+
+        function togglePoiSelection(id) {
+            initApp();
+            if (selectedPoiIds.includes(id)) selectedPoiIds = selectedPoiIds.filter(i => i !== id);
+            else {
+                if (selectedPoiIds.length >= 12) return alert("Max 12 POIs");
+                selectedPoiIds.push(id);
+            }
+            renderPoiChips();
+        }
+
+        function toggleRouteBuilder() {
+            initApp();
+            const builder = document.getElementById('routeBuilder');
+            const isOpen = builder.classList.toggle('hidden');
+            document.getElementById('routeBtn').classList.toggle('on', !isOpen);
+        }
 
         async function generateRoute() {
             initApp();
-            if (selectedPoiIds.length < 2) return alert("Min 2 Orte");
+            let finalPoiIds = [...selectedPoiIds];
+            if (finalPoiIds.length < 2) return alert("Min 2 Orte auswählen");
+
             const btn = document.querySelector('#routeBuilder button');
             const downloadBtn = document.getElementById('downloadBtn');
             btn.innerText = "Berechne...";
+
             try {
-                const res = await fetch(`${BACKEND_URL}/route`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ poi_ids: selectedPoiIds }) });
+                const res = await fetch(`${BACKEND_URL}/route`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ poi_ids: finalPoiIds })
+                });
                 const data = await res.json();
                 lastCalculatedRoutePoints = data.geometry.coordinates.map(c => ({ lat: c[1], lng: c[0] }));
                 if (currentRouteLayer) map.removeLayer(currentRouteLayer);
-                currentRouteLayer = L.geoJSON(data.geometry, { style: { color: '#0ea5e9', weight: 8, opacity: 0.9, dashArray: '1, 15', lineCap: 'round' } }).addTo(map);
-                
-                // Save route to offline storage
-                await saveRoute({
-                    poi_ids: selectedPoiIds,
-                    geometry: data.geometry,
-                    points: lastCalculatedRoutePoints
-                });
+                currentRouteLayer = L.geoJSON(data.geometry, {
+                    style: { color: '#0ea5e9', weight: 8, opacity: 0.9, dashArray: '1, 15', lineCap: 'round' }
+                }).addTo(map);
 
+                await saveRoute({ poi_ids: finalPoiIds, geometry: data.geometry, points: lastCalculatedRoutePoints });
                 map.fitBounds(currentRouteLayer.getBounds(), { padding: [60, 60] });
-                
-                // Show download button
                 downloadBtn.classList.remove('hidden');
-                downloadBtn.innerText = "Tour offline speichern";
-                downloadBtn.disabled = false;
-                
                 toggleRouteBuilder();
             } catch (e) { alert("Fehler"); } finally { btn.innerText = "Weg berechnen"; }
         }
 
-        async function downloadTour() {
-            const btn = document.getElementById('downloadBtn');
-            btn.disabled = true;
-            btn.innerText = "Speichere...";
-
-            try {
-                // 1. Get all assets to download
-                const assetsToCache = [];
-                
-                for (const poiId of selectedPoiIds) {
-                    const poi = pois.find(p => p.id === poiId);
-                    if (!poi) continue;
-
-                    // Fetch POI audio data (this also triggers script generation/caching on backend)
-                    const res = await fetch(`${BACKEND_URL}/poi/${poiId}/audio?persona=${selectedPersona}`);
-                    const data = await res.json();
-                    
-                    // Add audio URL
-                    if (data.audio_url) assetsToCache.push(`${BACKEND_URL}${data.audio_url}`);
-                    
-                    // Add image URLs
-                    if (data.image) {
-                        if (data.image.cached) assetsToCache.push(`${BACKEND_URL}${data.image.cached}`);
-                        if (data.image.proxied) assetsToCache.push(`${BACKEND_URL}${data.image.proxied}`);
-                    }
-                }
-
-                // 2. Open cache and add assets
-                if ('caches' in window) {
-                    const cache = await caches.open('citywhisper-assets-v1');
-                    let count = 0;
-                    for (const url of assetsToCache) {
-                        try {
-                            await cache.add(url);
-                            count++;
-                            btn.innerText = `Speichere (${count}/${assetsToCache.length})`;
-                        } catch (e) {
-                            console.warn('Failed to cache asset:', url, e);
-                        }
-                    }
-                    btn.innerText = "✅ Offline verfügbar";
-                    setTimeout(() => {
-                        btn.innerText = "Tour offline speichern";
-                        btn.disabled = false;
-                    }, 3000);
-                } else {
-                    alert("Browser unterstützt kein Offline-Caching");
-                    btn.innerText = "Fehler";
-                }
-            } catch (e) {
-                console.error('Download error:', e);
-                btn.innerText = "Fehler beim Speichern";
-                btn.disabled = false;
-            }
+        function renderMarkers() {
+            markers.forEach(m => map.removeLayer(m.marker));
+            markers = [];
+            pois.forEach(poi => {
+                const isMatch = poi.categories && poi.categories.some(cat => selectedCategories.includes(cat));
+                const marker = L.marker([poi.lat, poi.lng], {
+                    icon: L.divIcon({
+                        html: `<div class="custom-marker">
+                                <div class="marker-dot" style="${isMatch ? 'background: #f59e0b;' : ''}">
+                                    ${poi.emoji}
+                                </div>
+                                ${isMatch ? '<div class="absolute -top-1 -right-1 bg-white text-[10px] rounded-full px-1 shadow-md text-black font-bold">✨</div>' : ''}
+                               </div>`,
+                        className: '',
+                        iconSize: [40, 40],
+                        iconAnchor: [20, 20]
+                    })
+                }).addTo(map).on('click', () => openSheet(poi, true));
+                markers.push({ marker, poi });
+            });
         }
 
-        function renderMarkers() { markers.forEach(m => map.removeLayer(m.marker)); pois.forEach(poi => { const marker = L.marker([poi.lat, poi.lng], { icon: L.divIcon({ html: `<div class="custom-marker"><div class="marker-dot">${poi.emoji}</div></div>`, className: '', iconSize: [40, 40], iconAnchor: [20, 20] }) }).addTo(map).on('click', () => openSheet(poi, true)); markers.push({ marker, poi }); }); }
-        
-        async function gotoCity(city) { 
-            initApp(); 
-            if (city === 'Schoenau') map.setView([49.4355, 8.8090], 16); 
-            else map.setView([49.4836, 8.4660], 15); 
+        async function gotoCity(city) {
+            initApp();
+            if (city === 'Schoenau') map.setView([49.4355, 8.8090], 16);
+            else map.setView([49.4836, 8.4660], 15);
             await saveSetting('selectedCity', city);
         }
 
-        async function selectPersona(id) { 
-            initApp(); 
-            selectedPersona = id; 
+        async function selectPersona(id) {
+            initApp();
+            selectedPersona = id;
             updatePersonaUI();
             await saveSetting('selectedPersona', id);
         }
@@ -516,126 +752,69 @@
             });
         }
 
-        // Robust image loading with multiple fallback strategies
         async function loadPoiImage(imgElement, imageData) {
-            // imageData is now an object: { direct, proxied, cached, fallback }
             const fallbackUrl = imageData.fallback || `${BACKEND_URL}/static/fallback.svg`;
-
-            // Reset and show loading state
             imgElement.style.opacity = '0';
             imgElement.src = '';
 
-            // Strategy 1: Try cached local image first (fastest, no external requests)
-            if (imageData.cached) {
+            const tryUrls = [imageData.cached, imageData.proxied, imageData.direct].filter(u => u);
+            for (const url of tryUrls) {
                 try {
-                    const cachedUrl = imageData.cached.startsWith('/') ? `${BACKEND_URL}${imageData.cached}` : imageData.cached;
-                    console.log('Trying cached:', cachedUrl);
-                    await loadImageWithTimeout(imgElement, cachedUrl, 5000);
-                    return; // Success!
-                } catch (e) {
-                    console.log('Cached image failed, trying proxy...', e);
-                }
-            }
-
-            // Strategy 2: Try proxied URL (has CORS headers, reliable)
-            if (imageData.proxied) {
-                try {
-                    const proxyUrl = imageData.proxied.startsWith('/') ? `${BACKEND_URL}${imageData.proxied}` : imageData.proxied;
-                    console.log('Trying proxy:', proxyUrl);
-                    await loadImageWithTimeout(imgElement, proxyUrl, 10000);
-                    return; // Success!
-                } catch (e) {
-                    console.log('Proxied image failed, trying direct...', e);
-                }
-            }
-
-            // Strategy 3: Try direct URL as last resort
-            if (imageData.direct) {
-                try {
-                    console.log('Trying direct:', imageData.direct);
-                    await loadImageWithTimeout(imgElement, imageData.direct, 8000);
-                    return; // Success!
-                } catch (e) {
-                    console.log('Direct image failed, using fallback...', e);
-                }
-            }
-
-            // Strategy 4: Use fallback (always works)
-            console.log('Using fallback:', fallbackUrl);
-            imgElement.src = fallbackUrl;
-            imgElement.onload = () => {
-                imgElement.style.opacity = '1';
-            };
-        }
-
-        // Helper: Load image - fires onload OR onerror but doesn't reject Promise
-        function loadImageWithTimeout(imgElement, url, timeout) {
-            return new Promise((resolve, reject) => {
-                // Set a timeout that will reject
-                const timeoutId = setTimeout(() => {
-                    reject(new Error('Timeout'));
-                }, timeout);
-
-                // onload - image loaded successfully
-                imgElement.onload = () => {
-                    clearTimeout(timeoutId);
+                    const finalUrl = url.startsWith('/') ? `${BACKEND_URL}${url}` : url;
+                    await new Promise((resolve, reject) => {
+                        const timeout = setTimeout(() => reject('timeout'), 8000);
+                        imgElement.onload = () => { clearTimeout(timeout); resolve(); };
+                        imgElement.onerror = () => { clearTimeout(timeout); reject('error'); };
+                        imgElement.src = finalUrl;
+                    });
                     imgElement.style.opacity = '1';
-                    console.log('Image loaded:', url);
-                    resolve(); // Success - stop here
-                };
-
-                // onerror - image failed but DON'T reject (might already be loaded from cache)
-                // Just log it, the image might still display due to onload firing first
-                imgElement.onerror = () => {
-                    clearTimeout(timeoutId);
-                    console.log('Image error (may still display):', url);
-                    // Don't reject - just resolve so we don't cascade to fallbacks
-                    resolve();
-                };
-
-                imgElement.src = url;
-            });
-        }
-
-        // Preload images for all POIs (improves UX)
-        // Note: Disabled - uses wrong URLs. Images load correctly via openSheet()
-        function preloadPoiImages() {
-            // Images are now loaded via openSheet() which uses the API with proper caching
-            // This preload function caused OpaqueResponseBlocking issues with Wikipedia URLs
-            console.log('Preload disabled - using openSheet for image loading');
+                    return;
+                } catch (e) { continue; }
+            }
+            imgElement.src = fallbackUrl;
+            imgElement.style.opacity = '1';
         }
 
         async function openSheet(poi, isManual = false) {
             initApp();
             const sheet = document.getElementById('bottomSheet');
+            const backdrop = document.getElementById('backdrop');
             const audio = document.getElementById('audioElement');
             const img = document.getElementById('poiImg');
+            const playBtn = document.getElementById('playPauseBtn');
 
-            // Reset image to loading state immediately
+            document.getElementById('discoveryModal').classList.remove('open');
+            document.getElementById('preferencesModal').classList.remove('open');
+
             img.style.opacity = '0';
-            img.src = '';
-
             document.getElementById('poiName').innerText = poi.name;
             document.getElementById('poiCity').innerText = poi.city;
             document.getElementById('scriptText').innerText = "Wird geladen...";
-            document.getElementById('audioStatus').innerText = "Lädt...";
+            document.getElementById('audioStatus').innerText = "KI erzählt...";
             document.getElementById('progressFill').style.width = '0%';
 
+            playBtn.classList.add('pulse-blue');
             sheet.classList.add('open');
+            if (isManual) backdrop.classList.add('open');
+
+            const timeoutId = setTimeout(() => {
+                if (document.getElementById('audioStatus').innerText === "KI erzählt...") {
+                    document.getElementById('audioStatus').innerText = "Verbindung langsam...";
+                    playBtn.classList.remove('pulse-blue');
+                }
+            }, 12000);
 
             try {
-                const res = await fetch(`${BACKEND_URL}/poi/${poi.id}/audio?persona=${selectedPersona}`);
+                const catParam = selectedCategories.join(',');
+                const res = await fetch(`${BACKEND_URL}/poi/${poi.id}/audio?persona=${selectedPersona}&categories=${catParam}`);
                 const data = await res.json();
+                
+                clearTimeout(timeoutId);
+                playBtn.classList.remove('pulse-blue');
+                
                 document.getElementById('scriptText').innerText = data.script;
-
-                // Load image with robust fallback system
-                if (data.image) {
-                    await loadPoiImage(img, data.image);
-                } else {
-                    // No image data at all - use fallback
-                    img.src = `${BACKEND_URL}/static/fallback.svg`;
-                    img.style.opacity = '1';
-                }
+                if (data.image) await loadPoiImage(img, data.image);
+                else img.src = `${BACKEND_URL}/static/fallback.svg`;
 
                 audio.src = data.audio_url;
                 const shouldPlay = isManual || (isAudioMasterOn && isAutoPlayOn);
@@ -649,17 +828,39 @@
                 }
                 updateProgress();
             } catch (e) {
-                console.error('Error loading POI:', e);
+                clearTimeout(timeoutId);
+                playBtn.classList.remove('pulse-blue');
                 document.getElementById('audioStatus').innerText = "Fehler";
-                // Show fallback image on any error
-                img.src = `${BACKEND_URL}/static/fallback.svg`;
-                img.style.opacity = '1';
             }
         }
 
-        function togglePlayback() { const audio = document.getElementById('audioElement'); const btn = document.getElementById('playPauseBtn'); if (audio.paused) { audio.play(); btn.innerText = '⏸️'; document.getElementById('audioStatus').innerText = "Wird erzählt..."; } else { audio.pause(); btn.innerText = '▶️'; } }
-        function updateProgress() { const audio = document.getElementById('audioElement'); const fill = document.getElementById('progressFill'); const interval = setInterval(() => { if (audio.duration) { const pct = (audio.currentTime / audio.duration) * 100; fill.style.width = pct + '%'; } if (audio.ended || !document.getElementById('bottomSheet').classList.contains('open')) { clearInterval(interval); if (audio.ended) document.getElementById('playPauseBtn').innerText = '▶️'; } }, 100); }
-        function closeSheet() { document.getElementById('bottomSheet').classList.remove('open'); document.getElementById('audioElement').pause(); }
+        function togglePlayback() {
+            const audio = document.getElementById('audioElement');
+            const btn = document.getElementById('playPauseBtn');
+            if (audio.paused) { audio.play(); btn.innerText = '⏸️'; document.getElementById('audioStatus').innerText = "Wird erzählt..."; }
+            else { audio.pause(); btn.innerText = '▶️'; }
+        }
+
+        function updateProgress() {
+            const audio = document.getElementById('audioElement');
+            const fill = document.getElementById('progressFill');
+            const interval = setInterval(() => {
+                if (audio.duration) {
+                    const pct = (audio.currentTime / audio.duration) * 100;
+                    fill.style.width = pct + '%';
+                }
+                if (audio.ended || !document.getElementById('bottomSheet').classList.contains('open')) {
+                    clearInterval(interval);
+                    if (audio.ended) document.getElementById('playPauseBtn').innerText = '▶️';
+                }
+            }, 100);
+        }
+
+        function closeSheet() {
+            document.getElementById('bottomSheet').classList.remove('open');
+            document.getElementById('backdrop').classList.remove('open');
+            document.getElementById('audioElement').pause();
+        }
 
         function checkGeofences(uLat, uLng) {
             pois.forEach(poi => {
@@ -671,20 +872,133 @@
             });
         }
 
-        function startDemoWalk() {
-            initApp(); shouldFollowUser = true; document.getElementById('recenterBtn').classList.add('hidden');
-            const path = lastCalculatedRoutePoints.length > 0 ? lastCalculatedRoutePoints : [{ lat: 49.4836, lng: 8.4751 }, { lat: 49.4862, lng: 8.4665 }, { lat: 49.4831, lng: 8.4622 }];
-            let currentStep = 0;
-            const interval = setInterval(() => {
-                if (currentStep >= path.length) { clearInterval(interval); return; }
-                const pos = path[currentStep];
-                if (!userLocationMarker) userLocationMarker = L.marker([pos.lat, pos.lng], { icon: L.divIcon({ html: '<div class="user-location-dot"></div>', className: '', iconSize: [20, 20] }) }).addTo(map);
-                else userLocationMarker.setLatLng([pos.lat, pos.lng]);
-                if (shouldFollowUser) map.panTo([pos.lat, pos.lng]);
-                checkGeofences(pos.lat, pos.lng);
-                currentStep++;
-            }, 150);
+        function togglePreferences() {
+            initApp();
+            const modal = document.getElementById('preferencesModal');
+            const backdrop = document.getElementById('backdrop');
+            const isOpen = modal.classList.toggle('open');
+            backdrop.classList.toggle('open', isOpen);
+            if (isOpen) {
+                document.getElementById('discoveryModal').classList.remove('open');
+                document.getElementById('bottomSheet').classList.remove('open');
+                renderCategories();
+            }
         }
+
+        function toggleDiscovery() {
+            initApp();
+            const modal = document.getElementById('discoveryModal');
+            const backdrop = document.getElementById('backdrop');
+            const isOpen = modal.classList.toggle('open');
+            backdrop.classList.toggle('open', isOpen);
+
+            const btn = document.getElementById('discoverBtn');
+            btn.classList.toggle('on', isOpen);
+            btn.classList.toggle('off', !isOpen);
+
+            if (isOpen) {
+                document.getElementById('preferencesModal').classList.remove('open');
+                document.getElementById('bottomSheet').classList.remove('open');
+                renderDiscovery();
+            }
+        }
+
+        async function renderDiscovery() {
+            const list = document.getElementById('discoveryList');
+            list.innerHTML = '<div class="text-center py-8 opacity-50 text-sm">Suche nach passenden Orten...</div>';
+            try {
+                const catParam = selectedCategories.join(',');
+                const res = await fetch(`${BACKEND_URL}/discover?categories=${catParam}`);
+                const suggestedPois = await res.json();
+                const newPois = suggestedPois.filter(p => !selectedPoiIds.includes(p.id));
+
+                if (newPois.length === 0) {
+                    list.innerHTML = `<div class="text-center py-10 opacity-50 text-sm">Keine neuen Orte gefunden.</div>`;
+                    return;
+                }
+
+                list.innerHTML = newPois.map(poi => `
+                    <div class="glass-card p-4 flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <div class="text-2xl">${poi.emoji}</div>
+                            <div>
+                                <div class="font-bold text-sm">${poi.name}</div>
+                                <div class="text-[10px] opacity-40 uppercase tracking-wider">${poi.categories.slice(0, 2).join(' • ')}</div>
+                            </div>
+                        </div>
+                        <button onclick="togglePoiSelection('${poi.id}'); renderDiscovery();" class="w-10 h-10 bg-[#0ea5e9]/10 text-[#0ea5e9] rounded-xl flex items-center justify-center transition-colors hover:bg-[#0ea5e9] hover:text-white">
+                            ➕
+                        </button>
+                    </div>
+                `).join('');
+            } catch (e) { list.innerHTML = '<div class="text-center py-8 text-red-400">Fehler.</div>'; }
+        }
+
+        function renderCategories() {
+            const grid = document.getElementById('categoryGrid');
+            grid.innerHTML = ALL_CATEGORIES.map(cat => `
+                <div onclick="selectCategory('${cat}')" class="px-4 py-3 rounded-2xl border ${selectedCategories.includes(cat) ? 'bg-[#0ea5e9] border-white/20 text-white shadow-lg' : 'bg-white/5 border-white/10 text-white/40'} text-[13px] font-bold text-center cursor-pointer transition-all">
+                    ${cat}
+                </div>
+            `).join('');
+        }
+
+        function selectCategory(cat) {
+            if (selectedCategories.includes(cat)) selectedCategories = selectedCategories.filter(c => c !== cat);
+            else selectedCategories.push(cat);
+            renderCategories();
+        }
+
+        async function savePreferences() {
+            await saveSetting('userPreferences', selectedCategories);
+            closeAll();
+            renderMarkers();
+        }
+
+        async function updateStorageInfo() {
+            if (navigator.storage && navigator.storage.estimate) {
+                const estimate = await navigator.storage.estimate();
+                const usedMB = Math.round(estimate.usage / (1024 * 1024));
+                document.getElementById('storageInfo').innerText = `Aktuell belegter Speicher: ca. ${usedMB} MB`;
+            }
+        }
+
+        async function startCityDownload(city) {
+            const cityPois = pois.filter(p => p.city === city);
+            const btn = document.getElementById(`btn-${city}`);
+            const statusText = document.getElementById(`status-${city}`);
+
+            btn.disabled = true;
+            btn.classList.add('opacity-50');
+
+            let count = 0;
+            for (const poi of cityPois) {
+                count++;
+                statusText.innerText = `Lade: ${count}/${cityPois.length} POIs...`;
+                try {
+                    const catParam = selectedCategories.join(',');
+                    await fetch(`${BACKEND_URL}/poi/${poi.id}/audio?persona=${selectedPersona}&categories=${catParam}`);
+                } catch (e) { console.error(`Failed to download ${poi.name}`, e); }
+            }
+
+            statusText.innerText = "Offline verfügbar";
+            btn.innerText = "Aktualisieren";
+            btn.disabled = false;
+            btn.classList.remove('opacity-50');
+            updateStorageInfo();
+        }
+
+        async function clearOfflineData() {
+            if (confirm("Möchtest du wirklich alle heruntergeladenen Audios und Bilder löschen?")) {
+                const cacheNames = await caches.keys();
+                for (const name of cacheNames) {
+                    await caches.delete(name);
+                }
+                alert("Speicher geleert.");
+                updateStorageInfo();
+            }
+        }
+
         loadData();
     </script>
 </body>
