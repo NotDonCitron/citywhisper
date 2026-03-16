@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="/static/js/db.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -238,6 +239,8 @@
             <div
                 class="bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 flex items-center gap-2">
                 <span class="font-bold text-[#0ea5e9]">City</span>Whisper
+                <span id="offlineIndicator" class="ml-2 w-2 h-2 rounded-full bg-red-500 hidden" title="Offline"></span>
+                <span id="onlineIndicator" class="ml-2 w-2 h-2 rounded-full bg-green-500" title="Online"></span>
             </div>
             <div class="flex gap-2 bg-white/5 backdrop-blur-md p-1.5 rounded-full border border-white/10"
                 id="personaSelector">
@@ -257,8 +260,12 @@
             <div class="bg-black/70 backdrop-blur-xl p-5 rounded-3xl border border-white/10 w-72 shadow-2xl">
                 <h3 class="text-sm font-bold mb-4 flex items-center gap-2">📍 Tour zusammenstellen</h3>
                 <div id="poiList" class="flex flex-wrap gap-2 mb-5"></div>
-                <button onclick="generateRoute()"
-                    class="w-full bg-[#0ea5e9] text-white py-3 rounded-2xl text-sm font-bold">Weg berechnen</button>
+                <div class="flex flex-col gap-2">
+                    <button onclick="generateRoute()"
+                        class="w-full bg-[#0ea5e9] text-white py-3 rounded-2xl text-sm font-bold">Weg berechnen</button>
+                    <button id="downloadBtn" onclick="downloadTour()"
+                        class="w-full bg-white/10 text-white py-3 rounded-2xl text-sm font-bold border border-white/10 hidden">Tour offline speichern</button>
+                </div>
             </div>
         </div>
         <div class="city-switcher flex gap-2 pointer-all">
@@ -317,17 +324,69 @@
         function initApp() { if (isAppInitialized) return; isAppInitialized = true; const audio = document.getElementById('audioElement'); audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(e => { }); }
         function toggleAudioMaster() { isAudioMasterOn = !isAudioMasterOn; const btn = document.getElementById('audioMasterBtn'); btn.innerText = isAudioMasterOn ? '🔊' : '🔇'; btn.classList.toggle('on', isAudioMasterOn); btn.classList.toggle('off', !isAudioMasterOn); if (!isAudioMasterOn) document.getElementById('audioElement').pause(); }
         function toggleAutoPlay() { isAutoPlayOn = !isAutoPlayOn; const btn = document.getElementById('autoPlayBtn'); btn.innerText = isAutoPlayOn ? '⚡' : '🔘'; btn.classList.toggle('on', isAutoPlayOn); btn.classList.toggle('off', !isAutoPlayOn); }
-        function selectPersona(id) { initApp(); selectedPersona = id; document.querySelectorAll('.persona-btn').forEach(btn => btn.classList.toggle('active', btn.getAttribute('onclick').includes(id))); }
+
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+
+        function updateOnlineStatus() {
+            const offline = document.getElementById('offlineIndicator');
+            const online = document.getElementById('onlineIndicator');
+            if (navigator.onLine) {
+                offline.classList.add('hidden');
+                online.classList.remove('hidden');
+            } else {
+                offline.classList.remove('hidden');
+                online.classList.add('hidden');
+            }
+        }
 
         async function loadData() {
             try {
-                const res = await fetch(`${BACKEND_URL}/pois`);
-                pois = await res.json();
+                // Initialize Database
+                await initDB();
+                updateOnlineStatus();
+
+                // Load Settings
+                const savedPersona = await getSetting('selectedPersona');
+                if (savedPersona) {
+                    selectedPersona = savedPersona;
+                    updatePersonaUI();
+                }
+
+                const savedCity = await getSetting('selectedCity');
+                if (savedCity) {
+                    const coords = savedCity === 'Schoenau' ? [49.4355, 8.8090] : [49.4836, 8.4660];
+                    const zoom = savedCity === 'Schoenau' ? 16 : 15;
+                    map.setView(coords, zoom);
+                }
+
+                // Load POIs
+                try {
+                    const res = await fetch(`${BACKEND_URL}/pois`);
+                    pois = await res.json();
+                    // Save to offline storage
+                    await savePOIs(pois);
+                } catch (fetchError) {
+                    console.warn('Network failed, loading POIs from offline storage');
+                    pois = await getAllPOIs();
+                }
+
                 renderMarkers();
                 renderPoiChips();
-                preloadPoiImages(); // Preload images for instant display
+                preloadPoiImages();
                 startGpsTracking();
-            } catch (e) { console.error(e); }
+
+                // Load Last Route
+                const lastRoute = await getLastRoute();
+                if (lastRoute) {
+                    selectedPoiIds = lastRoute.poi_ids;
+                    lastCalculatedRoutePoints = lastRoute.points;
+                    renderPoiChips();
+                    if (currentRouteLayer) map.removeLayer(currentRouteLayer);
+                    currentRouteLayer = L.geoJSON(lastRoute.geometry, { style: { color: '#0ea5e9', weight: 8, opacity: 0.9, dashArray: '1, 15', lineCap: 'round' } }).addTo(map);
+                }
+
+            } catch (e) { console.error('Initialization error:', e); }
         }
 
         function startGpsTracking() {
@@ -351,6 +410,7 @@
             initApp();
             if (selectedPoiIds.length < 2) return alert("Min 2 Orte");
             const btn = document.querySelector('#routeBuilder button');
+            const downloadBtn = document.getElementById('downloadBtn');
             btn.innerText = "Berechne...";
             try {
                 const res = await fetch(`${BACKEND_URL}/route`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ poi_ids: selectedPoiIds }) });
@@ -358,13 +418,103 @@
                 lastCalculatedRoutePoints = data.geometry.coordinates.map(c => ({ lat: c[1], lng: c[0] }));
                 if (currentRouteLayer) map.removeLayer(currentRouteLayer);
                 currentRouteLayer = L.geoJSON(data.geometry, { style: { color: '#0ea5e9', weight: 8, opacity: 0.9, dashArray: '1, 15', lineCap: 'round' } }).addTo(map);
+                
+                // Save route to offline storage
+                await saveRoute({
+                    poi_ids: selectedPoiIds,
+                    geometry: data.geometry,
+                    points: lastCalculatedRoutePoints
+                });
+
                 map.fitBounds(currentRouteLayer.getBounds(), { padding: [60, 60] });
+                
+                // Show download button
+                downloadBtn.classList.remove('hidden');
+                downloadBtn.innerText = "Tour offline speichern";
+                downloadBtn.disabled = false;
+                
                 toggleRouteBuilder();
             } catch (e) { alert("Fehler"); } finally { btn.innerText = "Weg berechnen"; }
         }
 
+        async function downloadTour() {
+            const btn = document.getElementById('downloadBtn');
+            btn.disabled = true;
+            btn.innerText = "Speichere...";
+
+            try {
+                // 1. Get all assets to download
+                const assetsToCache = [];
+                
+                for (const poiId of selectedPoiIds) {
+                    const poi = pois.find(p => p.id === poiId);
+                    if (!poi) continue;
+
+                    // Fetch POI audio data (this also triggers script generation/caching on backend)
+                    const res = await fetch(`${BACKEND_URL}/poi/${poiId}/audio?persona=${selectedPersona}`);
+                    const data = await res.json();
+                    
+                    // Add audio URL
+                    if (data.audio_url) assetsToCache.push(`${BACKEND_URL}${data.audio_url}`);
+                    
+                    // Add image URLs
+                    if (data.image) {
+                        if (data.image.cached) assetsToCache.push(`${BACKEND_URL}${data.image.cached}`);
+                        if (data.image.proxied) assetsToCache.push(`${BACKEND_URL}${data.image.proxied}`);
+                    }
+                }
+
+                // 2. Open cache and add assets
+                if ('caches' in window) {
+                    const cache = await caches.open('citywhisper-assets-v1');
+                    let count = 0;
+                    for (const url of assetsToCache) {
+                        try {
+                            await cache.add(url);
+                            count++;
+                            btn.innerText = `Speichere (${count}/${assetsToCache.length})`;
+                        } catch (e) {
+                            console.warn('Failed to cache asset:', url, e);
+                        }
+                    }
+                    btn.innerText = "✅ Offline verfügbar";
+                    setTimeout(() => {
+                        btn.innerText = "Tour offline speichern";
+                        btn.disabled = false;
+                    }, 3000);
+                } else {
+                    alert("Browser unterstützt kein Offline-Caching");
+                    btn.innerText = "Fehler";
+                }
+            } catch (e) {
+                console.error('Download error:', e);
+                btn.innerText = "Fehler beim Speichern";
+                btn.disabled = false;
+            }
+        }
+
         function renderMarkers() { markers.forEach(m => map.removeLayer(m.marker)); pois.forEach(poi => { const marker = L.marker([poi.lat, poi.lng], { icon: L.divIcon({ html: `<div class="custom-marker"><div class="marker-dot">${poi.emoji}</div></div>`, className: '', iconSize: [40, 40], iconAnchor: [20, 20] }) }).addTo(map).on('click', () => openSheet(poi, true)); markers.push({ marker, poi }); }); }
-        function gotoCity(city) { initApp(); if (city === 'Schoenau') map.setView([49.4355, 8.8090], 16); else map.setView([49.4836, 8.4660], 15); }
+        
+        async function gotoCity(city) { 
+            initApp(); 
+            if (city === 'Schoenau') map.setView([49.4355, 8.8090], 16); 
+            else map.setView([49.4836, 8.4660], 15); 
+            await saveSetting('selectedCity', city);
+        }
+
+        async function selectPersona(id) { 
+            initApp(); 
+            selectedPersona = id; 
+            updatePersonaUI();
+            await saveSetting('selectedPersona', id);
+        }
+
+        function updatePersonaUI() {
+            document.querySelectorAll('.persona-btn').forEach(btn => {
+                const isActive = btn.getAttribute('onclick').includes(selectedPersona);
+                btn.classList.toggle('active', isActive);
+            });
+        }
 
         // Robust image loading with multiple fallback strategies
         async function loadPoiImage(imgElement, imageData) {

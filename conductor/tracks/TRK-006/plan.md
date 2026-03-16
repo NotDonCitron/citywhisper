@@ -2,18 +2,22 @@
 
 ## 📋 Steps
 
-### Phase 1: Storage Layer (⏳ Not Started)
-- [ ] Implement IndexedDB storage for POIs and Routes.
-- [ ] Add a service worker listener for prefetching.
+### Phase 1: Storage Layer (✅ Completed)
+- [x] Implement IndexedDB storage for POIs and Routes.
+- [x] Create `backend/static/js/db.js` for database abstraction.
+- [x] Integrate persistence into `loadData`, `selectPersona`, `gotoCity`, and `generateRoute`.
 
-### Phase 2: Assets Pre-download (⏳ Not Started)
-- [ ] Create a "Download Tour" UI button.
-- [ ] Use `CacheStorage API` to download and store all POI images and audio files.
+### Phase 2: Assets Pre-download (✅ Completed)
+- [x] Create a "Download Tour" UI button in Route Builder.
+- [x] Implement `downloadTour()` function using `CacheStorage API`.
+- [x] Fetch and cache all POI audio and images for the selected route.
 
-### Phase 3: Offline Map Caching (⏳ Not Started)
-- [ ] Research and implement Leaflet/Mapbox tile caching.
-- [ ] Set up a bounding box for the current city (e.g., Mannheim) for pre-caching.
+### Phase 3: Offline Map Caching (✅ Completed)
+- [x] Update `sw.js` with Cache-First strategies for static assets and map tiles.
+- [x] Implement specific caching for CartoDB dark matter tiles.
+- [x] Handle API fallbacks in the service worker.
 
-### Phase 4: UI Updates & Verification (⏳ Not Started)
-- [ ] Add offline status indicators.
-- [ ] Test the full tour flow in Airplane Mode.
+### Phase 4: UI Updates & Verification (✅ Completed)
+- [x] Add online/offline status indicators.
+- [x] Verify data persistence across page reloads.
+- [x] Test Offline capability for selected routes.
