@@ -845,8 +845,59 @@
         function toggleRouteBuilder() {
             initApp();
             const builder = document.getElementById('routeBuilder');
-            const isOpen = builder.classList.toggle('hidden');
-            document.getElementById('routeBtn').classList.toggle('on', !isOpen);
+            const backdrop = document.getElementById('backdrop');
+            if (!builder) return;
+
+            const isOpen = !builder.classList.toggle('hidden');
+
+            // Toggle backdrop
+            if (backdrop) {
+                backdrop.classList.toggle('open', isOpen);
+            }
+
+            // Render POIs when opening
+            if (!isOpen) {
+                renderPoiChips();
+            }
+        }
+
+        // Add all discovered POIs to tour
+        async function addAllDiscovery() {
+            const list = document.getElementById('discoveryList');
+            if (!list) return;
+
+            const items = list.querySelectorAll('[data-poi-id]');
+            items.forEach(item => {
+                const poiId = item.getAttribute('data-poi-id');
+                if (poiId && !selectedPoiIds.includes(poiId) && selectedPoiIds.length < 12) {
+                    selectedPoiIds.push(poiId);
+                }
+            });
+
+            alert(`${items.length} Orte zur Tour hinzugefügt!`);
+            toggleDiscovery(); // Close modal
+            renderPoiChips();
+        }
+
+        // Download tour for offline
+        async function downloadTour() {
+            if (selectedPoiIds.length === 0) return alert("Keine Orte ausgewählt!");
+
+            const btn = document.getElementById('downloadBtn');
+            if (!btn) return;
+
+            btn.innerText = "Lädt...";
+
+            try {
+                for (const poiId of selectedPoiIds) {
+                    await fetch(`${BACKEND_URL}/poi/${poiId}/audio?persona=${selectedPersona}&categories=${selectedCategories.join(',')}`);
+                }
+                alert("Tour offline verfügbar!");
+            } catch (e) {
+                alert("Fehler beim Download");
+            } finally {
+                btn.innerText = "Offline speichern";
+            }
         }
 
         async function generateRoute() {
@@ -1080,16 +1131,19 @@
             initApp();
             const modal = document.getElementById('discoveryModal');
             const backdrop = document.getElementById('backdrop');
+            if (!modal || !backdrop) return;
+
             const isOpen = modal.classList.toggle('open');
             backdrop.classList.toggle('open', isOpen);
 
+            // Safe check for legacy button
             const btn = document.getElementById('discoverBtn');
-            btn.classList.toggle('on', isOpen);
-            btn.classList.toggle('off', !isOpen);
+            btn?.classList.toggle('on', isOpen);
+            btn?.classList.toggle('off', !isOpen);
 
             if (isOpen) {
-                document.getElementById('preferencesModal').classList.remove('open');
-                document.getElementById('bottomSheet').classList.remove('open');
+                document.getElementById('preferencesModal')?.classList.remove('open');
+                document.getElementById('bottomSheet')?.classList.remove('open');
                 renderDiscovery();
             }
         }
