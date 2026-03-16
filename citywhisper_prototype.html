@@ -1023,22 +1023,34 @@
 
         function togglePoiSelection(id) {
             initApp();
-            if (hasSelectedPoiId(id)) {
+            const isSelected = hasSelectedPoiId(id);
+            addDebugLog(`togglePoiSelection(${id}) - vorher: ${isSelected ? 'ausgewählt' : 'nicht ausgewählt'}`, 'info');
+
+            if (isSelected) {
                 selectedPoiIds = selectedPoiIds.filter(pid => normalizePoiId(pid) !== normalizePoiId(id));
             } else {
-                if (selectedPoiIds.length >= 12) return alert("Max 12 POIs");
+                if (selectedPoiIds.length >= 12) {
+                    addDebugLog('Max 12 POIs erreicht!', 'error');
+                    return alert("Max 12 POIs");
+                }
                 selectedPoiIds.push(String(id));
             }
+            addDebugLog(`Nachher: ${selectedPoiIds.join(', ')}`, 'success');
             renderPoiChips();
         }
 
         function toggleRouteBuilder() {
+            addDebugLog('toggleRouteBuilder gestartet', 'info');
             initApp();
             const builder = document.getElementById('routeBuilder');
             const backdrop = document.getElementById('backdrop');
-            if (!builder) return;
+            if (!builder) {
+                addDebugLog('routeBuilder nicht gefunden!', 'error');
+                return;
+            }
 
             const isOpen = !builder.classList.toggle('hidden');
+            addDebugLog(`Route Builder ist jetzt: ${isOpen ? 'offen' : 'geschlossen'}`, 'info');
 
             // Toggle backdrop
             if (backdrop) {
@@ -1047,20 +1059,30 @@
 
             // Render POIs when opening
             if (!isOpen) {
+                addDebugLog('Rendere POI Chips...', 'info');
                 renderPoiChips();
             }
         }
 
         // Add all discovered POIs to tour
         async function addAllDiscovery() {
+            addDebugLog('addAllDiscovery gestartet', 'info');
+
             // Use cache if available, otherwise query DOM
             let items = discoveryCache;
 
             if (!items || items.length === 0) {
+                addDebugLog('Cache leer, scanne DOM...', 'info');
                 const list = document.getElementById('discoveryList');
-                if (!list) return;
+                if (!list) {
+                    addDebugLog('discoveryList nicht gefunden!', 'error');
+                    return;
+                }
                 const domItems = list.querySelectorAll('[data-poi-id]');
                 items = Array.from(domItems).map(item => item.getAttribute('data-poi-id'));
+                addDebugLog(`DOM Items gefunden: ${items.length}`, 'info');
+            } else {
+                addDebugLog(`Cache Items: ${items.length}`, 'info');
             }
 
             let addedCount = 0;
@@ -1068,9 +1090,15 @@
                 if (addSelectedPoiId(poiId)) addedCount++;
             });
 
+            addDebugLog(`Hinzugefügt: ${addedCount}, Total: ${selectedPoiIds.length}`, 'success');
             alert(`${addedCount} Orte zur Tour hinzugefügt!`);
             toggleDiscovery(); // Close modal
             renderPoiChips();
+
+            // Refresh debug panel
+            if (document.getElementById('debugPanel').classList.contains('open')) {
+                refreshDebug();
+            }
         }
 
         // Download tour for offline
@@ -1095,21 +1123,38 @@
         }
 
         async function generateRoute() {
+            addDebugLog('generateRoute gestartet', 'info');
+            addDebugLog(`POI IDs: ${selectedPoiIds.join(', ')}`, 'info');
+
             initApp();
             let finalPoiIds = [...selectedPoiIds];
-            if (finalPoiIds.length < 2) return alert("Min 2 Orte auswählen");
+            if (finalPoiIds.length < 2) {
+                addDebugLog('Weniger als 2 POIs!', 'error');
+                return alert("Min 2 Orte auswählen");
+            }
+
+            addDebugLog(`Finale POI IDs für Route: ${finalPoiIds.join(', ')}`, 'info');
 
             const btn = document.querySelector('#routeBuilder button');
             const downloadBtn = document.getElementById('downloadBtn');
             btn.innerText = "Berechne...";
 
             try {
+                addDebugLog(`Sende POST /route mit: ${JSON.stringify({ poi_ids: finalPoiIds })}`, 'info');
                 const res = await fetch(`${BACKEND_URL}/route`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ poi_ids: finalPoiIds })
                 });
+
+                if (!res.ok) {
+                    addDebugLog(`Route Fehler: HTTP ${res.status}`, 'error');
+                    throw new Error(`HTTP ${res.status}`);
+                }
+
                 const data = await res.json();
+                addDebugLog(`Route Antwort erhalten: ${data.geometry?.coordinates?.length} Koordinaten`, 'success');
+
                 lastCalculatedRoutePoints = data.geometry.coordinates.map(c => ({ lat: c[1], lng: c[0] }));
                 if (currentRouteLayer) map.removeLayer(currentRouteLayer);
                 currentRouteLayer = L.geoJSON(data.geometry, {
@@ -1120,7 +1165,11 @@
                 map.fitBounds(currentRouteLayer.getBounds(), { padding: [60, 60] });
                 downloadBtn.classList.remove('hidden');
                 toggleRouteBuilder();
-            } catch (e) { alert("Fehler"); } finally { btn.innerText = "Weg berechnen"; }
+                addDebugLog('Route erfolgreich erstellt!', 'success');
+            } catch (e) {
+                addDebugLog(`Route Fehler: ${e.message}`, 'error');
+                alert("Fehler");
+            } finally { btn.innerText = "Weg berechnen"; }
         }
 
         function renderMarkers() {
@@ -1343,17 +1392,28 @@
         }
 
         async function renderDiscovery() {
+            addDebugLog('renderDiscovery gestartet', 'info');
             const list = document.getElementById('discoveryList');
             list.innerHTML = '<div class="text-center py-8 opacity-50 text-sm">Suche nach passenden Orten...</div>';
             try {
                 const catParam = selectedCategories.join(',');
+                addDebugLog(`Fetching /discover?categories=${catParam}`, 'info');
                 const res = await fetch(`${BACKEND_URL}/discover?categories=${catParam}`);
                 const suggestedPois = await res.json();
+
+                addDebugLog(`Backend Antwort: ${suggestedPois.length} POIs`, 'success');
+
+                // Log the first few POI IDs
+                if (suggestedPois.length > 0) {
+                    const ids = suggestedPois.slice(0, 5).map(p => p.id).join(', ');
+                    addDebugLog(`Erste POI IDs: ${ids}`, 'info');
+                }
 
                 // Update cache
                 discoveryCache = suggestedPois;
 
                 const newPois = suggestedPois.filter(p => !hasSelectedPoiId(p.id));
+                addDebugLog(`Neue (nicht ausgewählte) POIs: ${newPois.length}`, 'info');
 
                 if (newPois.length === 0) {
                     list.innerHTML = `<div class="text-center py-10 opacity-50 text-sm">Keine neuen Orte gefunden.</div>`;
@@ -1374,7 +1434,10 @@
                         </button>
                     </div>
                 `).join('');
-            } catch (e) { list.innerHTML = '<div class="text-center py-8 text-red-400">Fehler.</div>'; }
+            } catch (e) {
+                addDebugLog(`renderDiscovery Fehler: ${e.message}`, 'error');
+                list.innerHTML = '<div class="text-center py-8 text-red-400">Fehler.</div>';
+            }
         }
 
         function renderCategories() {
