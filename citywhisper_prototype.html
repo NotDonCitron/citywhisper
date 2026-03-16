@@ -616,6 +616,27 @@
         const ALL_CATEGORIES = ['History', 'Art', 'Subculture', 'Architecture', 'Nature', 'Food', 'Nightlife', 'Religion', 'Urban', 'Views', 'Family', 'Culture'];
         let pois = [], markers = [], userLocationMarker = null, lastTriggeredPoiId = null, selectedPoiIds = [], currentRouteLayer = null;
         let selectedPersona = 'insider', isAppInitialized = false, shouldFollowUser = true, isAudioMasterOn = true, isAutoPlayOn = true, lastCalculatedRoutePoints = [], selectedCategories = [];
+        let discoveryCache = [];
+
+        // Helper: Normalize POI ID for consistent comparison
+        function normalizePoiId(id) {
+            return String(id).toLowerCase().trim();
+        }
+
+        // Helper: Check if POI is selected
+        function hasSelectedPoiId(id) {
+            const normalized = normalizePoiId(id);
+            return selectedPoiIds.some(pid => normalizePoiId(pid) === normalized);
+        }
+
+        // Helper: Add POI to selection safely
+        function addSelectedPoiId(id) {
+            if (!hasSelectedPoiId(id) && selectedPoiIds.length < 12) {
+                selectedPoiIds.push(String(id));
+                return true;
+            }
+            return false;
+        }
 
         const map = L.map('map', { zoomControl: false, attributionControl: false, fadeAnimation: true }).setView([49.4836, 8.4660], 15);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png').addTo(map);
@@ -827,17 +848,18 @@
         function renderPoiChips() {
             const list = document.getElementById('poiList');
             list.innerHTML = pois.map(poi => `
-                <button type="button" class="poi-chip ${selectedPoiIds.includes(poi.id) ? 'selected' : ''}" onclick="togglePoiSelection('${poi.id}')">
+                <button type="button" class="poi-chip ${hasSelectedPoiId(poi.id) ? 'selected' : ''}" onclick="togglePoiSelection('${poi.id}')">
                     ${poi.emoji} ${poi.name.split(' ')[0]}
                 </button>`).join('');
         }
 
         function togglePoiSelection(id) {
             initApp();
-            if (selectedPoiIds.includes(id)) selectedPoiIds = selectedPoiIds.filter(i => i !== id);
-            else {
+            if (hasSelectedPoiId(id)) {
+                selectedPoiIds = selectedPoiIds.filter(pid => normalizePoiId(pid) !== normalizePoiId(id));
+            } else {
                 if (selectedPoiIds.length >= 12) return alert("Max 12 POIs");
-                selectedPoiIds.push(id);
+                selectedPoiIds.push(String(id));
             }
             renderPoiChips();
         }
@@ -863,18 +885,22 @@
 
         // Add all discovered POIs to tour
         async function addAllDiscovery() {
-            const list = document.getElementById('discoveryList');
-            if (!list) return;
+            // Use cache if available, otherwise query DOM
+            let items = discoveryCache;
 
-            const items = list.querySelectorAll('[data-poi-id]');
-            items.forEach(item => {
-                const poiId = item.getAttribute('data-poi-id');
-                if (poiId && !selectedPoiIds.includes(poiId) && selectedPoiIds.length < 12) {
-                    selectedPoiIds.push(poiId);
-                }
+            if (!items || items.length === 0) {
+                const list = document.getElementById('discoveryList');
+                if (!list) return;
+                const domItems = list.querySelectorAll('[data-poi-id]');
+                items = Array.from(domItems).map(item => item.getAttribute('data-poi-id'));
+            }
+
+            let addedCount = 0;
+            items.forEach(poiId => {
+                if (addSelectedPoiId(poiId)) addedCount++;
             });
 
-            alert(`${items.length} Orte zur Tour hinzugefügt!`);
+            alert(`${addedCount} Orte zur Tour hinzugefügt!`);
             toggleDiscovery(); // Close modal
             renderPoiChips();
         }
@@ -1155,7 +1181,11 @@
                 const catParam = selectedCategories.join(',');
                 const res = await fetch(`${BACKEND_URL}/discover?categories=${catParam}`);
                 const suggestedPois = await res.json();
-                const newPois = suggestedPois.filter(p => !selectedPoiIds.includes(p.id));
+
+                // Update cache
+                discoveryCache = suggestedPois;
+
+                const newPois = suggestedPois.filter(p => !hasSelectedPoiId(p.id));
 
                 if (newPois.length === 0) {
                     list.innerHTML = `<div class="text-center py-10 opacity-50 text-sm">Keine neuen Orte gefunden.</div>`;
@@ -1163,7 +1193,7 @@
                 }
 
                 list.innerHTML = newPois.map(poi => `
-                    <div class="glass-card p-4 flex items-center justify-between">
+                    <div class="glass-card p-4 flex items-center justify-between" data-poi-id="${poi.id}">
                         <div class="flex items-center gap-4">
                             <div class="text-2xl">${poi.emoji}</div>
                             <div>
