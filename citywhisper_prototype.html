@@ -88,6 +88,60 @@
             }
         }
 
+        /* Glow Animation */
+        .route-glow-anim {
+            animation: glowPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% {
+                filter: drop-shadow(0 0 4px rgba(14, 165, 233, 0.5));
+                stroke-width: 6;
+            }
+            50% {
+                filter: drop-shadow(0 0 12px rgba(14, 165, 233, 1));
+                stroke-width: 8;
+            }
+        }
+
+        /* Breathe Animation */
+        .route-breathe {
+            animation: breatheLine 3s ease-in-out infinite;
+        }
+
+        @keyframes breatheLine {
+            0%, 100% {
+                opacity: 0.4;
+                stroke-width: 5;
+            }
+            50% {
+                opacity: 0.9;
+                stroke-width: 8;
+            }
+        }
+
+        /* Rainbow Animation */
+        .route-rainbow {
+            animation: rainbowFlow 1s linear infinite;
+        }
+
+        @keyframes rainbowFlow {
+            to {
+                stroke-dashoffset: -74;
+            }
+        }
+
+        /* Particle Animation */
+        .route-particle {
+            animation: particleTrail 1.2s linear infinite;
+        }
+
+        @keyframes particleTrail {
+            to {
+                stroke-dashoffset: -42;
+            }
+        }
+
         .route-pulse {
             animation: routePulse 1.5s ease-out;
         }
@@ -545,6 +599,18 @@
             background: rgba(255, 255, 255, 0.1);
             border-radius: 10px;
         }
+
+        /* Fix for white dropdown menu background */
+        select option {
+            background-color: #141827;
+            color: white;
+            padding: 12px;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #0ea5e9;
+        }
     </style>
 </head>
 
@@ -658,6 +724,7 @@
                     </div>
                 </div>
 
+
                 <!-- Section 3: System / Offline -->
                 <div class="mb-8 pt-8 border-t border-white/10">
                     <h3 class="text-xs font-bold uppercase tracking-widest opacity-40 mb-4">System & Offline</h3>
@@ -714,10 +781,17 @@
                 <h3 class="text-sm font-bold mb-4 flex items-center gap-2">📍 Tour zusammenstellen</h3>
                 <div id="poiList" class="flex flex-wrap gap-2 mb-6 max-h-40 overflow-y-auto pr-1"></div>
                 <div class="flex flex-col gap-2">
-                    <label class="text-xs font-semibold text-gray-400 mb-1">Startpunkt (optional)</label>
-                    <select id="startPointSelect" class="w-full bg-[#1f2937] text-white text-sm py-3 px-4 rounded-xl border border-white/10 focus:border-[#0ea5e9] focus:outline-none mb-3">
-                        <option value="auto">📍 Automatisch (optimale Route)</option>
-                        <option value="current_location">📍 Aktueller Standort</option>
+                    <label class="text-xs font-bold opacity-80">Routen-Animation</label>
+                    <select id="routeAnimationSelect" onchange="setRouteAnimation(this.value)"
+                        class="w-full bg-white/5 text-white py-3 px-4 rounded-2xl text-sm font-semibold border border-white/10 mb-2">
+                        <option value="dash">Standard (Laufende Striche)</option>
+                        <option value="draw">Draw-On Effekt</option>
+                        <option value="glow">Pulsierendes Leuchten</option>
+                        <option value="travel">Bewegter Marker</option>
+                        <option value="gradient">Farbverlauf Sweep</option>
+                        <option value="rainbow">Regenbogen-Welle</option>
+                        <option value="particle">Partikel-Spur</option>
+                        <option value="breathe">Atmende Linie</option>
                     </select>
                     <button onclick="generateRoute()"
                         class="w-full bg-[#0ea5e9] text-white py-4 rounded-2xl text-sm font-bold shadow-lg shadow-[#0ea5e9]/20">Weg
@@ -780,8 +854,162 @@
         const ALL_CATEGORIES = ['History', 'Art', 'Subculture', 'Architecture', 'Nature', 'Food', 'Nightlife', 'Religion', 'Urban', 'Views', 'Family', 'Culture'];
         let pois = [], markers = [], userLocationMarker = null, lastTriggeredPoiId = null, selectedPoiIds = [], currentRouteLayer = null;
         let selectedPersona = 'insider', isAppInitialized = false, shouldFollowUser = true, isAudioMasterOn = true, isAutoPlayOn = true, lastCalculatedRoutePoints = [], selectedCategories = [];
-        let currentUserLocation = null; // Store current GPS location for start point selection
+        let selectedRouteAnimation = 'dashed', lastRouteGeometry = null, isRouteAnimationReady = false;
         let discoveryCache = [];
+        const ROUTE_ANIMATIONS = {
+            dash: { label: 'Standard (Laufende Striche)', dashArray: '10, 20', weight: 5, color: '#0ea5e9', opacity: 0.9 },
+            draw: { label: 'Draw-On Effekt', dashArray: null, weight: 5, color: '#0ea5e9', opacity: 1, animated: true },
+            glow: { label: 'Pulsierendes Leuchten', dashArray: null, weight: 8, color: '#0ea5e9', opacity: 0.8, glow: true },
+            travel: { label: 'Bewegter Marker', dashArray: '1, 10', weight: 4, color: '#0ea5e9', opacity: 0.7, traveling: true },
+            gradient: { label: 'Farbverlauf Sweep', dashArray: null, weight: 6, color: '#8b5cf6', opacity: 1, gradient: true },
+            rainbow: { label: 'Regenbogen-Welle', dashArray: '20, 10', weight: 5, color: '#f472b6', opacity: 1, rainbow: true },
+            particle: { label: 'Partikel-Spur', dashArray: '5, 15', weight: 3, color: '#34d399', opacity: 0.8, particle: true },
+            breathe: { label: 'Atmende Linie', dashArray: null, weight: 6, color: '#818cf8', opacity: 0.6, breathe: true }
+        };
+
+        function parseSavedValue(rawValue) {
+            if (rawValue === null || rawValue === undefined) return null;
+            try { return JSON.parse(rawValue); } catch (_) { return rawValue; }
+        }
+
+        async function savePersistentSetting(key, value) {
+            try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { console.warn(`localStorage save failed for ${key}`, e); }
+            try { await saveSetting(key, value); } catch (e) { console.warn(`IndexedDB save failed for ${key}`, e); }
+        }
+
+        async function loadPersistentSetting(key, fallback = null) {
+            try {
+                const value = await getSetting(key);
+                if (value !== null && value !== undefined) {
+                    try { localStorage.setItem(key, JSON.stringify(value)); } catch (_) { }
+                    return value;
+                }
+            } catch (e) {
+                console.warn(`IndexedDB load failed for ${key}`, e);
+            }
+
+            const localRaw = localStorage.getItem(key);
+            if (localRaw !== null) return parseSavedValue(localRaw);
+            return fallback;
+        }
+
+        function renderRouteOnMap(geometry) {
+            if (!geometry) return;
+            lastRouteGeometry = geometry;
+
+            // Guard against startup race: only render once animation preference is loaded.
+            if (!isRouteAnimationReady) {
+                console.log('Route animation not ready yet, deferring route render');
+                return;
+            }
+
+            if (currentRouteLayer) map.removeLayer(currentRouteLayer);
+            if (window.routeGlowLayer) map.removeLayer(window.routeGlowLayer);
+
+            const animStyle = ROUTE_ANIMATIONS[selectedRouteAnimation] || ROUTE_ANIMATIONS.dash;
+            const routeGeoJSON = typeof geometry === 'string' ? JSON.parse(geometry) : geometry;
+
+            // Glow Layer (breiter, transparenter) - nur bei manchen Animationen
+            if (selectedRouteAnimation === 'glow' || selectedRouteAnimation === 'breathe') {
+                window.routeGlowLayer = L.geoJSON(routeGeoJSON, {
+                    style: {
+                        color: selectedRouteAnimation === 'glow' ? '#0ea5e9' : '#818cf8',
+                        weight: selectedRouteAnimation === 'glow' ? 20 : 14,
+                        opacity: selectedRouteAnimation === 'glow' ? 0.5 : 0.4,
+                        lineCap: 'round',
+                        lineJoin: 'round'
+                    },
+                    className: selectedRouteAnimation === 'glow' ? 'route-glow' : 'route-breathe'
+                }).addTo(map);
+            }
+
+            // Core Layer - varies by animation style
+            let coreStyle = {
+                color: animStyle.color || '#0ea5e9',
+                weight: animStyle.weight || 8,
+                opacity: animStyle.opacity || 0.9,
+                lineCap: 'round',
+                lineJoin: 'round'
+            };
+
+            // Apply animation-specific styles
+            if (selectedRouteAnimation === 'dash' || selectedRouteAnimation === 'travel') {
+                coreStyle.dashArray = selectedRouteAnimation === 'dash' ? '10, 20' : '1, 12';
+            } else if (selectedRouteAnimation === 'rainbow') {
+                coreStyle.dashArray = '25, 12';
+            } else if (selectedRouteAnimation === 'particle') {
+                coreStyle.dashArray = '3, 18';
+            }
+
+            currentRouteLayer = L.geoJSON(routeGeoJSON, {
+                style: coreStyle,
+                className: selectedRouteAnimation === 'dash' || selectedRouteAnimation === 'travel' ? 'route-core' : ''
+            }).addTo(map);
+
+            // Add CSS animation class for certain types
+            const pathEl = currentRouteLayer.getLayers()[0]?._path;
+            if (pathEl) {
+                if (selectedRouteAnimation === 'dash' || selectedRouteAnimation === 'travel') {
+                    pathEl.classList.add('route-core');
+                } else if (selectedRouteAnimation === 'rainbow') {
+                    pathEl.classList.add('route-rainbow');
+                } else if (selectedRouteAnimation === 'particle') {
+                    pathEl.classList.add('route-particle');
+                } else if (selectedRouteAnimation === 'draw') {
+                    const length = pathEl.getTotalLength();
+                    pathEl.style.strokeDasharray = length;
+                    pathEl.style.strokeDashoffset = length;
+                    pathEl.getBoundingClientRect(); // Trigger reflow
+                    pathEl.style.transition = 'stroke-dashoffset 2s ease-in-out';
+                    pathEl.style.strokeDashoffset = '0';
+                }
+            }
+
+            // Fit map to route
+            if (currentRouteLayer.getBounds().isValid()) {
+                map.fitBounds(currentRouteLayer.getBounds(), { padding: [60, 60] });
+            }
+        }
+
+        function setRouteAnimation(animType) {
+            if (!ROUTE_ANIMATIONS[animType]) return;
+            selectedRouteAnimation = animType;
+
+            const select = document.getElementById('routeAnimationSelect');
+            if (select) select.value = animType;
+
+            console.log('Route animation set to:', animType);
+            // Persist immediately in localStorage to survive instant reloads (F5).
+            savePersistentSetting('routeAnimation', animType);
+
+            if (lastRouteGeometry) renderRouteOnMap(lastRouteGeometry);
+        }
+
+        async function loadSavedAnimation() {
+            // Read localStorage first so an immediate F5 after selection is respected.
+            // IndexedDB can lag behind and still contain an older value.
+            const localRaw = localStorage.getItem('routeAnimation');
+            const localSaved = parseSavedValue(localRaw);
+
+            let savedAnimation = localSaved;
+            if (!savedAnimation || !ROUTE_ANIMATIONS[savedAnimation]) {
+                savedAnimation = await loadPersistentSetting('routeAnimation', 'dashed');
+            }
+
+            console.log('Loaded routeAnimation from storage:', savedAnimation);
+
+            if (savedAnimation && ROUTE_ANIMATIONS[savedAnimation]) {
+                selectedRouteAnimation = savedAnimation;
+            }
+
+            const select = document.getElementById('routeAnimationSelect');
+            if (select) select.value = selectedRouteAnimation;
+
+            isRouteAnimationReady = true;
+
+            // If a route geometry is already known, render/re-render with the loaded style.
+            if (lastRouteGeometry) renderRouteOnMap(lastRouteGeometry);
+        }
 
         // Helper: Normalize POI ID for consistent comparison
         function normalizePoiId(id) {
@@ -1000,23 +1228,27 @@
         async function loadData() {
             try {
                 await initDB();
+                await loadSavedAnimation();
                 updateOnlineStatus();
                 updateStorageInfo();
 
-                const savedPersona = await getSetting('selectedPersona');
+                const savedPersona = await loadPersistentSetting('selectedPersona');
                 if (savedPersona) {
                     selectedPersona = savedPersona;
                     updatePersonaUI();
                 }
 
-                const savedCity = await getSetting('selectedCity');
+                const savedCity = await loadPersistentSetting('selectedCity');
                 if (savedCity) {
                     const coords = savedCity === 'Schoenau' ? [49.4355, 8.8090] : [49.4836, 8.4660];
                     const zoom = savedCity === 'Schoenau' ? 16 : 15;
                     map.setView(coords, zoom);
                 }
 
-                const savedPrefs = await getSetting('userPreferences');
+                let savedPrefs = await loadPersistentSetting('userPreferences');
+                if (!savedPrefs || savedPrefs.length === 0) {
+                    savedPrefs = await loadPersistentSetting('selectedCategories');
+                }
                 if (savedPrefs && savedPrefs.length > 0) {
                     selectedCategories = savedPrefs;
                 } else {
@@ -1043,10 +1275,7 @@
                     selectedPoiIds = lastRoute.poi_ids;
                     lastCalculatedRoutePoints = lastRoute.points;
                     renderPoiChips();
-                    // Verwende die neue animierte Route-Funktion
-                    if (lastRoute.geometry) {
-                        renderRouteOnMap(lastRoute.geometry);
-                    }
+                    renderRouteOnMap(lastRoute.geometry);
                 }
             } catch (e) { console.error('Initialization error:', e); }
         }
@@ -1056,11 +1285,10 @@
                 navigator.geolocation.watchPosition(pos => {
                     const { latitude, longitude } = pos.coords;
                     const latlng = [latitude, longitude];
-                    currentUserLocation = { lat: latitude, lng: longitude };
                     if (!userLocationMarker) {
                         userLocationMarker = L.marker(latlng, {
                             icon: L.divIcon({ html: '<div class="user-location-dot"></div>', className: '', iconSize: [22, 22] })
-                        }).addTo(map).bindTooltip("📍 Du bist hier", { permanent: true, direction: 'top', className: 'user-tooltip' });
+                        }).addTo(map);
                     } else {
                         userLocationMarker.setLatLng(latlng);
                     }
@@ -1073,235 +1301,70 @@
         function renderPoiChips() {
             const list = document.getElementById('poiList');
             list.innerHTML = pois.map(poi => `
-                <button type="button" class="poi-chip ${hasSelectedPoiId(poi.id) ? 'selected' : ''}" onclick="togglePoiSelection('${poi.id}')">
-                    ${poi.emoji} ${poi.name.split(' ')[0]}
-                </button>`).join('');
-            
-            // Update start point dropdown with selected POIs
-            updateStartPointDropdown();
-        }
-
-        function updateStartPointDropdown() {
-            const select = document.getElementById('startPointSelect');
-            if (!select) return;
-            
-            // Keep first two options (auto and current location)
-            const firstOptions = `
-                <option value="auto">📍 Automatisch (optimale Route)</option>
-                <option value="current_location">📍 Aktueller Standort</option>
-            `;
-            
-            // Add POI options
-            const poiOptions = pois
-                .filter(poi => hasSelectedPoiId(poi.id))
-                .map(poi => `<option value="${poi.id}">📍 ${poi.name}</option>`)
-                .join('');
-            
-            select.innerHTML = firstOptions + poiOptions;
+                <div onclick="togglePoiSelection('${poi.id}')" class="poi-chip ${hasSelectedPoiId(poi.id) ? 'selected' : ''} cursor-pointer transition-all">
+                    ${poi.emoji} ${poi.name}
+                </div>
+            `).join('');
         }
 
         function togglePoiSelection(id) {
             initApp();
             const isSelected = hasSelectedPoiId(id);
-            addDebugLog(`togglePoiSelection(${id}) - vorher: ${isSelected ? 'ausgewählt' : 'nicht ausgewählt'}`, 'info');
-
             if (isSelected) {
                 selectedPoiIds = selectedPoiIds.filter(pid => normalizePoiId(pid) !== normalizePoiId(id));
             } else {
-                if (selectedPoiIds.length >= 12) {
-                    addDebugLog('Max 12 POIs erreicht!', 'error');
-                    return alert("Max 12 POIs");
-                }
+                if (selectedPoiIds.length >= 12) return alert("Max 12 POIs");
                 selectedPoiIds.push(String(id));
             }
-            addDebugLog(`Nachher: ${selectedPoiIds.join(', ')}`, 'success');
             renderPoiChips();
         }
 
         function toggleRouteBuilder() {
-            addDebugLog('toggleRouteBuilder gestartet', 'info');
             initApp();
             const builder = document.getElementById('routeBuilder');
             const backdrop = document.getElementById('backdrop');
-            if (!builder) {
-                addDebugLog('routeBuilder nicht gefunden!', 'error');
-                return;
-            }
-
             const isOpen = !builder.classList.toggle('hidden');
-            addDebugLog(`Route Builder ist jetzt: ${isOpen ? 'offen' : 'geschlossen'}`, 'info');
-
-            // Toggle backdrop
-            if (backdrop) {
-                backdrop.classList.toggle('open', isOpen);
-            }
-
-            // Render POIs when opening
-            if (!isOpen) {
-                addDebugLog('Rendere POI Chips...', 'info');
-                renderPoiChips();
-            }
+            backdrop.classList.toggle('open', isOpen);
+            if (isOpen) renderPoiChips();
         }
 
-        // Add all discovered POIs to tour
-        async function addAllDiscovery() {
-            addDebugLog('addAllDiscovery gestartet', 'info');
-
-            // Use cache if available, otherwise query DOM
-            let items = discoveryCache;
-
-            if (!items || items.length === 0) {
-                addDebugLog('Cache leer, scanne DOM...', 'info');
-                const list = document.getElementById('discoveryList');
-                if (!list) {
-                    addDebugLog('discoveryList nicht gefunden!', 'error');
-                    return;
-                }
-                const domItems = list.querySelectorAll('[data-poi-id]');
-                items = Array.from(domItems).map(item => item.getAttribute('data-poi-id'));
-                addDebugLog(`DOM Items gefunden: ${items.length}`, 'info');
-            } else {
-                addDebugLog(`Cache Items: ${items.length}`, 'info');
-            }
-
-            let addedCount = 0;
-            items.forEach(poiId => {
-                if (addSelectedPoiId(poiId)) addedCount++;
-            });
-
-            addDebugLog(`Hinzugefügt: ${addedCount}, Total: ${selectedPoiIds.length}`, 'success');
-            alert(`${addedCount} Orte zur Tour hinzugefügt!`);
-            toggleDiscovery(); // Close modal
-            renderPoiChips();
-
-            // Refresh debug panel
-            if (document.getElementById('debugPanel').classList.contains('open')) {
-                refreshDebug();
-            }
-        }
-
-        // Download tour for offline
         async function downloadTour() {
             if (selectedPoiIds.length === 0) return alert("Keine Orte ausgewählt!");
-
             const btn = document.getElementById('downloadBtn');
-            if (!btn) return;
-
             btn.innerText = "Lädt...";
-
             try {
                 for (const poiId of selectedPoiIds) {
-                    await fetch(`${BACKEND_URL}/poi/${poiId}/audio?persona=${selectedPersona}&categories=${selectedCategories.join(',')}`);
+                    const poi = pois.find(p => String(p.id) === String(poiId));
+                    if (poi) {
+                        const catParam = selectedCategories.join(',');
+                        await fetch(`${BACKEND_URL}/poi/${poi.id}/audio?persona=${selectedPersona}&categories=${catParam}`);
+                    }
                 }
                 alert("Tour offline verfügbar!");
-            } catch (e) {
-                alert("Fehler beim Download");
-            } finally {
-                btn.innerText = "Offline speichern";
-            }
+            } catch (e) { alert("Fehler beim Download"); }
+            finally { btn.innerText = "Offline speichern"; }
         }
 
         async function generateRoute() {
-            addDebugLog('generateRoute gestartet', 'info');
-            addDebugLog(`POI IDs: ${selectedPoiIds.join(', ')}`, 'info');
-
             initApp();
-            let finalPoiIds = [...selectedPoiIds];
-            if (finalPoiIds.length < 2) {
-                addDebugLog('Weniger als 2 POIs!', 'error');
-                return alert("Min 2 Orte auswählen");
-            }
-
-            addDebugLog(`Finale POI IDs für Route: ${finalPoiIds.join(', ')}`, 'info');
-
-            // Get start point selection
-            const startPointSelect = document.getElementById('startPointSelect');
-            const startPoint = startPointSelect ? startPointSelect.value : 'auto';
-            
-            // Build request body with optional start point
-            const requestBody = { poi_ids: finalPoiIds };
-            
-            if (startPoint === 'current_location' && currentUserLocation) {
-                requestBody.start_location = [currentUserLocation.lng, currentUserLocation.lat]; // [lng, lat] for Mapbox
-            } else if (startPoint !== 'auto' && startPoint !== 'current_location') {
-                // It's a POI ID
-                requestBody.start_poi_id = startPoint;
-            }
-
-            addDebugLog(`Startpunkt: ${startPoint}`, 'info');
-
+            if (selectedPoiIds.length < 2) return alert("Min 2 Orte auswählen");
             const btn = document.querySelector('#routeBuilder button');
             const downloadBtn = document.getElementById('downloadBtn');
             btn.innerText = "Berechne...";
-
             try {
-                addDebugLog(`Sende POST /route mit: ${JSON.stringify(requestBody)}`, 'info');
                 const res = await fetch(`${BACKEND_URL}/route`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(requestBody)
+                    body: JSON.stringify({ poi_ids: selectedPoiIds })
                 });
-
-                if (!res.ok) {
-                    addDebugLog(`Route Fehler: HTTP ${res.status}`, 'error');
-                    throw new Error(`HTTP ${res.status}`);
-                }
-
                 const data = await res.json();
-                addDebugLog(`Route Antwort erhalten: ${data.geometry?.coordinates?.length} Koordinaten`, 'success');
-
                 lastCalculatedRoutePoints = data.geometry.coordinates.map(c => ({ lat: c[1], lng: c[0] }));
-
-                // Verwende die neue animierte Route-Funktion
                 renderRouteOnMap(data.geometry);
-
-                await saveRoute({ poi_ids: finalPoiIds, geometry: data.geometry, points: lastCalculatedRoutePoints });
+                await saveRoute({ poi_ids: selectedPoiIds, geometry: data.geometry, points: lastCalculatedRoutePoints });
                 downloadBtn.classList.remove('hidden');
                 toggleRouteBuilder();
-                addDebugLog('Route erfolgreich erstellt!', 'success');
-            } catch (e) {
-                addDebugLog(`Route Fehler: ${e.message}`, 'error');
-                alert("Fehler");
-            } finally { btn.innerText = "Weg berechnen"; }
-        }
-
-        // Neue animierte Route zeichnen
-        function renderRouteOnMap(geometry) {
-            // Entferne alte Routen
-            if (currentRouteLayer) map.removeLayer(currentRouteLayer);
-            if (window.routeGlowLayer) map.removeLayer(window.routeGlowLayer);
-
-            const routeGeoJSON = typeof geometry === 'string' ? JSON.parse(geometry) : geometry;
-
-            // Glow Layer (breiter, transparenter)
-            window.routeGlowLayer = L.geoJSON(routeGeoJSON, {
-                style: {
-                    color: '#0ea5e9',
-                    weight: 16,
-                    opacity: 0.4,
-                    lineCap: 'round',
-                    lineJoin: 'round'
-                },
-                className: 'route-glow'
-            }).addTo(map);
-
-            // Core Layer (schmal, animiert)
-            currentRouteLayer = L.geoJSON(routeGeoJSON, {
-                style: {
-                    color: '#38bdf8',
-                    weight: 6,
-                    opacity: 1,
-                    dashArray: '10, 20',
-                    lineCap: 'round',
-                    lineJoin: 'round'
-                },
-                className: 'route-core'
-            }).addTo(map);
-
-            // Fit map to route
-            if (currentRouteLayer.getBounds().isValid()) {
-                map.fitBounds(currentRouteLayer.getBounds(), { padding: [60, 60] });
-            }
+            } catch (e) { alert("Fehler"); }
+            finally { btn.innerText = "Weg berechnen"; }
         }
 
         function renderMarkers() {
@@ -1330,14 +1393,14 @@
             initApp();
             if (city === 'Schoenau') map.setView([49.4355, 8.8090], 16);
             else map.setView([49.4836, 8.4660], 15);
-            await saveSetting('selectedCity', city);
+            await savePersistentSetting('selectedCity', city);
         }
 
         async function selectPersona(id) {
             initApp();
             selectedPersona = id;
             updatePersonaUI();
-            await saveSetting('selectedPersona', id);
+            await savePersistentSetting('selectedPersona', id);
         }
 
         function updatePersonaUI() {
