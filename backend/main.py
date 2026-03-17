@@ -6,16 +6,20 @@ from fastapi import FastAPI, HTTPException, Response, Query
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from database import get_all_pois, get_pois_by_categories, init_db, save_poi
+from pydantic import BaseModel, Field
 from typing import List, Optional
 from dotenv import load_dotenv
-from gtts import gTTS
+import edge_tts
 import wikipediaapi
 from groq import Groq
 from urllib.parse import quote, unquote
 
 # Lade Umgebungsvariablen
 load_dotenv()
+
+# Initialize Database on startup
+init_db()
 
 # API Keys
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
@@ -33,9 +37,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-AUDIO_DIR = "backend/static/audio"
+AUDIO_DIR = "static/audio"
 os.makedirs(AUDIO_DIR, exist_ok=True)
-app.mount("/static", StaticFiles(directory="backend/static"), name="static")
+
+@app.get("/")
+async def get_index():
+    # If running from backend directory, root is one level up
+    path = "../citywhisper_prototype.html"
+    if not os.path.exists(path):
+        # Fallback if running from root
+        path = "citywhisper_prototype.html"
+    return FileResponse(path)
+
+@app.get("/citywhisper_prototype.html")
+async def get_index_file():
+    path = "../citywhisper_prototype.html"
+    if not os.path.exists(path):
+        path = "citywhisper_prototype.html"
+    return FileResponse(path)
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 wiki_wiki = wikipediaapi.Wikipedia(language='de', user_agent="CityWhisper/1.0")
 
@@ -46,21 +67,7 @@ class POI(BaseModel):
     lng: float
     emoji: Optional[str] = "📍"
     city: str
-
-# POI data with correct Wikipedia images
-CURRENT_POIS = [
-    {"id": "wasserturm", "name": "Mannheimer Wasserturm", "lat": 49.4836, "lng": 8.4751, "emoji": "⛲", "city": "Mannheim", "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Mannheim_Wasserturm_Friedrichsplatz_1.jpg/800px-Mannheim_Wasserturm_Friedrichsplatz_1.jpg"},
-    {"id": "schloss_mannheim", "name": "Schloss Mannheim", "lat": 49.4831, "lng": 8.4622, "emoji": "🏛️", "city": "Mannheim", "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/SchlossEhrenhof_2017.jpg/800px-SchlossEhrenhof_2017.jpg"},
-    {"id": "jungbusch", "name": "Jungbusch Mannheim", "lat": 49.4939, "lng": 8.4568, "emoji": "🎸", "city": "Mannheim", "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Jungbusch_in_Mannheim.jpg/800px-Jungbusch_in_Mannheim.jpg"},
-    {"id": "fernmeldeturm", "name": "Fernmeldeturm Mannheim", "lat": 49.4873, "lng": 8.4871, "emoji": "🗼", "city": "Mannheim", "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/Fernmeldeturm_Mannheim_02.jpg/800px-Fernmeldeturm_Mannheim_02.jpg"},
-    {"id": "jesuitenkirche", "name": "Jesuitenkirche (Mannheim)", "lat": 49.4852, "lng": 8.4608, "emoji": "⛪", "city": "Mannheim", "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Mannheim_Jesuitenkirche_20120322.jpg/800px-Mannheim_Jesuitenkirche_20120322.jpg"},
-    {"id": "paradeplatz", "name": "Paradeplatz (Mannheim)", "lat": 49.4862, "lng": 8.4665, "emoji": "🌳", "city": "Mannheim", "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Paradeplatz_Mannheim_2019.jpg/800px-Paradeplatz_Mannheim_2019.jpg"},
-    {"id": "luisenpark", "name": "Luisenpark Mannheim", "lat": 49.4710, "lng": 8.4500, "emoji": "🌺", "city": "Mannheim"},
-    {"id": "reiss_engelhorn_museen", "name": "Reiss-Engelhorn-Museen", "lat": 49.4805, "lng": 8.4610, "emoji": "🏛️", "city": "Mannheim"},
-    {"id": "nationaltheater", "name": "Nationaltheater Mannheim", "lat": 49.4830, "lng": 8.4670, "emoji": "🎭", "city": "Mannheim"},
-    {"id": "kunsthalle", "name": "Kunsthalle Mannheim", "lat": 49.4825, "lng": 8.4680, "emoji": "🎨", "city": "Mannheim"},
-    {"id": "water_tower_park", "name": "Friedrichsplatz Mannheim", "lat": 49.4840, "lng": 8.4740, "emoji": "🗿", "city": "Mannheim", "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Friedrichsplatz_Mannheim_2019.jpg/800px-Friedrichsplatz_Mannheim_2019.jpg"}
-]
+    categories: List[str] = []
 
 PERSONAS = {
     "historian": {"name": "Historiker Tom", "emoji": "📜", "description": "Faktisch, tiefgründig.", "prompt_style": "Du bist ein Historiker. Erzähle präzise über Architektur."},
@@ -80,8 +87,9 @@ def preload_all_images():
     """Pre-download all POI images to local cache."""
     print("Pre-loading POI images...")
     cache = load_image_cache()
+    all_pois = get_all_pois()
     
-    for poi in CURRENT_POIS:
+    for poi in all_pois:
         poi_id = poi["id"]
         poi_name = poi["name"]
         city = poi.get("city", "")
@@ -98,7 +106,7 @@ def preload_all_images():
             cached_path = download_and_cache_image(static_img, poi_id)
             if cached_path:
                 print(f"  {poi_id}: cached successfully")
-                time.sleep(10)
+                time.sleep(1)
                 continue
             else:
                 print(f"  {poi_id}: static image failed, trying Wikipedia search...")
@@ -138,8 +146,9 @@ def preload_all_images():
                 print(f"  {poi_id}: no image found on any source")
         
         # Wait between downloads to avoid rate limiting
-        time.sleep(10)
+        time.sleep(1)
     print("Image pre-loading complete!")
+
 
 def load_image_cache():
     """Load the image cache from disk."""
@@ -411,61 +420,179 @@ async def proxy_image(url: str = Query(..., description="URL-encoded image URL")
         print(f"[PROXY_DEBUG] Unexpected error for {url}: {e}")
         return FileResponse("backend/static/fallback.svg", media_type="image/svg+xml")
 
-async def generate_script(poi, persona_id="insider"):
+async def generate_script(poi, persona_id="insider", user_categories: List[str] = []):
     persona = PERSONAS.get(persona_id, PERSONAS["insider"])
     page = wiki_wiki.page(poi["name"])
     facts = page.summary[:1000] if page.exists() else f"Ort: {poi['name']}."
-    prompt = f"{persona['prompt_style']} KONTEXT: Wir stehen vor {poi['name']}. STIL: Kein Name, ca. 80 Wörter. FAKTEN: {facts}"
+    
+    # Context-aware prompting
+    poi_cats = poi.get("categories", [])
+    matched_cats = [c for c in poi_cats if c in user_categories]
+    
+    prompt = f"{persona['prompt_style']} KONTEXT: Wir stehen vor {poi['name']}. "
+    if matched_cats:
+        prompt += f"Interessen-Match: Der Nutzer interessiert sich besonders für {', '.join(matched_cats)}. Betone diese Aspekte. "
+    prompt += f"Kategorien des Ortes: {', '.join(poi_cats)}. STIL: Kein Name, ca. 80 Wörter. FAKTEN: {facts}"
+    
     if groq_client:
         try:
-            completion = groq_client.chat.completions.create(model="llama3-8b-8192", messages=[{"role": "user", "content": prompt}], temperature=0.8)
+            completion = groq_client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role": "user", "content": prompt}], temperature=0.8)
             return completion.choices[0].message.content
-        except: pass
+        except Exception as e:
+            print(f"Groq error: {e}")
+            pass
     return f"Schau dir das mal an. Wir stehen hier am {poi['name']}."
 
 class RouteRequest(BaseModel):
     poi_ids: List[str]
+    start_poi_id: Optional[str] = None
+    start_location: Optional[List[float]] = Field(default=None, min_items=2, max_items=2)
 
 @app.post("/route")
 async def get_optimized_route(req: RouteRequest):
     if not MAPBOX_ACCESS_TOKEN: raise HTTPException(500, "Token missing")
-    selected_pois = [p for p in CURRENT_POIS if p["id"] in req.poi_ids]
-    coords = ";".join([f"{p['lng']},{p['lat']}" for p in selected_pois])
+    all_pois = get_all_pois()
+    selected_pois = [p for p in all_pois if p["id"] in req.poi_ids]
+    
+    if len(selected_pois) < 2:
+        raise HTTPException(400, "At least 2 POIs required")
+    
+    # Build route points list
+    route_points = [{"id": p["id"], "lat": p["lat"], "lng": p["lng"], "is_poi": True} for p in selected_pois]
+    
+    # Mapbox API parameters
+    params = {
+        "access_token": MAPBOX_ACCESS_TOKEN,
+        "geometries": "geojson",
+        "overview": "full",
+        "steps": "false"
+    }
+    
+    # Handle start point selection
+    if req.start_location:
+        # Use current location as start point
+        lat, lng = req.start_location[1], req.start_location[0]  # [lng, lat] -> lat, lng
+        route_points.insert(0, {"id": "__start_location__", "lat": lat, "lng": lng, "is_poi": False})
+        params.update({"source": "first", "destination": "any", "roundtrip": "false"})
+    elif req.start_poi_id:
+        # Use selected POI as start point
+        start = next((p for p in selected_pois if p["id"] == req.start_poi_id), None)
+        if start:
+            # Reorder: start POI first, then others
+            route_points = [
+                {"id": start["id"], "lat": start["lat"], "lng": start["lng"], "is_poi": True}
+            ] + [
+                {"id": p["id"], "lat": p["lat"], "lng": p["lng"], "is_poi": True}
+                for p in selected_pois if p["id"] != req.start_poi_id
+            ]
+            params.update({"source": "first", "destination": "any", "roundtrip": "false"})
+    
+    # Build coordinates string for Mapbox API
+    coords = ";".join([f"{p['lng']},{p['lat']}" for p in route_points])
     url = f"https://api.mapbox.com/optimized-trips/v1/mapbox/walking/{coords}"
-    params = {"access_token": MAPBOX_ACCESS_TOKEN, "geometries": "geojson", "overview": "full", "steps": "false"}
+    
     response = requests.get(url, params=params)
     data = response.json()
-    return {"geometry": data["trips"][0]["geometry"], "duration": data["trips"][0]["duration"], "optimized_poi_order": [selected_pois[i]["id"] for i in [tw["waypoint_index"] for tw in data["waypoints"]]]}
+    
+    if "trips" not in data or not data["trips"]:
+        raise HTTPException(400, data.get("message", "Route could not be generated"))
+    
+    # Extract ordered POIs from waypoints
+    ordered_pois = []
+    for wp in data.get("waypoints", []):
+        idx = wp.get("waypoint_index")
+        if idx is None or idx >= len(route_points):
+            continue
+        point = route_points[idx]
+        if point["is_poi"]:
+            ordered_pois.append(point["id"])
+    
+    return {
+        "geometry": data["trips"][0]["geometry"],
+        "duration": data["trips"][0]["duration"],
+        "optimized_poi_order": ordered_pois
+    }
 
 @app.get("/")
-async def root(): return FileResponse("citywhisper_prototype.html")
+async def root():
+    path = "citywhisper_prototype.html"
+    if not os.path.exists(path):
+        path = os.path.join("..", path)
+    return FileResponse(path)
+
+@app.get("/manifest.json")
+async def manifest(): return FileResponse("manifest.json")
+
+@app.get("/sw.js")
+async def service_worker(): return FileResponse("sw.js", media_type="application/javascript")
 
 @app.get("/pois")
-async def get_pois(): return CURRENT_POIS
+async def get_pois(): return get_all_pois()
+
+@app.get("/discover")
+async def discover_pois(categories: List[str] = Query([])):
+    """Filter POIs based on a list of categories."""
+    if not categories:
+        return get_all_pois()
+    
+    processed_categories = []
+    for cat in categories:
+        if "," in cat:
+            processed_categories.extend([c.strip() for c in cat.split(",")])
+        else:
+            processed_categories.append(cat)
+            
+    return get_pois_by_categories(processed_categories)
 
 @app.get("/personas")
 async def get_personas(): return PERSONAS
 
 @app.get("/poi/{poi_id}/audio")
-async def get_audio(poi_id: str, persona: str = "insider"):
-    poi = next((p for p in CURRENT_POIS if p["id"] == poi_id), None)
+async def get_audio(poi_id: str, persona: str = "insider", categories: str = Query("")):
+    all_pois = get_all_pois()
+    poi = next((p for p in all_pois if p["id"] == poi_id), None)
     if not poi: raise HTTPException(404)
     
     # Get image with auto-discovery
     image_data = get_poi_image(poi)
     
-    audio_path, script_path = f"{AUDIO_DIR}/{poi_id}_{persona}.mp3", f"{AUDIO_DIR}/{poi_id}_{persona}.txt"
+    # Handle user preferences if passed
+    user_cats = [c.strip() for c in categories.split(",")] if categories else []
+    
+    import hashlib
+    cat_hash = hashlib.md5(categories.encode()).hexdigest()[:8] if categories else "none"
+    
+    audio_path = f"{AUDIO_DIR}/{poi_id}_{persona}_{cat_hash}.mp3"
+    script_path = f"{AUDIO_DIR}/{poi_id}_{persona}_{cat_hash}.txt"
+    
     if os.path.exists(audio_path):
         with open(script_path, "r", encoding="utf-8") as f: script = f.read()
-        return {"id": poi_id, "audio_url": f"/static/audio/{poi_id}_{persona}.mp3", "script": script, "image": image_data}
-    script = await generate_script(poi, persona)
+        return {"id": poi_id, "audio_url": f"/static/audio/{os.path.basename(audio_path)}", "script": script, "image": image_data}
+    
+    script = await generate_script(poi, persona, user_cats)
     with open(script_path, "w", encoding="utf-8") as f: f.write(script)
-    tts = gTTS(text=script, lang='de')
-    tts.save(audio_path)
-    return {"id": poi_id, "audio_url": f"/static/audio/{poi_id}_{persona}.mp3", "script": script, "image": image_data}
+    
+    # Map personas to edge-tts voices
+    voice = "de-DE-KatjaNeural" if persona == "insider" else "de-DE-KillianNeural"
+    
+    try:
+        communicate = edge_tts.Communicate(script, voice)
+        await communicate.save(audio_path)
+    except Exception as e:
+        print(f"Edge-TTS error: {e}")
+        # Very minimal fallback if even edge-tts fails
+        return {"id": poi_id, "audio_url": None, "script": script, "image": image_data, "error": "TTS failed"}
+    
+    return {"id": poi_id, "audio_url": f"/static/audio/{os.path.basename(audio_path)}", "script": script, "image": image_data}
 
-# Preload images on startup (after all functions are defined)
-preload_all_images()
+# Startup event: preload images after app is ready
+@app.on_event("startup")
+async def startup_event():
+    print("Starting CityWhisper backend...")
+    # Run image preloading in background to not block
+    import threading
+    thread = threading.Thread(target=preload_all_images, daemon=True)
+    thread.start()
 
 if __name__ == "__main__":
     import uvicorn

@@ -1,0 +1,63 @@
+<h2>Design-Konzept: "Geordnete Struktur" 🧭</h2>
+<p class="subtitle">Wie sollen wir die Funktionen der App organisieren, damit sie sich aufgeräumter anfühlt?</p>
+
+<div class="section">
+  <h3>Vorgeschlagene Ansätze</h3>
+  
+  <div class="options">
+    <!-- Option A: Tab Bar -->
+    <div class="option" data-choice="tab-bar" onclick="toggleSelect(this)">
+      <div class="letter">A</div>
+      <div class="content">
+        <h4>Klassische Tab-Bar (unten)</h4>
+        <p>Die Funktionen werden in einer Leiste am unteren Bildschirmrand gruppiert. Sehr intuitiv für Einhand-Bedienung auf dem Handy.</p>
+        <div class="mockup mt-2" style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+          <div style="height: 60px; display: flex; align-items: flex-end;">
+            <div style="width: 100%; height: 40px; background: #141827; border-top: 1px solid #0ea5e9; border-radius: 12px 12px 0 0; display: flex; justify-content: space-around; align-items: center; font-size: 14px;">
+              <span>🗺️</span>
+              <span style="opacity: 0.5;">✨</span>
+              <span style="opacity: 0.5;">⚙️</span>
+              <span style="opacity: 0.5;">👤</span>
+            </div>
+          </div>
+        </div>
+        <p class="text-[10px] mt-2 opacity-60"><strong>Pro:</strong> Vertraut, einfach zu bedienen.<br><strong>Contra:</strong> Belegt dauerhaft Platz am unteren Rand.</p>
+      </div>
+    </div>
+    
+    <!-- Option B: Floating Dashboard -->
+    <div class="option" data-choice="dashboard" onclick="toggleSelect(this)">
+      <div class="letter">B</div>
+      <div class="content">
+        <h4>Zentrales Kontrollzentrum</h4>
+        <p>Alle Steuerungen (Persona, Auto-Play, Einstellungen) wandern in ein kompaktes, ausklappbares Panel an der Seite oder oben.</p>
+        <div class="mockup mt-2" style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
+          <div style="display: flex; justify-content: flex-end;">
+             <div style="width: 40px; height: 120px; background: #141827; border: 1px solid #0ea5e9; border-radius: 20px; display: flex; flex-direction: column; justify-content: space-around; align-items: center;">
+               <span>⚙️</span>
+               <span>✨</span>
+               <div style="width: 20px; height: 1px; background: rgba(255,255,255,0.1);"></div>
+               <span>👤</span>
+             </div>
+          </div>
+        </div>
+        <p class="text-[10px] mt-2 opacity-60"><strong>Pro:</strong> Maximale Sicht auf die Karte.<br><strong>Contra:</strong> Funktionen sind "versteckter".</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Meine Empfehlung: Option A (Tab-Bar)</h3>
+  <p>Da CityWhisper eine "Outdoor-App" ist, ist die **Einhand-Bedienung** entscheidend. Eine Tab-Bar unten ermöglicht es, schnell zwischen Karte, Entdeckungen (Discovery) und Einstellungen zu wechseln, ohne umgreifen zu müssen.</p>
+</div>
+
+<div class="pros-cons">
+  <div class="pros">
+    <h4>Nächste Detail-Fragen</h4>
+    <ul>
+      <li>Soll die Persona-Wahl (Tom/Sarah) prominent oben bleiben oder mit in die Tab-Bar?</li>
+      <li>Wie "hoch" darf die Tab-Bar sein (Transparenz)?</li>
+    </ul>
+  </div>
+</div>

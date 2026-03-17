@@ -26,6 +26,16 @@ CityWhisper is a personalized city experience app that breaks through traditiona
 - **Opportunity:** Positionierung als smarter Begleiter für "Local Experiences" in Mannheim.
 - **Monetization:** Affiliate commissions (lokale Partner), Freemium (Premium audio/offline).
 
+## 💰 Revenue Model
+Based on the **0-Cost Strategy**, the goal is to minimize overhead while maximizing affiliate-driven revenue.
+
+| Stream | Potential | Mechanism |
+|---|---|---|
+| **Affiliate Commissions** | **8% - 12%** per booking | Integration of **Viator**, **GetYourGuide**, and **Tiqets** APIs for direct in-app ticket sales (e.g., Rijksmuseum, Grachtenfahrt). |
+| **Freemium Tier** | **$5 - $15** per premium tour | Charging for high-quality, AI-narrated offline tours and exclusive "insider" content. |
+| **Local Partnerships** | Variable | Direct B2B collaborations with local cafes, shops, and attractions for "featured" stops (Sponsored POIs - non-intrusive). |
+| **White-Labeling** | SaaS Licensing | Offering the underlying routing and RAG-audio technology to DMOs (Destination Management Organizations) or museums. |
+
 ## 📍 Beispiel-POIs (Mannheim)
 - **Wasserturm & Anlage:** Historische Fakten und Architektur.
 - **Schloss Mannheim:** Barocke Geschichte.

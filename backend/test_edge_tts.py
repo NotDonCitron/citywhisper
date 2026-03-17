@@ -2,7 +2,7 @@ import asyncio
 import edge_tts
 
 TEXT = "Hallo! Ich bin Stefan, dein Guide für Schönau. Wir stehen hier vor dem historischen Rathaus. Die Qualität dieser Stimme ist ziemlich beeindruckend, findest du nicht auch?"
-VOICE = "de-DE-StefanNeural"
+VOICE = "de-DE-KillianNeural"
 OUTPUT_FILE = "edge_test_stefan.mp3"
 
 async def amain() -> None:
