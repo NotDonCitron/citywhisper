@@ -48,6 +48,16 @@ export const useAudio = () => {
       setAudioStatus('Beendet');
     };
 
+    const onPause = () => {
+      setIsPlaying(false);
+      setAudioStatus('Pause');
+    };
+
+    const onPlay = () => {
+      setIsPlaying(true);
+      setAudioStatus('Wiedergabe...');
+    };
+
     const onError = (e) => {
       console.error("Audio error:", e);
       setAudioStatus('Fehler');
@@ -56,11 +66,15 @@ export const useAudio = () => {
 
     audio.addEventListener('timeupdate', onTimeUpdate);
     audio.addEventListener('ended', onEnded);
+    audio.addEventListener('pause', onPause);
+    audio.addEventListener('play', onPlay);
     audio.addEventListener('error', onError);
 
     return () => {
       audio.removeEventListener('timeupdate', onTimeUpdate);
       audio.removeEventListener('ended', onEnded);
+      audio.removeEventListener('pause', onPause);
+      audio.removeEventListener('play', onPlay);
       audio.removeEventListener('error', onError);
     };
   }, []);
