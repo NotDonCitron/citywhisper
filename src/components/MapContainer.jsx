@@ -45,7 +45,8 @@ const MapContainerComponent = () => {
     activeRoute, 
     isTourActive,
     togglePoiSelection,
-    selectedPois
+    selectedPois,
+    selectedCategories
   } = useTourContext();
 
   const [mapCenter, setMapCenter] = useState([49.4875, 8.4660]); // Default Mannheim center
@@ -77,6 +78,20 @@ const MapContainerComponent = () => {
         {/* POI Markers */}
         {pois.map((poi) => {
           const isSelected = selectedPois.some(p => p.id === poi.id);
+          const stopIndex = selectedPois.findIndex(p => p.id === poi.id);
+          const stopNumber = isSelected ? stopIndex + 1 : null;
+          const isMatch = selectedCategories.includes(poi.category);
+
+          // Calculate distance for pulse animation
+          let isNear = false;
+          if (userLocation) {
+            const userLatLng = L.latLng(userLocation.lat, userLocation.lng);
+            const poiLatLng = L.latLng(poi.lat, poi.lng);
+            if (userLatLng.distanceTo(poiLatLng) < 150) {
+              isNear = true;
+            }
+          }
+
           return (
             <Marker 
               key={poi.id} 
@@ -85,14 +100,18 @@ const MapContainerComponent = () => {
                 click: () => togglePoiSelection(poi),
               }}
               icon={L.divIcon({
-                className: 'custom-poi-marker',
+                className: 'custom-poi-marker-container',
                 html: `
-                  <div class="marker-dot ${isSelected ? 'bg-sky-500' : 'bg-slate-700'} border-2 border-white rounded-full w-8 h-8 flex items-center justify-center text-xs shadow-lg transition-colors duration-300">
-                    ${poi.id.toString().substring(0, 2)}
+                  <div class="custom-marker ${isNear ? 'pulse-active' : ''}">
+                    <div class="marker-dot ${isSelected ? 'bg-sky-500' : 'bg-slate-700'} ${isMatch && !isSelected ? 'border-orange-400' : 'border-white'} flex items-center justify-center shadow-lg transition-all duration-300">
+                      <span class="text-xl">${poi.emoji || '📍'}</span>
+                    </div>
+                    ${stopNumber ? `<div class="stop-badge">${stopNumber}</div>` : ''}
+                    ${isMatch && !stopNumber ? `<div class="interest-badge">✨</div>` : ''}
                   </div>
                 `,
-                iconSize: [32, 32],
-                iconAnchor: [16, 16]
+                iconSize: [40, 40],
+                iconAnchor: [20, 20]
               })}
             >
               <Popup>
