@@ -1,0 +1,43 @@
+<h2>Architektur: Active Tour Prototype</h2>
+<p class="subtitle">Systemkomponenten für den Mannheim-Test</p>
+
+<div class="cards">
+  <div class="card">
+    <div class="card-body">
+      <h3>Frontend (UI/UX)</h3>
+      <ul>
+        <li><b>Tour Overlay:</b> Ein neuer Status-Layer über der Leaflet-Karte.</li>
+        <li><b>Smart Start:</b> User-Geste für AudioContext-Unlock & GPS-Start.</li>
+        <li><b>Hintergrund-Warnung:</b> Hinweis, falls die App in den Hintergrund geht (PWA/Visibility API).</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body">
+      <h3>Technik (Tracking)</h3>
+      <ul>
+        <li><b>Geofence Manager:</b> Distanzberechnung (Haversine) zu den POIs der gewählten Route.</li>
+        <li><b>Audio Queue:</b> Vorladen der MP3s, sobald die Tour startet (Offline-First).</li>
+        <li><b>Debug Overlay:</b> Live-Anzeige von GPS-Genauigkeit und Distanz für die Tester.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Datenfluss</h3>
+  <p>1. User wählt Route → 2. Klick auf "Start" (Intro Audio) → 3. Hintergrund-GPS wacht auf → 4. Distanz < 50m: POI-Audio startet automatisch → 5. Tour Ende: Feedback-Screen.</p>
+</div>
+
+<div class="pros-cons">
+  <div class="pros">
+    <h4>Ziele des Feldtests</h4>
+    <ul>
+      <li><b>Reliability:</b> Triggert das Audio zuverlässig bei 50m?</li>
+      <li><b>UX:</b> Versteht der User, wo er hinlaufen muss?</li>
+      <li><b>Performance:</b> Hält der Akku / bricht die KI-Verbindung ab?</li>
+    </ul>
+  </div>
+</div>
+
+<p class="subtitle">Sieht dieser technische Aufbau für dich stimmig aus? Wenn ja, erstelle ich die detaillierte Spezifikation.</p>

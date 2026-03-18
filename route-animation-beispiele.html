@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CityWhisper – Routen-Animationen Demo</title>
+  <style>
+    :root {
+      --bg-dark: #071022;
+      --bg-card: #111a30;
+      --primary: #37b5ff;
+      --primary-2: #8a6cff;
+      --accent: #ff6b9d;
+      --text: #e6f2ff;
+      --text-muted: #9bb3cb;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: radial-gradient(ellipse at top, #16254a 0%, var(--bg-dark) 60%);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 32px;
+      line-height: 1.5;
+    }
+
+    header {
+      max-width: 1200px;
+      margin: 0 auto 32px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0.2) 100%), 
+                  var(--bg-card);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+    }
+
+    .card h2 {
+      font-size: 1.15rem;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+
+    .card .description {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .preview {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16/10;
+      border-radius: 12px;
+      overflow: hidden;
+      background: linear-gradient(145deg, #0a152d, #0a1225);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .poi-marker {
+      fill: #fff;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+    }
+
+    .poi-marker.start { fill: #4ade80; }
+    .poi-marker.end { fill: #f87171; }
+
+    /* ============================================
+       ANIMATION 1: Draw-On Effect 
+       ============================================ */
+    .route-draw {
+      fill: none;
+      stroke: var(--primary);
+      stroke-width: 6;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 500;
+      stroke-dashoffset: 500;
+      animation: drawOn 3.5s ease-in-out infinite;
+    }
+
+    @keyframes drawOn {
+      0% { 
+        stroke-dashoffset: 500; 
+        opacity: 0.3;
+      }
+      20% {
+        opacity: 1;
+      }
+      80% {
+        stroke-dashoffset: 0;
+        opacity: 1;
+      }
+      100% { 
+        stroke-dashoffset: -500; 
+        opacity: 0.3;
+      }
+    }
+
+    /* ============================================
+       ANIMATION 2: Running Dashes
+       ============================================ */
+    .route-dashes {
+      fill: none;
+      stroke: var(--primary);
+      stroke-width: 5;
+      stroke-linecap: round;
+      stroke-dasharray: 12 18;
+      animation: dashFlow 1.5s linear infinite;
+    }
+
+    @keyframes dashFlow {
+      to { stroke-dashoffset: -60; }
+    }
+
+    /* ============================================
+       ANIMATION 3: Pulsing Glow
+       ============================================ */
+    .route-glow-base {
+      fill: none;
+      stroke: #1e3a5f;
+      stroke-width: 10;
+      stroke-linecap: round;
+    }
+
+    .route-glow {
+      fill: none;
+      stroke: var(--primary);
+      stroke-width: 6;
+      stroke-linecap: round;
+      filter: drop-shadow(0 0 4px #37b5ff) drop-shadow(0 0 12px #37b5ff);
+      animation: glowPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes glowPulse {
+      0%, 100% { 
+        opacity: 0.6;
+        stroke-width: 5;
+      }
+      50% { 
+        opacity: 1;
+        stroke-width: 8;
+      }
+    }
+
+    /* ============================================
+       ANIMATION 4: Traveling Marker
+       ============================================ */
+    .route-path {
+      fill: none;
+      stroke: #2a4a6f;
+      stroke-width: 4;
+      stroke-linecap: round;
+    }
+
+    .travel-dot {
+      fill: #fff;
+      filter: drop-shadow(0 0 6px #37b5ff);
+    }
+
+    .travel-dot circle {
+      animation: travelMove 3s ease-in-out infinite;
+    }
+
+    @keyframes travelMove {
+      0% { offset-distance: 0%; opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { offset-distance: 100%; opacity: 0; }
+    }
+
+    /* ============================================
+       ANIMATION 5: Gradient Sweep
+       ============================================ */
+    .route-gradient {
+      fill: none;
+      stroke: url(#gradient1);
+      stroke-width: 7;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 200;
+      stroke-dashoffset: 0;
+      animation: gradientFlow 2s linear infinite;
+    }
+
+    @keyframes gradientFlow {
+      to { stroke-dashoffset: -400; }
+    }
+
+    /* ============================================
+       ANIMATION 6: Rainbow Wave
+       ============================================ */
+    .route-rainbow {
+      fill: none;
+      stroke: url(#rainbowGradient);
+      stroke-width: 6;
+      stroke-linecap: round;
+      stroke-dasharray: 30 15;
+      animation: rainbowFlow 1s linear infinite;
+    }
+
+    @keyframes rainbowFlow {
+      to { stroke-dashoffset: -90; }
+    }
+
+    /* ============================================
+       ANIMATION 7: Particle Trail
+       ============================================ */
+    .route-particle {
+      fill: none;
+      stroke: var(--primary);
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-dasharray: 0 20;
+      animation: particleTrail 1.2s linear infinite;
+    }
+
+    .particle-dot {
+      fill: var(--accent);
+      filter: drop-shadow(0 0 4px var(--accent));
+      animation: particleMove 1.2s linear infinite;
+    }
+
+    @keyframes particleTrail {
+      to { stroke-dashoffset: -40; }
+    }
+
+    @keyframes particleMove {
+      0% { offset-distance: 0%; opacity: 0; }
+      15% { opacity: 1; }
+      85% { opacity: 1; }
+      100% { offset-distance: 100%; opacity: 0; }
+    }
+
+    /* ============================================
+       ANIMATION 8: Breathing Line
+       ============================================ */
+    .route-breathe {
+      fill: none;
+      stroke: var(--primary-2);
+      stroke-width: 8;
+      stroke-linecap: round;
+      opacity: 0.4;
+      animation: breathe 3s ease-in-out infinite;
+    }
+
+    .route-breathe-overlay {
+      fill: none;
+      stroke: #c4b5fd;
+      stroke-width: 4;
+      stroke-linecap: round;
+      animation: breatheOverlay 3s ease-in-out infinite;
+    }
+
+    @keyframes breathe {
+      0%, 100% { opacity: 0.3; stroke-width: 6; }
+      50% { opacity: 0.7; stroke-width: 10; }
+    }
+
+    @keyframes breatheOverlay {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+
+    /* Code section */
+    .selector-container {
+      max-width: 1200px;
+      margin: 0 auto 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .selector-container label {
+      font-size: 1rem;
+      color: var(--text-muted);
+    }
+
+    .selector {
+      background: var(--bg-card);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 12px;
+      padding: 12px 20px;
+      color: var(--text);
+      font-size: 1rem;
+      cursor: pointer;
+      min-width: 220px;
+      transition: all 0.3s ease;
+    }
+
+    .selector:hover {
+      border-color: var(--primary);
+    }
+
+    .selector:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(55, 181, 255, 0.2);
+    }
+
+    .preview-container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .preview-container.hidden {
+      display: none;
+    }
+
+    .code-section {
+      margin: 48px auto 0;
+      background: var(--bg-card);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 24px;
+    }
+
+    .code-section h3 {
+      font-size: 1.2rem;
+      margin-bottom: 16px;
+      color: var(--primary);
+    }
+
+    .code-block {
+      background: #0a0f1a;
+      border-radius: 8px;
+      padding: 16px;
+      overflow-x: auto;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.85rem;
+      color: #a5b6cf;
+      line-height: 1.6;
+    }
+
+    .code-block .keyword { color: #c792ea; }
+    .code-block .string { color: #c3e88d; }
+    .code-block .number { color: #f78c6c; }
+    .code-block .comment { color: #546e7a; }
+
+    .tip-box {
+      margin-top: 20px;
+      padding: 16px;
+      background: rgba(55, 181, 255, 0.08);
+      border-left: 3px solid var(--primary);
+      border-radius: 0 8px 8px 0;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .tip-box strong {
+      color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🗺️ Routen-Animationen</h1>
+    <p class="subtitle">Verschiedene Animationen für deine Route – wähle den Stil, der am besten passt</p>
+  </header>
+
+  <div class="selector-container">
+    <label for="animationSelect">Animation auswählen:</label>
+    <select id="animationSelect" class="selector" onchange="showAnimation(this.value)">
+      <option value="all">Alle Animationen</option>
+      <option value="draw">1. Draw-On Effekt</option>
+      <option value="dashes">2. Laufende Striche</option>
+      <option value="glow">3. Pulsierendes Leuchten</option>
+      <option value="travel">4. Bewegter Marker</option>
+      <option value="gradient">5. Farbverlauf Sweep</option>
+      <option value="rainbow">6. Regenbogen-Welle</option>
+      <option value="particle">7. Partikel-Spur</option>
+      <option value="breathe">8. Atmende Linie</option>
+    </select>
+  </div>
+
+  <div class="grid" id="animationGrid">
+    <!-- Animation 1: Draw-On -->
+    <article class="card" data-anim="draw">
+      <h2>1. Draw-On Effekt</h2>
+      <p class="description">Die Route wird gezeichnet wie mit einem Stift. Gut für "Route wird berechnet".</p>
+      <div class="preview">
+        <svg viewBox="0 0 300 180">
+          <path class="route-draw" d="M30,140 Q60,30 100,50 T170,100 T220,60 T270,40"/>
+          <circle class="poi-marker start" cx="30" cy="140" r="6"/>
+          <circle class="poi-marker end" cx="270" cy="40" r="6"/>
+        </svg>
+      </div>
+    </article>
+
+    <!-- Animation 2: Running Dashes -->
+    <article class="card" data-anim="dashes">
+      <h2>2. Laufende Striche</h2>
+      <p class="description">Bewegte Punkte/Linien zeigen Richtung an. Perfekt für Navigation.</p>
+      <div class="preview">
+        <svg viewBox="0 0 300 180">
+          <path class="route-dashes" d="M30,140 Q60,30 100,50 T170,100 T220,60 T270,40"/>
+          <circle class="poi-marker start" cx="30" cy="140" r="6"/>
+          <circle class="poi-marker end" cx="270" cy="40" r="6"/>
+        </svg>
+      </div>
+    </article>
+
+    <!-- Animation 3: Pulsing Glow -->
+    <article class="card" data-anim="glow">
+      <h2>3. Pulsierendes Leuchten</h2>
+      <p class="description">Sanft pulsierende Neon-Linie. Edler Premium-Look.</p>
+      <div class="preview">
+        <svg viewBox="0 0 300 180">
+          <path class="route-glow-base" d="M30,140 Q60,30 100,50 T170,100 T220,60 T270,40"/>
+          <path class="route-glow" d="M30,140 Q60,30 100,50 T170,100 T220,60 T270,40"/>
+          <circle class="poi-marker start" cx="30" cy="140" r="6"/>
+          <circle class="poi-marker end" cx="270" cy="40" r="6"/>
+        </svg>
+      </div>
+    </article>
+
+    <!-- Animation 4: Traveling Marker -->
+    <article class="card" data-anim="travel">
+      <h2>4. Bewegter Marker</h2>
+      <p class="description">Ein Punkt wandert entlang der Route. Sehr verständlich für Navigation.</p>
+      <div class="preview">
+        <svg viewBox="0 0 300 180">
+          <path id="path4" class="route-path" d="M30,140 Q60,30 100,50 T170,100 T220,60 T270,40"/>
+          <circle class="travel-dot" r="5" style="offset-path: path('M30,140 Q60,30 100,50 T170,100 T220,60 T270,40'); offset-rotate: 0deg;">
+            <animateMotion dur="3s" repeatCount="indefinite">
+              <mpath href="#path4"/>
+            </animateMotion>
+          </circle>
+          <circle class="poi-marker start" cx="30" cy="140" r="6"/>
+          <circle class="poi-marker end" cx="270" cy="40" r="6"/>
+        </svg>
+      </div>
+    </article>
+
+    <!-- Animation 5: Gradient Sweep -->
+    <article class="card" data-anim="gradient">
+      <h2>5. Farbverlauf Sweep</h2>
+      <p class="description">Farbverlauf bewegt sich über die Route. Modern und dynamisch.</p>
+      <div class="preview">
+        <svg viewBox="0 0 300 180">
+          <defs>
+            <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#37b5ff"/>
+              <stop offset="50%" stop-color="#8a6cff"/>
+              <stop offset="100%" stop-color="#37b5ff"/>
+            </linearGradient>
+          </defs>
+          <path class="route-gradient" d="M30,140 Q60,30 100,50 T170,100 T220,60 T270,40"/>
+          <circle class="poi-marker start" cx="30" cy="140" r="6"/>
+          <circle class="poi-marker end" cx="270" cy="40" r="6"/>
+        </svg>
+      </div>
+    </article>
+
+    <!-- Animation 6: Rainbow Wave -->
+    <article class="card" data-anim="rainbow">
+      <h2>6. Regenbogen-Welle</h2>
+      <p class="description">Bunte, fröhliche Animation. Gut für Freizeit/Event-Routen.</p>
+      <div class="preview">
+        <svg viewBox="0 0 300 180">
+          <defs>
+            <linearGradient id="rainbowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#ff6b9d"/>
+              <stop offset="33%" stop-color="#ffd93d"/>
+              <stop offset="66%" stop-color="#6bcb77"/>
+              <stop offset="100%" stop-color="#4d96ff"/>
+            </linearGradient>
+          </defs>
+          <path class="route-rainbow" d="M30,140 Q60,30 100,50 T170,100 T220,60 T270,40"/>
+          <circle class="poi-marker start" cx="30" cy="140" r="6"/>
+          <circle class="poi-marker end" cx="270" cy="40" r="6"/>
+        </svg>
+      </div>
+    </article>
+
+    <!-- Animation 7: Particle Trail -->
+    <article class="card" data-anim="particle">
+      <h2>7. Partikel-Spur</h2>
+      <p class="description">Ein leuchtender Punkt mit Schweif. Sci-Fi/Tech-Look.</p>
+      <div class="preview">
+        <svg viewBox="0 0 300 180">
+          <path id="path7" class="route-particle" d="M30,140 Q60,30 100,50 T170,100 T220,60 T270,40"/>
+          <circle class="particle-dot" r="4" style="offset-path: path('M30,140 Q60,30 100,50 T170,100 T220,60 T270,40');">
+            <animateMotion dur="2.5s" repeatCount="indefinite">
+              <mpath href="#path7"/>
+            </animateMotion>
+          </circle>
+          <circle class="poi-marker start" cx="30" cy="140" r="6"/>
+          <circle class="poi-marker end" cx="270" cy="40" r="6"/>
+        </svg>
+      </div>
+    </article>
+
+    <!-- Animation 8: Breathing Line -->
+    <article class="card" data-anim="breathe">
+      <h2>8. Atmende Linie</h2>
+      <p class="description">Sanftes Ein- und Ausblenden. Ruhig und entspannend.</p>
+      <div class="preview">
+        <svg viewBox="0 0 300 180">
+          <path class="route-breathe" d="M30,140 Q60,30 100,50 T170,100 T220,60 T270,40"/>
+          <path class="route-breathe-overlay" d="M30,140 Q60,30 100,50 T170,100 T220,60 T270,40"/>
+          <circle class="poi-marker start" cx="30" cy="140" r="6"/>
+          <circle class="poi-marker end" cx="270" cy="40" r="6"/>
+        </svg>
+      </div>
+    </article>
+  </div>
+
+  <section class="code-section">
+    <h3>📋 Integration in Leaflet</h3>
+    
+    <h4 style="margin: 20px 0 12px; color: var(--text);">Beispiel: Draw-On Animation</h4>
+    <div class="code-block">
+<span class="comment">// Route mit Draw-On Effekt</span>
+<span class="keyword">const</span> routeLayer = L.geoJSON(routeGeoJSON, {
+  <span class="keyword">style</span>: <span class="keyword">function</span>(feature) {
+    <span class="keyword">return</span> {
+      color: <span class="string">'#37b5ff'</span>,
+      weight: <span class="number">6</span>,
+      opacity: <span class="number">0.9</span>,
+      dashArray: <span class="string">'500'</span>,  <span class="comment">// Gesamtlänge der Route</span>
+      dashOffset: <span class="string">'500'</span>,
+      lineCap: <span class="string">'round'</span>
+    };
+  }
+}).addTo(map);
+
+<span class="comment">// Animation starten</span>
+routeLayer.eachLayer(<span class="keyword">function</span>(layer) {
+  <span class="keyword">let</span> length = layer._path.getTotalLength();
+  layer._path.style.transition = <span class="string">'stroke-dashoffset 2s ease-in-out'</span>;
+  layer._path.style.strokeDasharray = length;
+  layer._path.style.strokeDashoffset = length;
+  
+  <span class="comment">// Nach kurzer Zeit Animation starten</span>
+  setTimeout(<span class="keyword">()</span> => {
+    layer._path.style.strokeDashoffset = <span class="string">'0'</span>;
+  }, <span class="number">100</span>);
+});
+    </div>
+
+    <h4 style="margin: 24px 0 12px; color: var(--text);">Beispiel: Laufende Striche (einfach)</h4>
+    <div class="code-block">
+<span class="keyword">const</span> routeLayer = L.geoJSON(routeGeoJSON, {
+  <span class="keyword">style</span>: {
+    color: <span class="string">'#37b5ff'</span>,
+    weight: <span class="number">5</span>,
+    opacity: <span class="number">0.8</span>,
+    dashArray: <span class="string">'12, 18'</span>,  <span class="comment">// Strich, Abstand</span>
+    lineCap: <span class="string">'round'</span>
+  }
+}).addTo(map);
+
+<span class="comment">// CSS-Animation via class hinzufügen</span>
+<span class="comment">// Oder mit JavaScript: dashOffset animieren</span>
+    </div>
+
+    <div class="tip-box">
+      <strong>Tipp:</strong> Für komplexere Animationen wie den "Traveling Marker" oder "Particle Trail" 
+      kannst du eine zusätzliche SVG-Overlay-Schicht über der Leaflet-Karte erstellen oder die 
+      <code>animateMotion</code> API mit dem Leaflet-Pfad kombinieren.
+    </div>
+  </section>
+
+  <footer style="text-align: center; margin-top: 48px; color: var(--text-muted); font-size: 0.85rem;">
+    <p>CityWhisper Route Animation Examples • Wähle deinen Favoriten!</p>
+  </footer>
+
+  <script>
+    function showAnimation(animType) {
+      const cards = document.querySelectorAll('.card');
+      const grid = document.getElementById('animationGrid');
+      
+      if (animType === 'all') {
+        // Show all cards with animation
+        cards.forEach((card, index) => {
+          card.style.display = 'block';
+          card.style.animation = 'none';
+          setTimeout(() => {
+            card.style.animation = 'fadeInUp 0.5s ease forwards';
+          }, index * 100);
+        });
+        grid.style.display = 'grid';
+      } else {
+        // Hide all, show only selected
+        cards.forEach(card => {
+          if (card.dataset.anim === animType) {
+            card.style.display = 'block';
+            card.style.animation = 'fadeInUp 0.5s ease forwards';
+          } else {
+            card.style.display = 'none';
+          }
+        });
+        grid.style.display = 'grid';
+      }
+    }
+
+    // Add fadeInUp animation
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  </script>
+</body>
+</html>

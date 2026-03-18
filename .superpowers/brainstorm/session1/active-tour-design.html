@@ -1,0 +1,56 @@
+<h2>Design: Active Tour Cockpit</h2>
+<p class="subtitle">Optimiert für den Einsatz auf der Straße</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">1. Der "Start-Screen" (Overlay)</div>
+    <div class="mockup-body" style="background: #0a0e1a; padding: 20px; color: white;">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <div style="font-size: 40px;">🗺️</div>
+        <h3>Tour Bereit</h3>
+        <p style="font-size: 12px; opacity: 0.6;">3 Orte • ca. 45 Min</p>
+      </div>
+      <button class="mock-button" style="background: #0ea5e9; width: 100%; padding: 15px; border-radius: 30px; border: none; color: white; font-weight: bold;">
+        JETZT STARTEN
+      </button>
+      <div style="margin-top: 15px; font-size: 11px; text-align: center; opacity: 0.5;">
+        (Schaltet Audio frei & startet Tracking)
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">2. Das "Cockpit" (Aktiv)</div>
+    <div class="mockup-body" style="background: #141827; padding: 20px; color: white;">
+      <div class="label" style="color: #0ea5e9;">Aktueller Status</div>
+      <div style="font-size: 18px; font-weight: bold; margin-bottom: 20px;">
+        🚶 Auf dem Weg zum <span style="color: #0ea5e9;">Wasserturm</span>
+      </div>
+      
+      <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 16px; margin-bottom: 20px;">
+        <div style="font-size: 12px; opacity: 0.5;">Distanz</div>
+        <div style="font-size: 24px; font-weight: bold;">~ 150m</div>
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        <button class="mock-button" style="flex: 1; background: #333; border: none; padding: 12px; border-radius: 12px; color: white; font-size: 12px;">
+          Karte zeigen
+        </button>
+        <button class="mock-button" style="flex: 1; background: #ef4444/20; border: 1px solid #ef4444/40; padding: 12px; border-radius: 12px; color: #ef4444; font-size: 12px;">
+          Tour beenden
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Technische Komponenten</h3>
+  <ul>
+    <li><b>Audio-Manager:</b> Spielt bei Klick ein "Begrüßungs-Audio" ab (löst Browser-Sperre).</li>
+    <li><b>Geofence-Engine:</b> Berechnet Distanz zum nächsten POI und triggert bei < 50m.</li>
+    <li><b>Wake-Lock API:</b> Verhindert (optional), dass der Bildschirm während der Tour schwarz wird.</li>
+  </ul>
+</div>
+
+<p class="subtitle">Passt dieses Cockpit-Konzept für euren Testlauf? (Wir können jederzeit zur Karte zurückspringen)</p>

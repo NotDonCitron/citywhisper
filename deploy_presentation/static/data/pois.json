@@ -1,0 +1,347 @@
+[
+  {
+    "id": "reiss_engelhorn_museen",
+    "name": "Reiss-Engelhorn-Museen",
+    "lat": 49.4805,
+    "lng": 8.461,
+    "emoji": "🏛️",
+    "city": "Mannheim",
+    "image": null,
+    "categories": [
+      "History",
+      "Art"
+    ]
+  },
+  {
+    "id": "water_tower_park",
+    "name": "Friedrichsplatz Mannheim",
+    "lat": 49.484,
+    "lng": 8.474,
+    "emoji": "🗿",
+    "city": "Mannheim",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Friedrichsplatz_Mannheim_2019.jpg/800px-Friedrichsplatz_Mannheim_2019.jpg",
+    "categories": [
+      "Nature",
+      "Architecture"
+    ]
+  },
+  {
+    "id": "wasserturm",
+    "name": "Mannheimer Wasserturm",
+    "lat": 49.4842,
+    "lng": 8.4755,
+    "emoji": "⛲",
+    "city": "Mannheim",
+    "image": null,
+    "categories": [
+      "History",
+      "Architecture",
+      "Views"
+    ]
+  },
+  {
+    "id": "schloss_mannheim",
+    "name": "Barockschloss Mannheim",
+    "lat": 49.4836,
+    "lng": 8.462,
+    "emoji": "🏛️",
+    "city": "Mannheim",
+    "image": null,
+    "categories": [
+      "History",
+      "Architecture"
+    ]
+  },
+  {
+    "id": "fernmeldeturm",
+    "name": "Fernmeldeturm Mannheim",
+    "lat": 49.4872,
+    "lng": 8.4875,
+    "emoji": "🗼",
+    "city": "Mannheim",
+    "image": null,
+    "categories": [
+      "Architecture",
+      "Views",
+      "Urban"
+    ]
+  },
+  {
+    "id": "paradeplatz",
+    "name": "Paradeplatz Mannheim",
+    "lat": 49.4862,
+    "lng": 8.4665,
+    "emoji": "🌳",
+    "city": "Mannheim",
+    "image": null,
+    "categories": [
+      "History",
+      "Urban"
+    ]
+  },
+  {
+    "id": "marktplatz",
+    "name": "Marktplatz Mannheim (G1)",
+    "lat": 49.4894,
+    "lng": 8.4669,
+    "emoji": "🏢",
+    "city": "Mannheim",
+    "image": null,
+    "categories": [
+      "History",
+      "Architecture",
+      "Religion"
+    ]
+  },
+  {
+    "id": "friedrichsplatz",
+    "name": "Friedrichsplatz Mannheim",
+    "lat": 49.484,
+    "lng": 8.474,
+    "emoji": "🗿",
+    "city": "Mannheim",
+    "image": null,
+    "categories": [
+      "Nature",
+      "Architecture"
+    ]
+  },
+  {
+    "id": "collini_center",
+    "name": "Collini-Center",
+    "lat": 49.488,
+    "lng": 8.477,
+    "emoji": "🏢",
+    "city": "Mannheim",
+    "image": null,
+    "categories": [
+      "Architecture",
+      "Urban"
+    ]
+  },
+  {
+    "id": "luisenpark",
+    "name": "Luisenpark Mannheim",
+    "lat": 49.4825,
+    "lng": 8.4935,
+    "emoji": "🌺",
+    "city": "Mannheim",
+    "image": null,
+    "categories": [
+      "Nature",
+      "Family"
+    ]
+  },
+  {
+    "id": "teehaus",
+    "name": "Chinesisches Teehaus",
+    "lat": 49.4828,
+    "lng": 8.496,
+    "emoji": "🏮",
+    "city": "Mannheim",
+    "image": null,
+    "categories": [
+      "Culture",
+      "Architecture",
+      "Nature"
+    ]
+  },
+  {
+    "id": "herzogenriedpark",
+    "name": "Herzogenriedpark",
+    "lat": 49.5005,
+    "lng": 8.4795,
+    "emoji": "🌳",
+    "city": "Mannheim",
+    "image": null,
+    "categories": [
+      "Nature",
+      "Family"
+    ]
+  },
+  {
+    "id": "kunsthalle",
+    "name": "Kunsthalle Mannheim",
+    "lat": 49.4828,
+    "lng": 8.475,
+    "emoji": "🎨",
+    "city": "Mannheim",
+    "image": null,
+    "categories": [
+      "Art",
+      "Architecture"
+    ]
+  },
+  {
+    "id": "technoseum",
+    "name": "Technoseum Mannheim",
+    "lat": 49.4775,
+    "lng": 8.4975,
+    "emoji": "⚙️",
+    "city": "Mannheim",
+    "image": null,
+    "categories": [
+      "History",
+      "Urban"
+    ]
+  },
+  {
+    "id": "rem",
+    "name": "Reiss-Engelhorn-Museen",
+    "lat": 49.4885,
+    "lng": 8.4615,
+    "emoji": "🏛️",
+    "city": "Mannheim",
+    "image": null,
+    "categories": [
+      "History",
+      "Art"
+    ]
+  },
+  {
+    "id": "zeughaus",
+    "name": "Zeughaus Mannheim",
+    "lat": 49.4888,
+    "lng": 8.4615,
+    "emoji": "⚔️",
+    "city": "Mannheim",
+    "image": null,
+    "categories": [
+      "History",
+      "Art"
+    ]
+  },
+  {
+    "id": "planetarium",
+    "name": "Planetarium Mannheim",
+    "lat": 49.4795,
+    "lng": 8.4915,
+    "emoji": "🪐",
+    "city": "Mannheim",
+    "image": null,
+    "categories": [
+      "Views",
+      "Urban"
+    ]
+  },
+  {
+    "id": "nationaltheater",
+    "name": "Nationaltheater Mannheim",
+    "lat": 49.483,
+    "lng": 8.467,
+    "emoji": "🎭",
+    "city": "Mannheim",
+    "image": null,
+    "categories": [
+      "Art",
+      "Culture"
+    ]
+  },
+  {
+    "id": "rosengarten",
+    "name": "Congress Center Rosengarten",
+    "lat": 49.4845,
+    "lng": 8.4775,
+    "emoji": "🌹",
+    "city": "Mannheim",
+    "image": null,
+    "categories": [
+      "Culture",
+      "Architecture"
+    ]
+  },
+  {
+    "id": "jungbusch",
+    "name": "Jungbusch Mannheim",
+    "lat": 49.4945,
+    "lng": 8.4585,
+    "emoji": "🎸",
+    "city": "Mannheim",
+    "image": null,
+    "categories": [
+      "Subculture",
+      "Nightlife",
+      "Urban"
+    ]
+  },
+  {
+    "id": "popakademie",
+    "name": "Popakademie Baden-Württemberg",
+    "lat": 49.494,
+    "lng": 8.455,
+    "emoji": "🎸",
+    "city": "Mannheim",
+    "image": null,
+    "categories": [
+      "Subculture",
+      "Culture"
+    ]
+  },
+  {
+    "id": "hafen",
+    "name": "Mannheimer Hafen",
+    "lat": 49.497,
+    "lng": 8.451,
+    "emoji": "🚢",
+    "city": "Mannheim",
+    "image": null,
+    "categories": [
+      "Urban",
+      "Views"
+    ]
+  },
+  {
+    "id": "jesuitenkirche",
+    "name": "Jesuitenkirche Mannheim",
+    "lat": 49.4858,
+    "lng": 8.4605,
+    "emoji": "⛪",
+    "city": "Mannheim",
+    "image": null,
+    "categories": [
+      "History",
+      "Religion",
+      "Architecture"
+    ]
+  },
+  {
+    "id": "moschee",
+    "name": "Yavuz-Sultan-Selim-Moschee",
+    "lat": 49.492,
+    "lng": 8.459,
+    "emoji": "🕌",
+    "city": "Mannheim",
+    "image": null,
+    "categories": [
+      "Religion",
+      "Architecture",
+      "Culture"
+    ]
+  },
+  {
+    "id": "synagoge",
+    "name": "Synagoge Mannheim",
+    "lat": 49.4865,
+    "lng": 8.4635,
+    "emoji": "🕎",
+    "city": "Mannheim",
+    "image": null,
+    "categories": [
+      "Religion",
+      "History"
+    ]
+  },
+  {
+    "id": "kurpfalzbruecke",
+    "name": "Kurpfalzbrücke",
+    "lat": 49.4915,
+    "lng": 8.469,
+    "emoji": "🌉",
+    "city": "Mannheim",
+    "image": null,
+    "categories": [
+      "Views",
+      "Architecture"
+    ]
+  }
+]

@@ -1,0 +1,56 @@
+<h2>Design-Update: Karte + Cockpit</h2>
+<p class="subtitle">Orientierung behalten, Status im Blick</p>
+
+<div class="mockup">
+  <div class="mockup-header">Kombinierte Ansicht</div>
+  <div class="mockup-body" style="background: #0a0e1a; padding: 0; color: white; height: 350px; position: relative; overflow: hidden;">
+    
+    <!-- Mini-Map Placeholder -->
+    <div style="height: 100%; width: 100%; background: #111; display: flex; align-items: center; justify-content: center; opacity: 0.5;">
+      <div style="text-align: center;">
+        <div style="font-size: 30px;">🗺️</div>
+        <p style="font-size: 10px;">Interaktive Karte bleibt aktiv</p>
+      </div>
+    </div>
+
+    <!-- Floating Cockpit Card -->
+    <div style="position: absolute; bottom: 20px; left: 10px; right: 10px; background: rgba(20, 24, 39, 0.95); backdrop-filter: blur(10px); padding: 20px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+      <div class="label" style="color: #0ea5e9; font-size: 10px; margin-bottom: 5px;">Nächster Halt</div>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-size: 18px; font-weight: bold;">📍 Wasserturm</div>
+          <div style="font-size: 14px; color: #34d399;">~ 150m entfernt</div>
+        </div>
+        <div style="background: #0ea5e9; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+          🔊
+        </div>
+      </div>
+      
+      <!-- Progress Indicator -->
+      <div style="height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 15px; overflow: hidden;">
+        <div style="height: 100%; background: #0ea5e9; width: 65%;"></div>
+      </div>
+    </div>
+
+    <!-- Navigation Overlay -->
+    <div style="position: absolute; top: 10px; left: 10px; background: #ef4444; color: white; padding: 5px 12px; border-radius: 20px; font-size: 10px; font-weight: bold; cursor: pointer;">
+      ⏹️ TOUR BEENDEN
+    </div>
+  </div>
+</div>
+
+<div class="pros-cons">
+  <div class="pros">
+    <h4>Warum das besser ist:</h4>
+    <ul>
+      <li><b>Visuelle Führung:</b> Man sieht die Route auf der Karte weiterhin.</li>
+      <li><b>Status-Overlay:</b> Das Cockpit ist nur eine "Card", die über der Karte schwebt.</li>
+      <li><b>Audio-Control:</b> Man kann das Audio manuell triggern oder pausieren, ohne die Karte zu verlassen.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="section">
+  <p class="label">Idee für den Test</p>
+  <p>Wenn das Team läuft, kann die Card beim Gehen <b>kleiner</b> werden (nur Distanz) und <b>aufklappen</b>, sobald man am Ziel ist.</p>
+</div>

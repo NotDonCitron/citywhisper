@@ -420,29 +420,82 @@ async def proxy_image(url: str = Query(..., description="URL-encoded image URL")
         print(f"[PROXY_DEBUG] Unexpected error for {url}: {e}")
         return FileResponse("backend/static/fallback.svg", media_type="image/svg+xml")
 
-async def generate_script(poi, persona_id="insider", user_categories: List[str] = []):
+async def generate_script(target_data, target_type="poi", persona_id="insider", user_categories: List[str] = []):
+    """
+    Generates a script for either a POI or a Geofence Zone.
+    target_data: either a POI dict or a Geofence dict.
+    """
     persona = PERSONAS.get(persona_id, PERSONAS["insider"])
-    page = wiki_wiki.page(poi["name"])
-    facts = page.summary[:1000] if page.exists() else f"Ort: {poi['name']}."
-    
+    name = target_data["name"]
+
+    # Semantic Grounding
+    page = wiki_wiki.page(name)
+    facts = page.summary[:1000] if page.exists() else f"Ort/Zone: {name}."
+
     # Context-aware prompting
-    poi_cats = poi.get("categories", [])
-    matched_cats = [c for c in poi_cats if c in user_categories]
-    
-    prompt = f"{persona['prompt_style']} KONTEXT: Wir stehen vor {poi['name']}. "
-    if matched_cats:
-        prompt += f"Interessen-Match: Der Nutzer interessiert sich besonders für {', '.join(matched_cats)}. Betone diese Aspekte. "
-    prompt += f"Kategorien des Ortes: {', '.join(poi_cats)}. STIL: Kein Name, ca. 80 Wörter. FAKTEN: {facts}"
-    
+    categories = target_data.get("categories", []) if target_type == "poi" else []
+    matched_cats = [c for c in categories if c in user_categories]
+
+    if target_type == "geofence":
+        prompt = (
+            f"{persona['prompt_style']} Wir betreten gerade die Zone '{name}'. "
+            f"Gib eine kurze, atmosphärische Einführung (ca. 50 Wörter). "
+            f"Beschreibe den Charakter dieses Stadtteils/Areals. "
+            f"FAKTEN: {facts}"
+        )
+    else:
+        prompt = (
+            f"{persona['prompt_style']} Wir stehen vor {name}. "
+            f"{f'Interessen-Match: Der Nutzer mag {', '.join(matched_cats)}.' if matched_cats else ''} "
+            f"Erzähle eine spannende Geschichte dazu (ca. 80 Wörter). "
+            f"FAKTEN: {facts}"
+        )
+
     if groq_client:
         try:
-            completion = groq_client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role": "user", "content": prompt}], temperature=0.8)
+            completion = groq_client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.8
+            )
             return completion.choices[0].message.content
         except Exception as e:
             print(f"Groq error: {e}")
             pass
-    return f"Schau dir das mal an. Wir stehen hier am {poi['name']}."
 
+    return f"Willkommen in {name}. Ein wirklich interessanter Ort."
+
+@app.get("/geofence/{geofence_id}/audio")
+async def get_geofence_audio(geofence_id: str, persona: str = "insider"):
+    from database import get_db
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM geofences WHERE id = ?", (geofence_id,))
+    row = cursor.fetchone()
+    conn.close()
+
+    if not row: raise HTTPException(404, "Geofence not found")
+    fence = dict(row)
+
+    audio_path = f"{AUDIO_DIR}/fence_{geofence_id}_{persona}.mp3"
+    script_path = f"{AUDIO_DIR}/fence_{geofence_id}_{persona}.txt"
+
+    if os.path.exists(audio_path):
+        with open(script_path, "r", encoding="utf-8") as f: script = f.read()
+        return {"id": geofence_id, "audio_url": f"/static/audio/{os.path.basename(audio_path)}", "script": script, "type": "geofence"}
+
+    script = await generate_script(fence, target_type="geofence", persona_id=persona)
+    with open(script_path, "w", encoding="utf-8") as f: f.write(script)
+
+    voice = "de-DE-KatjaNeural" if persona == "insider" else "de-DE-KillianNeural"
+    try:
+        communicate = edge_tts.Communicate(script, voice)
+        await communicate.save(audio_path)
+    except Exception as e:
+        print(f"Edge-TTS error: {e}")
+        return {"id": geofence_id, "audio_url": None, "script": script, "error": "TTS failed"}
+
+    return {"id": geofence_id, "audio_url": f"/static/audio/{os.path.basename(audio_path)}", "script": script, "type": "geofence"}
 class RouteRequest(BaseModel):
     poi_ids: List[str]
     start_poi_id: Optional[str] = None
@@ -450,15 +503,14 @@ class RouteRequest(BaseModel):
 
 @app.post("/route")
 async def get_optimized_route(req: RouteRequest):
+    print(f"DEBUG: Route request received. POIs: {req.poi_ids}, Start Loc: {req.start_location}")
     if not MAPBOX_ACCESS_TOKEN: raise HTTPException(500, "Token missing")
+    
     all_pois = get_all_pois()
     selected_pois = [p for p in all_pois if p["id"] in req.poi_ids]
     
     if len(selected_pois) < 2:
         raise HTTPException(400, "At least 2 POIs required")
-    
-    # Build route points list
-    route_points = [{"id": p["id"], "lat": p["lat"], "lng": p["lng"], "is_poi": True} for p in selected_pois]
     
     # Mapbox API parameters
     params = {
@@ -468,31 +520,104 @@ async def get_optimized_route(req: RouteRequest):
         "steps": "false"
     }
     
+    # Build route points list
+    route_points = [{"id": p["id"], "lat": p["lat"], "lng": p["lng"], "is_poi": True} for p in selected_pois]
+    
     # Handle start point selection
     if req.start_location:
-        # Use current location as start point
-        lat, lng = req.start_location[1], req.start_location[0]  # [lng, lat] -> lat, lng
+        # Mapbox Optimized Trips limit is 12 total. 
+        # If we add GPS start, we must limit POIs to 11.
+        if len(route_points) > 11:
+            route_points = route_points[:11]
+            
+        lat, lng = req.start_location[1], req.start_location[0]
+        # Insert current location at the beginning
         route_points.insert(0, {"id": "__start_location__", "lat": lat, "lng": lng, "is_poi": False})
-        params.update({"source": "first", "destination": "any", "roundtrip": "false"})
+        params.update({
+            "source": "first",
+            "roundtrip": "false"
+        })
     elif req.start_poi_id:
-        # Use selected POI as start point
         start = next((p for p in selected_pois if p["id"] == req.start_poi_id), None)
         if start:
-            # Reorder: start POI first, then others
             route_points = [
                 {"id": start["id"], "lat": start["lat"], "lng": start["lng"], "is_poi": True}
             ] + [
                 {"id": p["id"], "lat": p["lat"], "lng": p["lng"], "is_poi": True}
                 for p in selected_pois if p["id"] != req.start_poi_id
             ]
-            params.update({"source": "first", "destination": "any", "roundtrip": "false"})
+            params.update({
+                "source": "first",
+                "roundtrip": "false"
+            })
+    else:
+        params.update({"roundtrip": "true"})
     
-    # Build coordinates string for Mapbox API
     coords = ";".join([f"{p['lng']},{p['lat']}" for p in route_points])
     url = f"https://api.mapbox.com/optimized-trips/v1/mapbox/walking/{coords}"
     
+    print(f"DEBUG: Mapbox Request: {url} | Params: {params}")
+    
     response = requests.get(url, params=params)
     data = response.json()
+
+    # Robust Fallback Logic
+    if response.status_code != 200 or "trips" not in data or not data["trips"]:
+        print(f"DEBUG: Mapbox Optimization failed. Status: {response.status_code}")
+        print("DEBUG: Falling back to distance-sorted Directions API...")
+        
+        # Smart Fallback: Sort POIs by distance from start_location manually
+        remaining_pois = selected_pois.copy()
+        sorted_route_pois = []
+        
+        # Start reference point
+        curr_lat, curr_lng = (req.start_location[1], req.start_location[0]) if req.start_location else (selected_pois[0]["lat"], selected_pois[0]["lng"])
+        
+        while remaining_pois:
+            # Find nearest POI to current position
+            nearest = min(remaining_pois, key=lambda p: (p["lat"]-curr_lat)**2 + (p["lng"]-curr_lng)**2)
+            sorted_route_pois.append(nearest)
+            remaining_pois.remove(nearest)
+            curr_lat, curr_lng = nearest["lat"], nearest["lng"]
+
+        # Build coordinates for Directions API
+        fallback_points = []
+        if req.start_location:
+            fallback_points.append({"lng": req.start_location[0], "lat": req.start_location[1]})
+        
+        for p in sorted_route_pois:
+            fallback_points.append({"lng": p["lng"], "lat": p["lat"]})
+            
+        f_coords = ";".join([f"{p['lng']},{p['lat']}" for p in fallback_points])
+        d_url = f"https://api.mapbox.com/directions/v5/mapbox/walking/{f_coords}"
+        d_params = {"access_token": MAPBOX_ACCESS_TOKEN, "geometries": "geojson", "overview": "full"}
+        
+        d_res = requests.get(d_url, params=d_params)
+        d_data = d_res.json()
+        
+        if d_res.status_code != 200 or "routes" not in d_data or not d_data["routes"]:
+            raise HTTPException(d_res.status_code, "Directions fallback failed")
+            
+        return {
+            "geometry": d_data["routes"][0]["geometry"],
+            "duration": d_data["routes"][0]["duration"],
+            "optimized_poi_order": [p["id"] for p in sorted_route_pois]
+        }
+
+    # Success with optimized trip
+    ordered_pois = []
+    for wp in data.get("waypoints", []):
+        orig_idx = wp.get("waypoint_index")
+        if orig_idx is not None and orig_idx < len(route_points):
+            pt = route_points[orig_idx]
+            if pt["is_poi"]:
+                ordered_pois.append(pt["id"])
+    
+    return {
+        "geometry": data["trips"][0]["geometry"],
+        "duration": data["trips"][0]["duration"],
+        "optimized_poi_order": ordered_pois
+    }
     
     if "trips" not in data or not data["trips"]:
         raise HTTPException(400, data.get("message", "Route could not be generated"))
@@ -521,13 +646,21 @@ async def root():
     return FileResponse(path)
 
 @app.get("/manifest.json")
-async def manifest(): return FileResponse("manifest.json")
+async def manifest(): return FileResponse("../manifest.json")
 
 @app.get("/sw.js")
-async def service_worker(): return FileResponse("sw.js", media_type="application/javascript")
+async def service_worker(): return FileResponse("../sw.js", media_type="application/javascript")
 
 @app.get("/pois")
 async def get_pois(): return get_all_pois()
+
+@app.get("/geofence/check")
+async def check_current_geofence(lat: float = Query(...), lng: float = Query(...)):
+    from database import check_geofences
+    fence = check_geofences(lat, lng)
+    if not fence:
+        return {"id": None}
+    return fence
 
 @app.get("/discover")
 async def discover_pois(categories: List[str] = Query([])):

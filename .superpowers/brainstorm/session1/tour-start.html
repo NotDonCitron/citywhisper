@@ -1,0 +1,31 @@
+<h2>Konzept: Tour-Start & Aktivierung</h2>
+<p class="subtitle">Wie stellen wir sicher, dass Audio und GPS zuverlässig starten?</p>
+
+<div class="options" data-multiselect>
+  <div class="option" data-choice="start-button" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>"Tour Starten" Button</h3>
+      <p>Explizite User-Geste schaltet Audio-Kontext frei. Fokus auf eine geplante Route (TRK-003).</p>
+    </div>
+  </div>
+  <div class="option" data-choice="free-roam" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>"Free Roam" Modus</h3>
+      <p>App läuft im Hintergrund, Audio triggert bei Annäherung. Maximale Freiheit, höheres Risiko für Autoplay-Sperren.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="guided-intro" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Guided Intro</h3>
+      <p>Erster POI wird manuell gestartet ("Check-In"). Kalibriert GPS und stellt sicher, dass der Sound an ist.</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <p class="label">Technischer Hinweis</p>
+  <p>Da Browser Audio ohne Interaktion oft blockieren, ist <b>Option A oder C</b> für einen Feldtest sicherer.</p>
+</div>

@@ -39,7 +39,18 @@ def init_db():
             value TEXT
         )
         """)
-        
+
+        # Geofences Table (for Districts, Areas, Paths)
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS geofences (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            type TEXT NOT NULL, -- 'area', 'district', 'path'
+            geometry TEXT NOT NULL, -- GeoJSON string
+            priority INTEGER DEFAULT 1
+        )
+        """)
+
         conn.commit()
         conn.close()
         return True
@@ -47,6 +58,47 @@ def init_db():
         print(f"Database initialization error: {e}")
         return False
 
+from shapely.geometry import shape, Point
+
+def check_geofences(lat: float, lng: float):
+    """
+    Check if a point is inside any defined geofence polygon.
+    Returns the matching geofence with the highest priority.
+    """
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM geofences ORDER BY priority DESC")
+        rows = cursor.fetchall()
+        conn.close()
+
+        point = Point(lng, lat) # GeoJSON is usually [lng, lat]
+
+        for row in rows:
+            geo_data = json.loads(row["geometry"])
+            polygon = shape(geo_data)
+            if polygon.contains(point):
+                return dict(row)
+        return None
+    except Exception as e:
+        print(f"Error checking geofences: {e}")
+        return None
+
+def save_geofence(id: str, name: str, fence_type: str, geometry: dict, priority: int = 1):
+    """Save or update a geofence."""
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("""
+        INSERT OR REPLACE INTO geofences (id, name, type, geometry, priority)
+        VALUES (?, ?, ?, ?, ?)
+        """, (id, name, fence_type, json.dumps(geometry), priority))
+        conn.commit()
+        conn.close()
+        return True
+    except sqlite3.Error as e:
+        print(f"Error saving geofence: {e}")
+        return False
 def save_poi(poi: dict):
     """Save or update a POI. Returns True on success."""
     try:

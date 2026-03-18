@@ -1,0 +1,2892 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CityWhisper – Schönau & Mannheim</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0ea5e9">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="./static/js/db.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0e1a;
+            color: white;
+            margin: 0;
+            overflow: hidden;
+            height: 100vh;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #map {
+            height: 100vh;
+            width: 100vw;
+            z-index: 1;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: #0a0e1a;
+        }
+
+        .leaflet-tile-container img {
+            filter: brightness(0.8) contrast(1.2) saturate(0.8);
+        }
+
+        .leaflet-container {
+            background: #0a0e1a !important;
+            outline: 0;
+        }
+
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 100;
+            pointer-events: none;
+            width: 100%;
+            height: 100%;
+        }
+
+        .pointer-all {
+            pointer-events: auto;
+        }
+
+        /* Better Marker Animations */
+        @keyframes fadeInScale {
+            0% {
+                opacity: 0;
+                transform: scale(0.5) translateY(10px);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        /* Animated Route - Dual Layer with Flow */
+        .route-glow {
+            filter: drop-shadow(0 0 8px rgba(14, 165, 233, 0.8));
+        }
+
+        .route-core {
+            animation: routeFlow 2s linear infinite;
+        }
+
+        @keyframes routeFlow {
+            0% {
+                stroke-dashoffset: 0;
+            }
+
+            100% {
+                stroke-dashoffset: -30;
+            }
+        }
+
+        /* Glow Animation */
+        .route-glow-anim {
+            animation: glowPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% {
+                filter: drop-shadow(0 0 4px rgba(14, 165, 233, 0.5));
+                stroke-width: 6;
+            }
+            50% {
+                filter: drop-shadow(0 0 12px rgba(14, 165, 233, 1));
+                stroke-width: 8;
+            }
+        }
+
+        /* Breathe Animation */
+        .route-breathe {
+            animation: breatheLine 3s ease-in-out infinite;
+        }
+
+        @keyframes breatheLine {
+            0%, 100% {
+                opacity: 0.4;
+                stroke-width: 5;
+            }
+            50% {
+                opacity: 0.9;
+                stroke-width: 8;
+            }
+        }
+
+        /* Rainbow Animation */
+        .route-rainbow {
+            animation: rainbowFlow 1s linear infinite;
+        }
+
+        @keyframes rainbowFlow {
+            to {
+                stroke-dashoffset: -74;
+            }
+        }
+
+        /* Particle Animation */
+        .route-particle {
+            animation: particleTrail 1.2s linear infinite;
+        }
+
+        @keyframes particleTrail {
+            to {
+                stroke-dashoffset: -42;
+            }
+        }
+
+        .route-pulse {
+            animation: routePulse 1.5s ease-out;
+        }
+
+        @keyframes routePulse {
+            0% {
+                stroke-width: 12;
+                opacity: 0.6;
+            }
+
+            100% {
+                stroke-width: 6;
+                opacity: 1;
+            }
+        }
+
+        .custom-marker {
+            position: relative;
+            width: 40px;
+            height: 40px;
+            animation: fadeInScale 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .marker-dot {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #0ea5e9;
+            border: 3px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .custom-marker:active .marker-dot {
+            transform: scale(0.9);
+        }
+
+        .user-location-dot {
+            width: 22px;
+            height: 22px;
+            background: #4285F4;
+            border: 3px solid white;
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(66, 133, 244, 0.6);
+            position: relative;
+        }
+
+        .user-location-dot::after {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            border-radius: 50%;
+            background: rgba(66, 133, 244, 0.2);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: scale(2.5);
+                opacity: 0;
+            }
+        }
+
+        .user-tooltip {
+            background: white;
+            border: none;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-weight: 600;
+            font-size: 12px;
+            color: #333;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .user-tooltip::before {
+            border-top-color: white;
+        }
+
+        /* Backdrop - removed for better visibility */
+
+        /* Better Bottom Sheet */
+        .bottom-sheet {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            background: #141827;
+            border-radius: 32px 32px 0 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: none;
+            transform: translateY(100%);
+            transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+            z-index: 300;
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+            max-height: 92vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .bottom-sheet.open {
+            transform: translateY(0);
+        }
+
+        .sheet-handle {
+            width: 40px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            margin: 12px auto;
+            flex-shrink: 0;
+        }
+
+        .poi-hero-img {
+            position: relative;
+            width: 100%;
+            height: 240px;
+            overflow: hidden;
+            background: #1a1f2e;
+            flex-shrink: 0;
+        }
+
+        .poi-hero-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.8s ease;
+        }
+
+        .bottom-sheet.open .poi-hero-img img {
+            transform: scale(1.05);
+        }
+
+        .poi-hero-img::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 60%;
+            background: linear-gradient(to top, #141827, transparent);
+        }
+
+        /* Native Modals */
+        .app-modal {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 400;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            pointer-events: none;
+            height: 100vh;
+        }
+
+        .modal-content {
+            width: 100%;
+            max-width: 500px;
+            background: #141827;
+            border-radius: 32px 32px 0 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 24px;
+            transform: translateY(105%);
+            transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+            pointer-events: auto;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 -20px 50px rgba(0, 0, 0, 0.6);
+        }
+
+        .app-modal.open .modal-content {
+            transform: translateY(0);
+        }
+
+        .audio-player {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 24px;
+            padding: 16px;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            margin: 14px 0 0 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #0ea5e9;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        .control-btn {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .control-btn:active {
+            transform: scale(0.9);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .control-btn.on {
+            background: #0ea5e9;
+            color: white;
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
+        }
+
+        @keyframes pulse-blue {
+            0% {
+                box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 15px rgba(14, 165, 233, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(14, 165, 233, 0);
+            }
+        }
+
+        .pulse-blue {
+            animation: pulse-blue 2s infinite;
+            border-color: #0ea5e9 !important;
+        }
+
+        .download-progress-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 12px;
+            margin-top: 10px;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: rgba(20, 24, 39, 0.85);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 500;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-item.active {
+            color: #0ea5e9;
+        }
+
+        .nav-icon {
+            font-size: 20px;
+        }
+
+        .poi-chip {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        /* Debug Panel Styles */
+        .debug-btn {
+            position: fixed;
+            bottom: 85px;
+            right: 20px;
+            z-index: 600;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+        }
+
+        .debug-btn:hover {
+            background: #dc2626;
+            transform: scale(1.1);
+        }
+
+        .debug-panel {
+            position: fixed;
+            bottom: 140px;
+            right: 20px;
+            width: 320px;
+            max-height: 60vh;
+            background: rgba(0, 0, 0, 0.95);
+            border: 1px solid #ef4444;
+            border-radius: 12px;
+            padding: 16px;
+            z-index: 601;
+            overflow-y: auto;
+            font-size: 11px;
+            color: #ccc;
+            display: none;
+            font-family: monospace;
+            pointer-events: auto;
+        }
+
+        .debug-panel.open {
+            display: block;
+        }
+
+        .debug-panel h4 {
+            color: #ef4444;
+            margin: 0 0 10px 0;
+            font-size: 13px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 8px;
+        }
+
+        .debug-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px solid #222;
+        }
+
+        .debug-label {
+            color: #888;
+        }
+
+        .debug-value {
+            color: #0ea5e9;
+            text-align: right;
+            word-break: break-all;
+            max-width: 180px;
+        }
+
+        .debug-log {
+            margin-top: 12px;
+            padding: 8px;
+            background: #111;
+            border-radius: 6px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .debug-log-entry {
+            padding: 2px 0;
+            font-size: 10px;
+        }
+
+        .debug-log-entry.error {
+            color: #ef4444;
+        }
+
+        .debug-log-entry.success {
+            color: #22c55e;
+        }
+
+        .debug-log-entry.info {
+            color: #3b82f6;
+        }
+
+        .poi-chip:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        .poi-chip.selected {
+            background: #0ea5e9;
+            border-color: #0ea5e9;
+        }
+
+        .persona-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: transparent;
+            border: 2px solid transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .persona-btn.active {
+            background: #0ea5e9;
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+        }
+
+        .glass-card.selected {
+            border-color: #0ea5e9;
+            background: rgba(14, 165, 233, 0.1);
+        }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        /* Living Cockpit Styles */
+        :root {
+            --cat-history: #f59e0b;
+            --cat-art: #ec4899;
+            --cat-architecture: #0ea5e9;
+            --cat-subculture: #8b5cf6;
+            --cat-default: #334155;
+            --pulse-color: var(--cat-default);
+        }
+
+        /* Waveform Visualizer */
+        .waveform {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            height: 12px;
+            margin-left: 8px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .waveform.active {
+            opacity: 1;
+        }
+
+        .waveform-bar {
+            width: 2px;
+            height: 4px;
+            background-color: #0ea5e9;
+            border-radius: 1px;
+            animation: wave 1s ease-in-out infinite;
+            animation-play-state: paused;
+        }
+
+        .waveform.active .waveform-bar {
+            animation-play-state: running;
+        }
+
+        .waveform-bar:nth-child(2) { animation-delay: 0.1s; }
+        .waveform-bar:nth-child(3) { animation-delay: 0.2s; }
+        .waveform-bar:nth-child(4) { animation-delay: 0.3s; }
+
+        @keyframes wave {
+            0%, 100% { height: 4px; }
+            50% { height: 12px; }
+        }
+
+        /* Ambient Glow */
+        #cockpitAmbientGlow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 1.2s ease-in-out;
+            background: radial-gradient(circle at 50% 50%, var(--glow-color, rgba(14, 165, 233, 0.15)) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        #activeTourCockpit.cockpit-expanded #cockpitAmbientGlow {
+            opacity: 1;
+        }
+
+        /* Text Reveal */
+        .script-paragraph {
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .script-paragraph.visible {
+            opacity: 0.7; /* Match the existing opacity-70 */
+            transform: translateY(0);
+        }
+
+        @keyframes cockpitPulse {
+            0%, 100% { opacity: 0.9; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.01); box-shadow: 0 0 30px var(--pulse-color); }
+        }
+
+        .pulse-active { 
+            animation: cockpitPulse 2s infinite ease-in-out;
+            border-color: var(--pulse-color) !important;
+            background: rgba(15, 23, 42, 0.95) !important;
+        }
+
+        /* Morphing Animation for Cockpit */
+        #activeTourCockpit {
+            position: fixed;
+            bottom: 90px;
+            left: 50%;
+            transform: translateX(-50%) translateY(150%);
+            width: 92%;
+            max-width: 500px;
+            z-index: 500;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(24px);
+            padding: 24px;
+            border-radius: 36px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255,255,255,0.05) inset;
+            transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            pointer-events: auto;
+            min-height: 180px;
+            max-height: 180px;
+        }
+
+        #activeTourCockpit.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        #activeTourCockpit.cockpit-expanded {
+            bottom: 20px !important;
+            min-height: auto !important;
+            max-height: 85vh !important;
+            width: 92% !important;
+            max-width: 500px !important;
+            border-radius: 36px !important;
+            padding: 0 !important;
+            z-index: 600;
+        }
+
+        #activeTourCockpit .detail-content {
+            opacity: 0;
+            visibility: hidden;
+            max-height: 0;
+            transition: opacity 0.5s ease, visibility 0.5s, max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        #activeTourCockpit.cockpit-expanded .detail-content {
+            visibility: visible;
+            opacity: 1;
+            max-height: 1000px;
+            overflow-y: auto;
+        }
+
+        #cockpitPoiImg {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            filter: blur(10px);
+            transition: opacity 0.8s ease, filter 0.8s ease, transform 0.8s ease;
+        }
+
+        #activeTourCockpit.cockpit-expanded #cockpitPoiImg {
+            filter: blur(0px);
+            /* opacity is handled by JS loadPoiImage but we set a transition target here */
+        }
+
+        #activeTourCockpit.cockpit-expanded .cockpit-header {
+            padding: 24px 24px 0 24px;
+        }
+
+        #cockpitTargetName, #poiName {
+            transition: font-size 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), all 0.5s ease;
+        }
+
+        #activeTourCockpit.cockpit-expanded #cockpitTargetName {
+            font-size: 1.875rem; /* 3xl */
+            line-height: 2.25rem;
+        }
+
+        #activeTourCockpit.cockpit-expanded .cockpit-controls {
+            display: none;
+        }
+
+        #activeTourCockpit .sheet-handle {
+            display: none;
+        }
+
+        #activeTourCockpit.cockpit-expanded .sheet-handle {
+            display: block;
+            cursor: pointer;
+        }
+
+        /* Fix for white dropdown menu background */
+        select option {
+            background-color: #141827;
+            color: white;
+            padding: 12px;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #0ea5e9;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+    <div id="backdrop" class="backdrop pointer-all" onclick="closeAll()"></div>
+
+    <div class="ui-layer">
+        <!-- Top Bar -->
+        <div class="fixed top-0 left-0 right-0 p-4 flex justify-between items-center z-[100] pointer-events-none">
+            <div
+                class="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 pointer-events-auto flex items-center gap-2">
+                <span class="font-bold text-[#0ea5e9]">City</span>Whisper
+                <span id="activePersonaBadge" class="ml-1 opacity-50 text-xs">📜</span>
+            </div>
+            <div id="statusIndicators" class="flex gap-1 pointer-events-auto">
+                <span id="offlineIndicator" class="w-2 h-2 rounded-full bg-red-500 hidden animate-pulse"></span>
+                <span id="onlineIndicator" class="w-2 h-2 rounded-full bg-green-500"></span>
+            </div>
+        </div>
+
+        <!-- Bottom Nav -->
+        <div class="bottom-nav pointer-events-auto">
+            <div class="nav-item active" onclick="switchTab('map')">
+                <span class="nav-icon">📍</span>
+                <span>Karte</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('discover')">
+                <span class="nav-icon">✨</span>
+                <span>Entdecken</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('tour')">
+                <span class="nav-icon">🗺️</span>
+                <span>Tour</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('prefs')">
+                <span class="nav-icon">👤</span>
+                <span>Profil</span>
+            </div>
+        </div>
+
+        <!-- Debug Button -->
+        <button class="debug-btn" onclick="toggleDebug()" title="Debug Info">🐞</button>
+
+        <!-- Debug Panel -->
+        <div id="debugPanel" class="debug-panel">
+            <h4>🐞 Debug Info</h4>
+            <div id="debugContent"></div>
+            <div id="debugLog" class="debug-log"></div>
+            <button onclick="toggleGpsMock()" id="gpsMockBtn"
+                style="margin-top:10px;width:100%;padding:8px;background:#0ea5e9;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:bold;">📍 Simuliere Mannheim</button>
+            <button onclick="runStressTest()" id="stressTestBtn"
+                style="margin-top:5px;width:100%;padding:8px;background:#8b5cf6;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:bold;">🚀 Stress-Test (High Speed)</button>
+            <button onclick="runFullAutoTest()" id="autoTestBtn"
+                style="margin-top:5px;width:100%;padding:10px;background:#f59e0b;color:#000;border:none;border-radius:6px;cursor:pointer;font-weight:900;text-transform:uppercase;">✨ Full Auto-Test (MA)</button>
+            <button onclick="refreshDebug()"
+                style="margin-top:10px;width:100%;padding:8px;background:#333;color:#fff;border:none;border-radius:6px;cursor:pointer;">🔄
+                Aktualisieren</button>
+            <button onclick="clearDebugLog()"
+                style="margin-top:5px;width:100%;padding:6px;background:#222;color:#888;border:none;border-radius:6px;cursor:pointer;font-size:10px;">Log
+                löschen</button>
+        </div>
+
+        <!-- Active Tour Cockpit -->
+        <div id="activeTourCockpit" class="fixed bottom-24 left-4 right-4 z-[500] bg-slate-900/90 backdrop-blur-md p-5 rounded-[32px] border border-white/10 shadow-2xl transition-all duration-500 translate-y-[150%] pointer-events-auto hidden">
+            <div id="cockpitAmbientGlow"></div>
+            <div class="sheet-handle" onclick="closeSheet()"></div>
+            
+            <div class="detail-content" id="cockpitHeroContainer">
+                <div class="poi-hero-img"><img src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" id="cockpitPoiImg" alt=""></div>
+            </div>
+
+            <div class="cockpit-header">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <p id="cockpitLabel" class="text-[10px] font-black uppercase tracking-widest text-sky-400 mb-1">Nächster Halt</p>
+                        <h3 id="cockpitTargetName" class="text-xl font-bold transition-all duration-500">Wasserturm</h3>
+                        <p id="cockpitPoiCity" class="text-[#0ea5e9] text-xs font-black tracking-[0.1em] uppercase mt-1 hidden">Stadt</p>
+                    </div>
+                    <div id="cockpitDistBadge" class="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-xs font-bold border border-emerald-500/30">
+                        ~ 0m
+                    </div>
+                </div>
+                
+                <div class="h-1 bg-white/10 rounded-full overflow-hidden mb-4">
+                    <div id="cockpitProgress" class="h-full bg-sky-500 transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="detail-content px-6 pb-10 overflow-y-auto">
+                <div class="audio-player shadow-inner">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <div class="bg-[#0ea5e9] text-white w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-lg shadow-[#0ea5e9]/30">🎙️</div>
+                            <div>
+                                <div class="flex items-center">
+                                    <div class="text-[10px] font-black uppercase tracking-[0.15em] opacity-30 mb-0.5">Guide Audio</div>
+                                    <div id="cockpitWaveform" class="waveform">
+                                        <div class="waveform-bar"></div>
+                                        <div class="waveform-bar"></div>
+                                        <div class="waveform-bar"></div>
+                                        <div class="waveform-bar"></div>
+                                    </div>
+                                </div>
+                                <div class="text-sm font-bold text-white/90" id="cockpitAudioStatus">Bereit</div>
+                            </div>
+                        </div>
+                        <button onclick="togglePlayback()" id="cockpitPlayPauseBtn" class="bg-white text-black w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold shadow-xl">▶️</button>
+                    </div>
+                    <div class="progress-bar">
+                        <div id="cockpitProgressFill" class="progress-fill"></div>
+                    </div>
+                </div>
+
+                <div id="cockpitScriptText" class="text-[16px] leading-[1.6] opacity-70 font-medium pb-8"></div>
+            </div>
+
+            <div class="cockpit-controls flex gap-2 mt-1">
+                <button onclick="endTour()" class="flex-1 bg-red-500/10 text-red-500 py-3 rounded-2xl text-xs font-bold border border-red-500/20">TOUR BEENDEN</button>
+                <button onclick="toggleMapFocus()" id="mapFocusBtn" class="flex-1 bg-white/5 text-white py-3 rounded-2xl text-xs font-bold border border-white/10">KARTE FIXIEREN</button>
+            </div>
+        </div>
+
+        <!-- Discovery Modal - Centered for Desktop -->
+        <div id="discoveryModal" class="app-modal centered"
+            style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 90%; max-height: 90vh; width: 500px;">
+            <div class="modal-content" style="max-height: 85vh; overflow-y: auto;">
+                <div class="sheet-handle mb-2"></div>
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold">Entdeckungen ✨</h2>
+                    <button onclick="toggleDiscovery()"
+                        class="p-2 opacity-50 hover:opacity-100 transition-opacity">✕</button>
+                </div>
+                <p class="text-sm opacity-60 mb-6">Basierend auf deinen Interessen haben wir diese Orte für dich
+                    gefunden:</p>
+
+                <div id="discoveryList" class="space-y-3 mb-6 pr-1">
+                    <!-- Discovery items will be injected here -->
+                </div>
+
+                <div class="flex flex-col gap-2 mt-6">
+                    <button onclick="generateRouteFromDiscovery()" id="startDiscoveryTourBtn"
+                        class="w-full bg-[#0ea5e9] text-white py-4 rounded-2xl font-bold shadow-lg shadow-[#0ea5e9]/20">
+                        Tour mit Auswahl starten
+                    </button>
+                    <button onclick="addAllDiscovery()"
+                        class="w-full bg-white/5 text-white/60 py-3 rounded-2xl text-xs font-bold border border-white/10">
+                        Alle Ergebnisse hinzufügen
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preferences Modal -->
+        <div id="preferencesModal" class="app-modal">
+            <div class="modal-content !pb-24">
+                <div class="sheet-handle mb-4"></div>
+                <h2 class="text-2xl font-bold mb-6">Dein Profil 👤</h2>
+
+                <!-- Section 1: Persona -->
+                <div class="mb-8">
+                    <h3 class="text-xs font-bold uppercase tracking-widest opacity-40 mb-4">Erzähl-Stil</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div onclick="selectPersona('historian')" id="p-historian"
+                            class="p-4 rounded-2xl border-2 border-white/5 bg-white/5 transition-all cursor-pointer">
+                            <div class="text-2xl mb-2">📜</div>
+                            <div class="font-bold text-sm">Historiker</div>
+                            <div class="text-[10px] opacity-50">Faktisch & Präzise</div>
+                        </div>
+                        <div onclick="selectPersona('insider')" id="p-insider"
+                            class="p-4 rounded-2xl border-2 border-white/5 bg-white/5 transition-all cursor-pointer">
+                            <div class="text-2xl mb-2">🕶️</div>
+                            <div class="font-bold text-sm">Insiderin</div>
+                            <div class="text-[10px] opacity-50">Locker & Modern</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Kategorien -->
+                <div class="mb-8">
+                    <h3 class="text-xs font-bold uppercase tracking-widest opacity-40 mb-4">Interessen</h3>
+                    <div id="categoryGrid" class="grid grid-cols-2 gap-2">
+                        <!-- Categories will be injected here -->
+                    </div>
+                </div>
+
+
+                <!-- Section 3: System / Offline -->
+                <div class="mb-8 pt-8 border-t border-white/10">
+                    <h3 class="text-xs font-bold uppercase tracking-widest opacity-40 mb-4">System & Offline</h3>
+                    <div id="storageInfo" class="text-xs opacity-50 mb-4">Speicher wird berechnet...</div>
+                    <div class="space-y-3" id="downloadControls">
+                        <div
+                            class="flex items-center justify-between bg-white/5 p-3 rounded-2xl border border-white/10">
+                            <div>
+                                <div class="font-bold text-sm">Mannheim</div>
+                                <div class="text-[10px] opacity-40 uppercase" id="status-Mannheim">Bereit</div>
+                            </div>
+                            <button onclick="startCityDownload('Mannheim')" id="btn-Mannheim"
+                                class="bg-[#0ea5e9]/20 text-[#0ea5e9] px-4 py-2 rounded-xl text-xs font-bold border border-[#0ea5e9]/30">Download</button>
+                        </div>
+                        <div
+                            class="flex items-center justify-between bg-white/5 p-3 rounded-2xl border border-white/10">
+                            <div>
+                                <div class="font-bold text-sm">Schönau</div>
+                                <div class="text-[10px] opacity-40 uppercase" id="status-Schoenau">Bereit</div>
+                            </div>
+                            <button onclick="startCityDownload('Schoenau')" id="btn-Schoenau"
+                                class="bg-[#0ea5e9]/20 text-[#0ea5e9] px-4 py-2 rounded-xl text-xs font-bold border border-[#0ea5e9]/30">Download</button>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-2 mt-4">
+                        <div
+                            class="flex justify-between items-center bg-white/5 p-3 rounded-2xl border border-white/10">
+                            <span class="text-sm font-bold">Auto-Play ⚡</span>
+                            <button id="autoPlayToggle" onclick="toggleAutoPlay()" class="text-xl">🔘</button>
+                        </div>
+                        <div
+                            class="flex justify-between items-center bg-white/5 p-3 rounded-2xl border border-white/10">
+                            <span class="text-sm font-bold">Ton an/aus 🔊</span>
+                            <button id="audioMasterToggle" onclick="toggleAudioMaster()" class="text-xl">🔊</button>
+                        </div>
+                    </div>
+                    <button onclick="clearOfflineData()"
+                        class="w-full mt-6 text-[10px] opacity-30 uppercase font-bold tracking-widest hover:opacity-100 transition-opacity">Alle
+                        Offline-Daten löschen</button>
+                </div>
+
+                <button onclick="savePreferences()"
+                    class="w-full bg-[#0ea5e9] text-white py-4 rounded-2xl font-bold shadow-lg shadow-[#0ea5e9]/20">Speichern</button>
+            </div>
+        </div>
+
+        <button id="recenterBtn" onclick="enableFollow()"
+            class="absolute bottom-10 right-6 pointer-all bg-[#0ea5e9] text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-xl hover:scale-110 transition-all hidden"
+            style="z-index: 200;">🎯</button>
+
+        <div id="routeBuilder" class="absolute bottom-24 left-1/2 -translate-x-1/2 pointer-all hidden w-[92%] max-w-sm"
+            style="z-index: 250;">
+            <div class="bg-[#141827]/95 p-6 rounded-[32px] border border-white/10 shadow-2xl">
+                <h3 class="text-sm font-bold mb-4 flex items-center gap-2">📍 Tour zusammenstellen</h3>
+                <div id="poiList" class="flex flex-wrap gap-2 mb-6 max-h-40 overflow-y-auto pr-1"></div>
+                <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold opacity-80">Routen-Animation</label>
+                    <select id="routeAnimationSelect" onchange="setRouteAnimation(this.value)"
+                        class="w-full bg-white/5 text-white py-3 px-4 rounded-2xl text-sm font-semibold border border-white/10 mb-2">
+                        <option value="dash">Standard (Laufende Striche)</option>
+                        <option value="draw">Draw-On Effekt</option>
+                        <option value="glow">Pulsierendes Leuchten</option>
+                        <option value="travel">Bewegter Marker</option>
+                        <option value="gradient">Farbverlauf Sweep</option>
+                        <option value="rainbow">Regenbogen-Welle</option>
+                        <option value="particle">Partikel-Spur</option>
+                        <option value="breathe">Atmende Linie</option>
+                    </select>
+                    <button onclick="generateRoute()"
+                        class="w-full bg-[#0ea5e9] text-white py-4 rounded-2xl text-sm font-bold shadow-lg shadow-[#0ea5e9]/20">Weg
+                        berechnen</button>
+                    <button id="downloadBtn" onclick="downloadTour()"
+                        class="w-full bg-white/5 text-white py-3 rounded-2xl text-sm font-bold border border-white/10 hidden">Offline
+                        speichern</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="absolute bottom-6 left-6 flex gap-2 pointer-all">
+            <button onclick="gotoCity('Schoenau')"
+                class="bg-white/10 px-4 py-2.5 rounded-full text-xs font-semibold border border-white/10 shadow-lg">🏘️
+                Schönau</button>
+            <button onclick="gotoCity('Mannheim')"
+                class="bg-white/10 px-4 py-2.5 rounded-full text-xs font-semibold border border-white/10 shadow-lg">🏙️
+                Mannheim</button>
+            <button onclick="startDemoWalk()"
+                class="bg-[#0ea5e9]/20 px-4 py-2.5 rounded-full text-xs border border-[#0ea5e9]/30 text-[#0ea5e9] font-bold shadow-lg">🏃
+                Demo</button>
+        </div>
+
+        <div id="bottomSheet" class="bottom-sheet pointer-all">
+            <div class="sheet-handle" onclick="closeSheet()"></div>
+            <div class="poi-hero-img"><img src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" id="poiImg"
+                    alt=""></div>
+            <div class="px-6 pb-10 overflow-y-auto">
+                <h2 class="text-3xl font-black mb-1 leading-tight mt-2" id="poiName">POI Name</h2>
+                <p class="text-[#0ea5e9] text-xs font-black tracking-[0.1em] uppercase mb-5" id="poiCity">Stadt</p>
+
+                <div class="audio-player shadow-inner">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <div
+                                class="bg-[#0ea5e9] text-white w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-lg shadow-[#0ea5e9]/30">
+                                🎙️</div>
+                            <div>
+                                <div class="flex items-center">
+                                    <div class="text-[10px] font-black uppercase tracking-[0.15em] opacity-30 mb-0.5">Guide
+                                        Audio</div>
+                                    <div id="waveform" class="waveform">
+                                        <div class="waveform-bar"></div>
+                                        <div class="waveform-bar"></div>
+                                        <div class="waveform-bar"></div>
+                                        <div class="waveform-bar"></div>
+                                    </div>
+                                </div>
+                                <div class="text-sm font-bold text-white/90" id="audioStatus">Bereit</div>
+                            </div>
+                        </div>
+                        <button onclick="togglePlayback()" id="playPauseBtn"
+                            class="bg-white text-black w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold shadow-xl">▶️</button>
+                    </div>
+                    <div class="progress-bar">
+                        <div id="progressFill" class="progress-fill"></div>
+                    </div>
+                </div>
+
+                <div id="scriptText" class="text-[16px] leading-[1.6] opacity-70 font-medium pb-8"></div>
+            </div>
+        </div>
+    </div>
+    <audio id="audioElement"></audio>
+    <div id="smartStartOverlay" class="fixed inset-0 z-[1000] bg-slate-950/95 backdrop-blur-xl flex flex-col items-center justify-center p-8 text-center hidden">
+        <div class="text-6xl mb-6">🏙️</div>
+        <h2 class="text-3xl font-bold mb-2">Bereit für die Tour?</h2>
+        <p id="tourSummaryText" class="text-slate-400 mb-8 max-w-xs">3 Orte in Mannheim • ca. 45 Min Gehzeit</p>
+        <button onclick="startActiveTour()" class="w-full max-w-xs bg-sky-500 hover:bg-sky-400 text-white py-5 rounded-3xl font-black text-xl shadow-2xl shadow-sky-500/20 transition-all active:scale-95">
+            ▶️ TOUR STARTEN
+        </button>
+        <div id="gpsWarmupStatus" class="mt-8 flex items-center gap-2 text-sm text-slate-500">
+            <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+            GPS wird kalibriert...
+        </div>
+    </div>
+    <script>
+        const IS_STATIC_DEMO = true;
+        const BACKEND_URL = IS_STATIC_DEMO ? "." : window.location.origin;
+
+        // --- Static Demo Fetch Interceptor ---
+        if (IS_STATIC_DEMO) {
+            const originalFetch = window.fetch;
+            window.fetch = async (url, options) => {
+                const urlStr = url.toString();
+                console.log(`[DEMO FETCH] Intercepting: ${urlStr}`);
+
+                // 1. POI List
+                if (urlStr.includes('/pois')) {
+                    return originalFetch('./static/data/pois.json');
+                }
+
+                // 2. Discover sugeriert alle POIs
+                if (urlStr.includes('/discover')) {
+                    return originalFetch('./static/data/pois.json');
+                }
+
+                // 3. Geofence Check
+                if (urlStr.includes('/geofence/check')) {
+                    const data = await originalFetch('./static/data/geofences.json').then(r => r.json());
+                    // Simply return first fence for demo if coordinates match Mannheim roughly
+                    const latMatch = urlStr.includes('lat=49.4');
+                    return new Response(JSON.stringify(latMatch ? data[0] : {id: null}), {
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                }
+
+                // 4. Audio & Script for POIs
+                if (urlStr.includes('/poi/') && urlStr.includes('/audio')) {
+                    const idMatch = urlStr.match(/\/poi\/([^/?]+)\/audio/);
+                    const persona = urlStr.includes('persona=historian') ? 'historian' : 'insider';
+                    if (idMatch) {
+                        const id = idMatch[1];
+                        const audioUrl = `./static/audio/poi_${id}_${persona}.mp3`;
+                        const scriptUrl = `./static/audio/poi_${id}_${persona}.txt`;
+                        
+                        let script = "Audio-Guide verfügbar.";
+                        try {
+                            const txtRes = await originalFetch(scriptUrl);
+                            if (txtRes.ok) script = await txtRes.text();
+                        } catch(e) {}
+
+                        return new Response(JSON.stringify({
+                            id: id,
+                            audio_url: audioUrl,
+                            script: script,
+                            type: 'poi'
+                        }), { headers: { 'Content-Type': 'application/json' } });
+                    }
+                }
+
+                // 5. Audio & Script for Geofences
+                if (urlStr.includes('/geofence/') && urlStr.includes('/audio')) {
+                    const idMatch = urlStr.match(/\/geofence\/([^/?]+)\/audio/);
+                    const persona = urlStr.includes('persona=historian') ? 'historian' : 'insider';
+                    if (idMatch) {
+                        const id = idMatch[1];
+                        const audioUrl = `./static/audio/fence_${id}_${persona}.mp3`;
+                        const scriptUrl = `./static/audio/fence_${id}_${persona}.txt`;
+                        
+                        let script = "Willkommen in der Zone!";
+                        try {
+                            const txtRes = await originalFetch(scriptUrl);
+                            if (txtRes.ok) script = await txtRes.text();
+                        } catch(e) {}
+
+                        return new Response(JSON.stringify({
+                            id: id,
+                            audio_url: audioUrl,
+                            script: script,
+                            type: 'geofence'
+                        }), { headers: { 'Content-Type': 'application/json' } });
+                    }
+                }
+
+                // 6. Route Calculation Mock
+                if (urlStr.includes('/route')) {
+                    addDebugLog("DEMO: Generiere detaillierte Demo-Route", "info");
+                    
+                    const reqOrder = selectedPoiIds.length > 0 ? selectedPoiIds : ['wasserturm', 'paradeplatz'];
+                    
+                    // Start at mock location
+                    let fullPath = [[MOCK_MANNHEIM[0], MOCK_MANNHEIM[1]]];
+                    
+                    // Connect each POI with intermediate points to simulate "walking along streets"
+                    for (let i = 0; i < reqOrder.length; i++) {
+                        const poi = pois.find(p => String(p.id) === String(reqOrder[i]));
+                        if (!poi) continue;
+                        
+                        const start = fullPath[fullPath.length - 1];
+                        const end = [poi.lng, poi.lat];
+                        
+                        // Generate 10 jittered intermediate points to make it look less like a straight line
+                        for (let j = 1; j <= 10; j++) {
+                            const ratio = j / 10;
+                            const intermediate = [
+                                start[0] + (end[0] - start[0]) * ratio,
+                                start[1] + (end[1] - start[1]) * ratio
+                            ];
+                            // Add very small random offset to look like street corners (jitter)
+                            if (j < 10) {
+                                intermediate[0] += (Math.random() - 0.5) * 0.0002;
+                                intermediate[1] += (Math.random() - 0.5) * 0.0002;
+                            }
+                            fullPath.push(intermediate);
+                        }
+                    }
+
+                    return new Response(JSON.stringify({
+                        optimized_poi_order: reqOrder,
+                        geometry: {
+                            type: "LineString",
+                            coordinates: fullPath
+                        }
+                    }), { headers: { 'Content-Type': 'application/json' } });
+                }
+
+                return originalFetch(url, options);
+            };
+        }
+        const GEOFENCE_RADIUS = 50;
+        const ALL_CATEGORIES = ['History', 'Art', 'Subculture', 'Architecture', 'Nature', 'Food', 'Nightlife', 'Religion', 'Urban', 'Views', 'Family', 'Culture'];
+        let pois = [], markers = [], userLocationMarker = null, lastTriggeredPoiId = null, lastTriggeredFenceId = null, selectedPoiIds = [], currentRouteLayer = null;
+        let lastCheckLat = 0, lastCheckLng = 0, lastCheckTime = 0;
+        let selectedPersona = 'insider', isAppInitialized = false, shouldFollowUser = true, isAudioMasterOn = true, isAutoPlayOn = true, lastCalculatedRoutePoints = [], selectedCategories = [];
+        let arrivalAnimationActive = false; // Guard for Living Cockpit morphing
+        let selectedRouteAnimation = 'dashed', lastRouteGeometry = null, isRouteAnimationReady = false;
+        let discoveryCache = [];
+        const ROUTE_ANIMATIONS = {
+            dash: { label: 'Standard (Laufende Striche)', dashArray: '10, 20', weight: 5, color: '#0ea5e9', opacity: 0.9 },
+            draw: { label: 'Draw-On Effekt', dashArray: null, weight: 5, color: '#0ea5e9', opacity: 1, animated: true },
+            glow: { label: 'Pulsierendes Leuchten', dashArray: null, weight: 8, color: '#0ea5e9', opacity: 0.8, glow: true },
+            travel: { label: 'Bewegter Marker', dashArray: '1, 10', weight: 4, color: '#0ea5e9', opacity: 0.7, traveling: true },
+            gradient: { label: 'Farbverlauf Sweep', dashArray: null, weight: 6, color: '#8b5cf6', opacity: 1, gradient: true },
+            rainbow: { label: 'Regenbogen-Welle', dashArray: '20, 10', weight: 5, color: '#f472b6', opacity: 1, rainbow: true },
+            particle: { label: 'Partikel-Spur', dashArray: '5, 15', weight: 3, color: '#34d399', opacity: 0.8, particle: true },
+            breathe: { label: 'Atmende Linie', dashArray: null, weight: 6, color: '#818cf8', opacity: 0.6, breathe: true }
+        };
+
+        function parseSavedValue(rawValue) {
+            if (rawValue === null || rawValue === undefined) return null;
+            try { return JSON.parse(rawValue); } catch (_) { return rawValue; }
+        }
+
+        function fadeInAudio(audio, duration = 800) {
+            audio.volume = 0;
+            audio.play();
+            const targetVolume = 1.0;
+            const startTime = performance.now();
+            
+            function updateVolume(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.max(0, Math.min(elapsed / duration, 1));
+                audio.volume = progress * targetVolume;
+                
+                if (progress < 1) {
+                    requestAnimationFrame(updateVolume);
+                }
+            }
+            requestAnimationFrame(updateVolume);
+        }
+
+        function renderScriptText(containerId, text) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            container.innerHTML = '';
+            
+            const paragraphs = text.split('\n').filter(p => p.trim() !== '');
+            paragraphs.forEach((p, i) => {
+                const pEl = document.createElement('p');
+                pEl.className = 'script-paragraph mb-4';
+                pEl.innerText = p;
+                container.appendChild(pEl);
+                
+                // Staggered reveal
+                setTimeout(() => {
+                    pEl.classList.add('visible');
+                }, i * 200 + 100);
+            });
+        }
+
+        let isTourActive = false;
+        let currentRouteIndex = 0;
+
+        async function preFetchTourAssets() {
+            if (selectedPoiIds.length === 0) return;
+            addDebugLog('Pre-fetching Tour Assets...', 'info');
+            const catParam = selectedCategories.join(',');
+            
+            for (const poiId of selectedPoiIds) {
+                const id = typeof poiId === 'object' ? poiId.id : poiId;
+                if (!id) continue;
+
+                try {
+                    const res = await fetch(`${BACKEND_URL}/poi/${id}/audio?persona=${selectedPersona}&categories=${catParam}`);
+                    const data = await res.json();
+                    if (data.audio_url) await fetch(data.audio_url);
+                    if (data.image && data.image.proxied) await fetch(data.image.proxied);
+                    addDebugLog(`Pre-fetched: ${id}`, 'success');
+                } catch (e) {
+                    console.warn(`Pre-fetch failed for POI ${id}`, e);
+                }
+            }
+            addDebugLog('Pre-fetch complete', 'success');
+        }
+
+        function startActiveTour() {
+            // Unlock AudioContext with a short silent/intro sound
+            const audio = document.getElementById('audioElement');
+            audio.play().then(() => {
+                audio.pause();
+                audio.currentTime = 0;
+            }).catch(e => console.warn('Audio unlock failed:', e));
+
+            // Hide overlay
+            document.getElementById('smartStartOverlay').classList.add('hidden');
+            
+            // Show Cockpit
+            const cockpit = document.getElementById('activeTourCockpit');
+            cockpit.classList.remove('hidden');
+            
+            // Force reflow before adding .show to ensure animation plays
+            void cockpit.offsetWidth; 
+            
+            // Use the dedicated .show class instead of manipulating translate-y directly
+            cockpit.classList.add('show');
+
+            // Start Tour
+            isTourActive = true;
+            currentRouteIndex = 0;
+            lastTriggeredPoiId = null;
+            enableFollow();
+            
+            addDebugLog('Tour gestartet', 'success');
+            
+            // Start pre-fetching
+            preFetchTourAssets();
+        }
+
+        function updateCockpitUI(poi, dist) {
+            const cockpit = document.getElementById('activeTourCockpit');
+            const nameEl = document.getElementById('cockpitTargetName');
+            const distBadge = document.getElementById('cockpitDistBadge');
+            const progress = document.getElementById('cockpitProgress');
+            const glow = document.getElementById('cockpitAmbientGlow');
+
+            if (nameEl) nameEl.innerText = poi.name;
+            
+            // 1. Determine Category Color
+            const primaryCat = poi.categories && poi.categories[0] ? poi.categories[0].toLowerCase() : 'default';
+            let pulseColor = 'var(--cat-default)';
+            let glowColor = 'rgba(51, 65, 85, 0.15)';
+            
+            if (primaryCat.includes('hist')) {
+                pulseColor = 'var(--cat-history)';
+                glowColor = 'rgba(245, 158, 11, 0.15)';
+            } else if (primaryCat.includes('art')) {
+                pulseColor = 'var(--cat-art)';
+                glowColor = 'rgba(236, 72, 153, 0.15)';
+            } else if (primaryCat.includes('arch')) {
+                pulseColor = 'var(--cat-architecture)';
+                glowColor = 'rgba(14, 165, 233, 0.15)';
+            } else if (primaryCat.includes('sub')) {
+                pulseColor = 'var(--cat-subculture)';
+                glowColor = 'rgba(139, 92, 246, 0.15)';
+            }
+            
+            if (cockpit) {
+                cockpit.style.setProperty('--pulse-color', pulseColor);
+                if (glow) glow.style.setProperty('--glow-color', glowColor);
+                // 2. Toggle Pulse Effect (Active if within 150m and NOT expanded)
+                if (dist < 150 && !cockpit.classList.contains('cockpit-expanded')) {
+                    cockpit.classList.add('pulse-active');
+                } else {
+                    cockpit.classList.remove('pulse-active');
+                }
+            }
+
+            if (distBadge) {
+                distBadge.innerText = `~ ${Math.round(dist)}m`;
+                // Color coding based on distance
+                if (dist < GEOFENCE_RADIUS) {
+                    distBadge.classList.replace('bg-emerald-500/20', 'bg-sky-500/20');
+                    distBadge.classList.replace('text-emerald-400', 'text-sky-400');
+                } else {
+                    distBadge.classList.replace('bg-sky-500/20', 'bg-emerald-500/20');
+                    distBadge.classList.replace('text-sky-400', 'text-emerald-400');
+                }
+            }
+
+            if (progress) {
+                const total = selectedPoiIds.length;
+                const pct = ((currentRouteIndex) / total) * 100;
+                progress.style.width = `${pct}%`;
+            }
+        }
+
+        function toggleMapFocus() {
+            shouldFollowUser = !shouldFollowUser;
+            const btn = document.getElementById('mapFocusBtn');
+            const recenterBtn = document.getElementById('recenterBtn');
+            
+            if (shouldFollowUser) {
+                btn.innerText = 'KARTE FIXIEREN';
+                btn.classList.replace('bg-sky-500/20', 'bg-white/5');
+                recenterBtn.classList.add('hidden');
+                if (userLocationMarker) map.panTo(userLocationMarker.getLatLng());
+            } else {
+                btn.innerText = 'FOLGEN AN';
+                btn.classList.replace('bg-white/5', 'bg-sky-500/20');
+                recenterBtn.classList.remove('hidden');
+            }
+        }
+
+        function endTour() {
+            if (!confirm('Tour wirklich beenden?')) return;
+            
+            const cockpit = document.getElementById('activeTourCockpit');
+            cockpit.classList.add('translate-y-[150%]');
+            setTimeout(() => {
+                cockpit.classList.add('hidden');
+                cockpit.classList.remove('cockpit-expanded');
+                document.getElementById('cockpitPoiCity').classList.add('hidden');
+                document.getElementById('cockpitLabel').classList.remove('hidden');
+            }, 500);
+
+            isTourActive = false;
+            currentRouteIndex = 0;
+            document.getElementById('backdrop').classList.remove('open');
+            document.getElementById('audioElement').pause();
+            addDebugLog('Tour abgebrochen', 'info');
+        }
+
+        function finishTour() {
+            const cockpit = document.getElementById('activeTourCockpit');
+            cockpit.classList.add('translate-y-[150%]');
+            setTimeout(() => {
+                cockpit.classList.add('hidden');
+                cockpit.classList.remove('cockpit-expanded');
+                document.getElementById('cockpitPoiCity').classList.add('hidden');
+                document.getElementById('cockpitLabel').classList.remove('hidden');
+            }, 500);
+            
+            addDebugLog('Tour erfolgreich beendet', 'success');
+            alert('Glückwunsch! Du hast alle Ziele erreicht.');
+            
+            isTourActive = false;
+            currentRouteIndex = 0;
+            document.getElementById('backdrop').classList.remove('open');
+            document.getElementById('audioElement').pause();
+        }
+
+        async function savePersistentSetting(key, value) {
+            try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { console.warn(`localStorage save failed for ${key}`, e); }
+            try { await saveSetting(key, value); } catch (e) { console.warn(`IndexedDB save failed for ${key}`, e); }
+        }
+
+        async function loadPersistentSetting(key, fallback = null) {
+            try {
+                const value = await getSetting(key);
+                if (value !== null && value !== undefined) {
+                    try { localStorage.setItem(key, JSON.stringify(value)); } catch (_) { }
+                    return value;
+                }
+            } catch (e) {
+                console.warn(`IndexedDB load failed for ${key}`, e);
+            }
+
+            const localRaw = localStorage.getItem(key);
+            if (localRaw !== null) return parseSavedValue(localRaw);
+            return fallback;
+        }
+
+        function renderRouteOnMap(geometry) {
+            if (!geometry) return;
+            lastRouteGeometry = geometry;
+
+            // Guard against startup race: only render once animation preference is loaded.
+            if (!isRouteAnimationReady) {
+                console.log('Route animation not ready yet, deferring route render');
+                return;
+            }
+
+            if (currentRouteLayer) map.removeLayer(currentRouteLayer);
+            if (window.routeGlowLayer) map.removeLayer(window.routeGlowLayer);
+
+            const animStyle = ROUTE_ANIMATIONS[selectedRouteAnimation] || ROUTE_ANIMATIONS.dash;
+            const routeGeoJSON = typeof geometry === 'string' ? JSON.parse(geometry) : geometry;
+
+            // Glow Layer (breiter, transparenter) - nur bei manchen Animationen
+            if (selectedRouteAnimation === 'glow' || selectedRouteAnimation === 'breathe') {
+                window.routeGlowLayer = L.geoJSON(routeGeoJSON, {
+                    style: {
+                        color: selectedRouteAnimation === 'glow' ? '#0ea5e9' : '#818cf8',
+                        weight: selectedRouteAnimation === 'glow' ? 20 : 14,
+                        opacity: selectedRouteAnimation === 'glow' ? 0.5 : 0.4,
+                        lineCap: 'round',
+                        lineJoin: 'round'
+                    },
+                    className: selectedRouteAnimation === 'glow' ? 'route-glow' : 'route-breathe'
+                }).addTo(map);
+            }
+
+            // Core Layer - varies by animation style
+            let coreStyle = {
+                color: animStyle.color || '#0ea5e9',
+                weight: animStyle.weight || 8,
+                opacity: animStyle.opacity || 0.9,
+                lineCap: 'round',
+                lineJoin: 'round'
+            };
+
+            // Apply animation-specific styles
+            if (selectedRouteAnimation === 'dash' || selectedRouteAnimation === 'travel') {
+                coreStyle.dashArray = selectedRouteAnimation === 'dash' ? '10, 20' : '1, 12';
+            } else if (selectedRouteAnimation === 'rainbow') {
+                coreStyle.dashArray = '25, 12';
+            } else if (selectedRouteAnimation === 'particle') {
+                coreStyle.dashArray = '3, 18';
+            }
+
+            currentRouteLayer = L.geoJSON(routeGeoJSON, {
+                style: coreStyle,
+                className: selectedRouteAnimation === 'dash' || selectedRouteAnimation === 'travel' ? 'route-core' : ''
+            }).addTo(map);
+
+            // Add CSS animation class for certain types
+            const pathEl = currentRouteLayer.getLayers()[0]?._path;
+            if (pathEl) {
+                if (selectedRouteAnimation === 'dash' || selectedRouteAnimation === 'travel') {
+                    pathEl.classList.add('route-core');
+                } else if (selectedRouteAnimation === 'rainbow') {
+                    pathEl.classList.add('route-rainbow');
+                } else if (selectedRouteAnimation === 'particle') {
+                    pathEl.classList.add('route-particle');
+                } else if (selectedRouteAnimation === 'draw') {
+                    const length = pathEl.getTotalLength();
+                    pathEl.style.strokeDasharray = length;
+                    pathEl.style.strokeDashoffset = length;
+                    pathEl.getBoundingClientRect(); // Trigger reflow
+                    pathEl.style.transition = 'stroke-dashoffset 2s ease-in-out';
+                    pathEl.style.strokeDashoffset = '0';
+                }
+            }
+
+            // Fit map to route
+            if (currentRouteLayer.getBounds().isValid()) {
+                map.fitBounds(currentRouteLayer.getBounds(), { padding: [60, 60] });
+            }
+        }
+
+        function setRouteAnimation(animType) {
+            if (!ROUTE_ANIMATIONS[animType]) return;
+            selectedRouteAnimation = animType;
+
+            const select = document.getElementById('routeAnimationSelect');
+            if (select) select.value = animType;
+
+            console.log('Route animation set to:', animType);
+            // Persist immediately in localStorage to survive instant reloads (F5).
+            savePersistentSetting('routeAnimation', animType);
+
+            if (lastRouteGeometry) renderRouteOnMap(lastRouteGeometry);
+        }
+
+        async function loadSavedAnimation() {
+            // Read localStorage first so an immediate F5 after selection is respected.
+            // IndexedDB can lag behind and still contain an older value.
+            const localRaw = localStorage.getItem('routeAnimation');
+            const localSaved = parseSavedValue(localRaw);
+
+            let savedAnimation = localSaved;
+            if (!savedAnimation || !ROUTE_ANIMATIONS[savedAnimation]) {
+                savedAnimation = await loadPersistentSetting('routeAnimation', 'dashed');
+            }
+
+            console.log('Loaded routeAnimation from storage:', savedAnimation);
+
+            if (savedAnimation && ROUTE_ANIMATIONS[savedAnimation]) {
+                selectedRouteAnimation = savedAnimation;
+            }
+
+            const select = document.getElementById('routeAnimationSelect');
+            if (select) select.value = selectedRouteAnimation;
+
+            isRouteAnimationReady = true;
+
+            // If a route geometry is already known, render/re-render with the loaded style.
+            if (lastRouteGeometry) renderRouteOnMap(lastRouteGeometry);
+        }
+
+        // Helper: Normalize POI ID for consistent comparison
+        function normalizePoiId(id) {
+            return String(id).toLowerCase().trim();
+        }
+
+        // Helper: Check if POI is selected
+        function hasSelectedPoiId(id) {
+            const normalized = normalizePoiId(id);
+            return selectedPoiIds.some(pid => normalizePoiId(pid) === normalized);
+        }
+
+        // Helper: Add POI to selection safely
+        function addSelectedPoiId(id) {
+            if (!hasSelectedPoiId(id) && selectedPoiIds.length < 12) {
+                selectedPoiIds.push(String(id));
+                return true;
+            }
+            return false;
+        }
+
+        // Debug Functions
+        let debugLog = [];
+        function addDebugLog(msg, type = 'info') {
+            const entry = { time: new Date().toLocaleTimeString(), msg, type };
+            debugLog.push(entry);
+            if (debugLog.length > 50) debugLog.shift();
+            console.log(`[DEBUG ${type.toUpperCase()}]`, msg);
+        }
+
+        function toggleDebug() {
+            const panel = document.getElementById('debugPanel');
+            panel.classList.toggle('open');
+            if (panel.classList.contains('open')) {
+                refreshDebug();
+                addDebugLog('Debug Panel geöffnet', 'success');
+            }
+        }
+
+        function refreshDebug() {
+            const content = document.getElementById('debugContent');
+            const canonicalIds = typeof getCanonicalSelectedPoiIds === 'function' ? getCanonicalSelectedPoiIds() : selectedPoiIds;
+
+            // Get unique POI IDs from the map markers
+            const knownPoiIds = markers.map(m => normalizePoiId(m.poiId));
+
+            content.innerHTML = `
+                <div class="debug-row"><span class="debug-label">POIs geladen:</span><span class="debug-value">${pois.length}</span></div>
+                <div class="debug-row"><span class="debug-label">Marker auf Karte:</span><span class="debug-value">${markers.length}</span></div>
+                <div class="debug-row"><span class="debug-label">Bekannte POI-IDs:</span><span class="debug-value">${knownPoiIds.slice(0, 5).join(', ')}${knownPoiIds.length > 5 ? '...' : ''}</span></div>
+                <div class="debug-row"><span class="debug-label">Ausgewählt (roh):</span><span class="debug-value">${selectedPoiIds.join(', ') || 'leer'}</span></div>
+                <div class="debug-row"><span class="debug-label">Kanonisch:</span><span class="debug-value">${canonicalIds.join(', ') || 'leer'}</span></div>
+                <div class="debug-row"><span class="debug-label">Discovery Cache:</span><span class="debug-value">${discoveryCache.length}</span></div>
+                <div class="debug-row"><span class="debug-label">Kategorien:</span><span class="debug-value">${selectedCategories.join(', ') || 'alle'}</span></div>
+                <div class="debug-row"><span class="debug-label">Persona:</span><span class="debug-value">${selectedPersona}</span></div>
+                <div class="debug-row"><span class="debug-label">Auto-Play:</span><span class="debug-value">${isAutoPlayOn ? 'AN' : 'AUS'}</span></div>
+                <div class="debug-row"><span class="debug-label">User Location:</span><span class="debug-value">${userLocationMarker ? 'ja' : 'nein'}</span></div>
+            `;
+
+            // Show recent log entries
+            const logEl = document.getElementById('debugLog');
+            logEl.innerHTML = debugLog.slice(-10).map(e =>
+                `<div class="debug-log-entry ${e.type}">[${e.time}] ${e.msg}</div>`
+            ).join('');
+        }
+
+        function clearDebugLog() {
+            debugLog = [];
+            document.getElementById('debugLog').innerHTML = '<div style="color:#666;">Log gelöscht</div>';
+        }
+
+        // Auto-open debug if ?debug=1 in URL
+        if (window.location.search.includes('debug=1')) {
+            setTimeout(() => {
+                document.getElementById('debugPanel').classList.add('open');
+                refreshDebug();
+                addDebugLog('Debug Mode aktiviert', 'info');
+            }, 1000);
+        }
+
+        const map = L.map('map', { zoomControl: false, attributionControl: false, fadeAnimation: true }).setView([49.4836, 8.4660], 15);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png').addTo(map);
+
+        map.on('dragstart', () => {
+            shouldFollowUser = false;
+            document.getElementById('recenterBtn').classList.remove('hidden');
+        });
+
+        function enableFollow() {
+            initApp();
+            shouldFollowUser = true;
+            document.getElementById('recenterBtn').classList.add('hidden');
+            if (userLocationMarker) map.panTo(userLocationMarker.getLatLng());
+        }
+
+        function initApp() {
+            if (isAppInitialized) return;
+            isAppInitialized = true;
+            const audio = document.getElementById('audioElement');
+            audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(e => { });
+        }
+
+        function closeAll() {
+            document.getElementById('bottomSheet').classList.remove('open');
+            document.getElementById('discoveryModal').classList.remove('open');
+            document.getElementById('preferencesModal').classList.remove('open');
+            document.getElementById('routeBuilder').classList.add('hidden');
+            document.getElementById('backdrop').classList.remove('open');
+            document.getElementById('audioElement').pause();
+
+            // Reset nav items
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            document.querySelectorAll('.nav-item')[0].classList.add('active'); // Default to map
+        }
+
+        // Bottom Navigation Switch Function
+        function switchTab(tab) {
+            const navItems = document.querySelectorAll('.nav-item');
+            
+            // Check if we are clicking the CURRENTLY active tab
+            let isAlreadyOpen = false;
+            if (tab === 'discover') isAlreadyOpen = document.getElementById('discoveryModal').classList.contains('open');
+            else if (tab === 'tour') isAlreadyOpen = !document.getElementById('routeBuilder').classList.contains('hidden');
+            else if (tab === 'prefs') isAlreadyOpen = document.getElementById('preferencesModal').classList.contains('open');
+
+            // Reset all nav items
+            navItems.forEach(item => item.classList.remove('active'));
+
+            // Close all modals first (for a clean state)
+            document.getElementById('discoveryModal').classList.remove('open');
+            document.getElementById('preferencesModal').classList.remove('open');
+            document.getElementById('routeBuilder').classList.add('hidden');
+            document.getElementById('backdrop').classList.remove('open');
+
+            // If it was already open, we just leave it closed and go back to 'map'
+            if (isAlreadyOpen || tab === 'map') {
+                navItems[0].classList.add('active');
+                return;
+            }
+
+            if (tab === 'discover') {
+                navItems[1].classList.add('active');
+                toggleDiscovery();
+            } else if (tab === 'tour') {
+                navItems[2].classList.add('active');
+                toggleRouteBuilder();
+            } else if (tab === 'prefs') {
+                navItems[3].classList.add('active');
+                togglePreferences();
+            }
+        }
+
+        // Update Persona UI for badge
+        function updatePersonaUI() {
+            const badge = document.getElementById('activePersonaBadge');
+            const pHistorian = document.getElementById('p-historian');
+            const pInsider = document.getElementById('p-insider');
+
+            if (badge) {
+                badge.innerText = selectedPersona === 'historian' ? '📜' : '🕶️';
+            }
+
+            // Update preference modal selections if elements exist
+            if (pHistorian && pInsider) {
+                pHistorian.classList.toggle('border-[#0ea5e9]', selectedPersona === 'historian');
+                pHistorian.classList.toggle('bg-[#0ea5e9]/10', selectedPersona === 'historian');
+                pInsider.classList.toggle('border-[#0ea5e9]', selectedPersona === 'insider');
+                pInsider.classList.toggle('bg-[#0ea5e9]/10', selectedPersona === 'insider');
+            }
+        }
+
+        // Sync buttons
+        const discoverBtn = document.getElementById('discoverBtn');
+        if (discoverBtn) {
+            discoverBtn.classList.remove('on');
+            discoverBtn.classList.add('off');
+        }
+
+        function toggleAudioMaster() {
+            isAudioMasterOn = !isAudioMasterOn;
+            // Try to update old button if exists
+            const oldBtn = document.getElementById('audioMasterBtn');
+            if (oldBtn) {
+                oldBtn.innerText = isAudioMasterOn ? '🔊' : '🔇';
+                oldBtn.classList.toggle('on', isAudioMasterOn);
+            }
+            // Update new toggle in preferences modal
+            const newToggle = document.getElementById('audioMasterToggle');
+            if (newToggle) {
+                newToggle.innerText = isAudioMasterOn ? '🔊' : '🔇';
+            }
+            if (!isAudioMasterOn) document.getElementById('audioElement').pause();
+        }
+
+        function toggleAutoPlay() {
+            isAutoPlayOn = !isAutoPlayOn;
+            // Try to update old button if exists
+            const oldBtn = document.getElementById('autoPlayBtn');
+            if (oldBtn) {
+                oldBtn.innerText = isAutoPlayOn ? '⚡' : '🔘';
+                oldBtn.classList.toggle('on', isAutoPlayOn);
+            }
+            // Update new toggle in preferences modal
+            const newToggle = document.getElementById('autoPlayToggle');
+            if (newToggle) {
+                newToggle.innerText = isAutoPlayOn ? '⚡' : '🔘';
+            }
+        }
+
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+
+        function updateOnlineStatus() {
+            const offline = document.getElementById('offlineIndicator');
+            const online = document.getElementById('onlineIndicator');
+            if (navigator.onLine) {
+                offline.classList.add('hidden');
+                online.classList.remove('hidden');
+            } else {
+                offline.classList.remove('hidden');
+                online.classList.add('hidden');
+            }
+        }
+
+        async function loadData() {
+            try {
+                await initDB();
+                await loadSavedAnimation();
+                updateOnlineStatus();
+                updateStorageInfo();
+
+                const savedPersona = await loadPersistentSetting('selectedPersona');
+                if (savedPersona) {
+                    selectedPersona = savedPersona;
+                    updatePersonaUI();
+                }
+
+                const savedCity = await loadPersistentSetting('selectedCity');
+                if (savedCity) {
+                    const coords = savedCity === 'Schoenau' ? [49.4355, 8.8090] : [49.4836, 8.4660];
+                    const zoom = savedCity === 'Schoenau' ? 16 : 15;
+                    map.setView(coords, zoom);
+                }
+
+                let savedPrefs = await loadPersistentSetting('userPreferences');
+                if (!savedPrefs || savedPrefs.length === 0) {
+                    savedPrefs = await loadPersistentSetting('selectedCategories');
+                }
+                if (savedPrefs && savedPrefs.length > 0) {
+                    selectedCategories = savedPrefs;
+                } else {
+                    selectedCategories = [];
+                    setTimeout(() => togglePreferences(), 1000);
+                }
+                renderCategories();
+
+                try {
+                    const res = await fetch(`${BACKEND_URL}/pois`);
+                    pois = await res.json();
+                    await savePOIs(pois);
+                } catch (fetchError) {
+                    console.warn('Network failed, loading POIs from offline storage');
+                    pois = await getAllPOIs();
+                }
+
+                renderMarkers();
+                renderPoiChips();
+                startGpsTracking();
+
+                const lastRoute = await getLastRoute();
+                if (lastRoute) {
+                    selectedPoiIds = lastRoute.poi_ids;
+                    lastCalculatedRoutePoints = lastRoute.points;
+                    renderPoiChips();
+                    renderRouteOnMap(lastRoute.geometry);
+                }
+            } catch (e) { console.error('Initialization error:', e); }
+        }
+
+        let gpsAccuracy = 0;
+        let isMockingGps = false;
+        const MOCK_MANNHEIM = [8.4660, 49.4836]; // [lng, lat]
+
+        function toggleGpsMock() {
+            isMockingGps = !isMockingGps;
+            const btn = document.getElementById('gpsMockBtn');
+            if (isMockingGps) {
+                btn.innerText = '📍 Simulation: AN';
+                btn.style.background = '#22c55e';
+                updatePosition(MOCK_MANNHEIM[1], MOCK_MANNHEIM[0], 5);
+                addDebugLog("GPS Simulation aktiviert (Mannheim)", "success");
+            } else {
+                btn.innerText = '📍 Simuliere Mannheim';
+                btn.style.background = '#0ea5e9';
+                addDebugLog("GPS Simulation deaktiviert", "info");
+            }
+            refreshDebug();
+        }
+
+        function updatePosition(lat, lng, accuracy) {
+            gpsAccuracy = accuracy;
+            const latlng = [lat, lng];
+            if (!userLocationMarker) {
+                userLocationMarker = L.marker(latlng, {
+                    icon: L.divIcon({ html: '<div class="user-location-dot"></div>', className: '', iconSize: [22, 22] })
+                }).addTo(map);
+            } else {
+                userLocationMarker.setLatLng(latlng);
+            }
+            if (shouldFollowUser) map.panTo(latlng);
+            if (isAppInitialized) checkGeofences(lat, lng);
+
+            // Update GPS warmup status
+            const warmup = document.getElementById('gpsWarmupStatus');
+            if (warmup && !warmup.classList.contains('hidden')) {
+                if (accuracy < 20) {
+                    warmup.innerHTML = '<span class="w-2 h-2 rounded-full bg-green-500"></span> GPS bereit';
+                } else {
+                    warmup.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> Kalibrierung (${Math.round(accuracy)}m)`;
+                }
+            }
+        }
+
+        function startGpsTracking() {
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(pos => {
+                    if (isMockingGps) return;
+                    updatePosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
+                }, err => { 
+                    if (!isMockingGps) addDebugLog(`GPS Fehler: ${err.message}`, 'error');
+                }, { enableHighAccuracy: true });
+            }
+        }
+
+        function renderPoiChips() {
+            const list = document.getElementById('poiList');
+            list.innerHTML = pois.map(poi => `
+                <div onclick="togglePoiSelection('${poi.id}')" class="poi-chip ${hasSelectedPoiId(poi.id) ? 'selected' : ''} cursor-pointer transition-all">
+                    ${poi.emoji} ${poi.name}
+                </div>
+            `).join('');
+        }
+
+        function togglePoiSelection(id) {
+            initApp();
+            const sid = String(id);
+            const isSelected = hasSelectedPoiId(sid);
+            if (isSelected) {
+                selectedPoiIds = selectedPoiIds.filter(pid => normalizePoiId(pid) !== normalizePoiId(sid));
+            } else {
+                if (selectedPoiIds.length >= 12) return alert("Max 12 POIs");
+                selectedPoiIds.push(sid);
+            }
+            renderPoiChips();
+            renderMarkers(); // UPDATE MAP
+            // Re-render discovery to update visual state if modal is open
+            if (document.getElementById('discoveryModal').classList.contains('open')) {
+                renderDiscovery(false);
+            }
+        }
+
+        function addAllDiscovery() {
+            discoveryCache.forEach(p => {
+                const sid = String(p.id);
+                if (!hasSelectedPoiId(sid)) {
+                    if (selectedPoiIds.length < 12) selectedPoiIds.push(sid);
+                }
+            });
+            renderMarkers(); // UPDATE MAP
+            renderDiscovery(false);
+            renderPoiChips();
+        }
+
+        function toggleRouteBuilder() {
+            initApp();
+            const builder = document.getElementById('routeBuilder');
+            const backdrop = document.getElementById('backdrop');
+            const isOpen = !builder.classList.toggle('hidden');
+            backdrop.classList.toggle('open', isOpen);
+            if (isOpen) renderPoiChips();
+        }
+
+        async function downloadTour() {
+            if (selectedPoiIds.length === 0) return alert("Keine Orte ausgewählt!");
+            const btn = document.getElementById('downloadBtn');
+            btn.innerText = "Lädt...";
+            try {
+                for (const poiId of selectedPoiIds) {
+                    const poi = pois.find(p => String(p.id) === String(poiId));
+                    if (poi) {
+                        const catParam = selectedCategories.join(',');
+                        await fetch(`${BACKEND_URL}/poi/${poi.id}/audio?persona=${selectedPersona}&categories=${catParam}`);
+                    }
+                }
+                alert("Tour offline verfügbar!");
+            } catch (e) { alert("Fehler beim Download"); }
+            finally { btn.innerText = "Offline speichern"; }
+        }
+
+        async function generateRoute() {
+            initApp();
+            
+            // SANITIZE: Ensure selectedPoiIds only contains strings
+            selectedPoiIds = selectedPoiIds.map(id => typeof id === 'object' ? String(id.id) : String(id)).filter(id => id && id !== 'undefined');
+            
+            if (selectedPoiIds.length < 2) return alert("Min 2 Orte auswählen");
+            
+            const btn = document.querySelector('#routeBuilder button');
+            const downloadBtn = document.getElementById('downloadBtn');
+            
+            btn.innerText = "Ortung...";
+            let startLoc = null;
+            try {
+                startLoc = await getCurrentLocation();
+                addDebugLog(`Startpunkt ermittelt: ${startLoc}`, 'success');
+            } catch (e) {
+                addDebugLog("GPS Startpunkt fehlgeschlagen, nutze POIs", "warn");
+            }
+
+            btn.innerText = "Berechne...";
+            try {
+                const res = await fetch(`${BACKEND_URL}/route`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        poi_ids: selectedPoiIds,
+                        start_location: startLoc
+                    })
+                });
+                
+                if (!res.ok) {
+                    const errData = await res.json();
+                    addDebugLog(`Route Fehler: ${JSON.stringify(errData)}`, 'error');
+                    alert("Routen-Fehler: " + (errData.detail || "Unbekannt"));
+                    return;
+                }
+
+                const data = await res.json();
+                
+                // CRITICAL: Use the optimized order from backend
+                if (data.optimized_poi_order && data.optimized_poi_order.length > 0) {
+                    selectedPoiIds = data.optimized_poi_order;
+                    addDebugLog('Route optimiert: ' + selectedPoiIds.join(' -> '), 'success');
+                }
+
+                lastCalculatedRoutePoints = data.geometry.coordinates.map(c => ({ lat: c[1], lng: c[0] }));
+                renderRouteOnMap(data.geometry);
+                renderMarkers(); // UPDATE MAP NUMBERS TO OPTIMIZED ORDER
+                
+                await saveRoute({ 
+                    poi_ids: selectedPoiIds, 
+                    geometry: data.geometry, 
+                    points: lastCalculatedRoutePoints 
+                });
+                
+                renderPoiChips(); // Refresh the chips at the bottom
+                downloadBtn.classList.remove('hidden');
+                
+                // If route builder is open, close it
+                const rb = document.getElementById('routeBuilder');
+                if (rb) rb.classList.add('hidden');
+                document.getElementById('backdrop').classList.remove('open');
+                
+                // Show Smart Start Overlay
+                document.getElementById('tourSummaryText').innerText = `${selectedPoiIds.length} Orte in ${pois.find(p => p.id == selectedPoiIds[0])?.city || 'Mannheim'}`;
+                document.getElementById('smartStartOverlay').classList.remove('hidden');
+            } catch (e) { 
+                addDebugLog(`Fetch Fehler: ${e.message}`, 'error');
+                alert("Verbindungsfehler"); 
+            }
+            finally { btn.innerText = "Weg berechnen"; }
+        }
+
+        function renderMarkers() {
+            markers.forEach(m => map.removeLayer(m.marker));
+            markers = [];
+            pois.forEach(poi => {
+                const isMatch = poi.categories && poi.categories.some(cat => selectedCategories.includes(cat));
+                
+                // Active Tour: Find stop order
+                let stopNumber = null;
+                if (selectedPoiIds.length > 0) {
+                    const idx = selectedPoiIds.findIndex(id => normalizePoiId(id) === normalizePoiId(poi.id));
+                    if (idx !== -1) stopNumber = idx + 1;
+                }
+
+                const marker = L.marker([poi.lat, poi.lng], {
+                    icon: L.divIcon({
+                        html: `<div class="custom-marker">
+                                <div class="marker-dot" style="${stopNumber ? 'background: #0ea5e9; border-color: white; transform: scale(1.1);' : (isMatch ? 'background: #f59e0b;' : '')}">
+                                    ${poi.emoji}
+                                </div>
+                                ${stopNumber ? `<div class="absolute -top-2 -left-2 bg-white text-black text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#0ea5e9] shadow-lg">${stopNumber}</div>` : ''}
+                                ${isMatch && !stopNumber ? '<div class="absolute -top-1 -right-1 bg-white text-[10px] rounded-full px-1 shadow-md text-black font-bold">✨</div>' : ''}
+                               </div>`,
+                        className: '',
+                        iconSize: [40, 40],
+                        iconAnchor: [20, 20]
+                    })
+                }).addTo(map).on('click', () => openSheet(poi, true));
+                markers.push({ marker, poi });
+            });
+        }
+
+        async function gotoCity(city) {
+            initApp();
+            if (city === 'Schoenau') map.setView([49.4355, 8.8090], 16);
+            else map.setView([49.4836, 8.4660], 15);
+            await savePersistentSetting('selectedCity', city);
+        }
+
+        async function selectPersona(id) {
+            initApp();
+            selectedPersona = id;
+            updatePersonaUI();
+            await savePersistentSetting('selectedPersona', id);
+        }
+
+        function updatePersonaUI() {
+            // Update top bar badge
+            const badge = document.getElementById('activePersonaBadge');
+            if (badge) {
+                badge.innerText = selectedPersona === 'historian' ? '📜' : '🕶️';
+            }
+
+            // Update old persona buttons if they exist
+            document.querySelectorAll('.persona-btn').forEach(btn => {
+                const isActive = btn.getAttribute('onclick').includes(selectedPersona);
+                btn.classList.toggle('active', isActive);
+            });
+
+            // Update new preference modal selections
+            const pHistorian = document.getElementById('p-historian');
+            const pInsider = document.getElementById('p-insider');
+            if (pHistorian && pInsider) {
+                pHistorian.classList.toggle('border-[#0ea5e9]', selectedPersona === 'historian');
+                pHistorian.classList.toggle('bg-[#0ea5e9]/10', selectedPersona === 'historian');
+                pHistorian.classList.toggle('border-white/5', selectedPersona !== 'historian');
+                pHistorian.classList.toggle('bg-white/5', selectedPersona !== 'historian');
+
+                pInsider.classList.toggle('border-[#0ea5e9]', selectedPersona === 'insider');
+                pInsider.classList.toggle('bg-[#0ea5e9]/10', selectedPersona === 'insider');
+                pInsider.classList.toggle('border-white/5', selectedPersona !== 'insider');
+                pInsider.classList.toggle('bg-white/5', selectedPersona !== 'insider');
+            }
+        }
+
+        async function loadPoiImage(imgElement, imageData) {
+            const fallbackUrl = imageData.fallback || `${BACKEND_URL}/static/fallback.svg`;
+            imgElement.style.opacity = '0';
+            imgElement.src = '';
+
+            const tryUrls = [imageData.cached, imageData.proxied, imageData.direct].filter(u => u);
+            for (const url of tryUrls) {
+                try {
+                    const finalUrl = url.startsWith('/') ? `${BACKEND_URL}${url}` : url;
+                    await new Promise((resolve, reject) => {
+                        const timeout = setTimeout(() => reject('timeout'), 8000);
+                        imgElement.onload = () => { clearTimeout(timeout); resolve(); };
+                        imgElement.onerror = () => { clearTimeout(timeout); reject('error'); };
+                        imgElement.src = finalUrl;
+                    });
+                    imgElement.style.opacity = '1';
+                    return;
+                } catch (e) { continue; }
+            }
+            imgElement.src = fallbackUrl;
+            imgElement.style.opacity = '1';
+        }
+
+        async function openSheet(poi, isManual = false) {
+            initApp();
+            
+            // If tour is active, use the Cockpit Morph
+            if (isTourActive) {
+                if (arrivalAnimationActive) return; // Prevent double trigger
+                
+                const cockpit = document.getElementById('activeTourCockpit');
+                const backdrop = document.getElementById('backdrop');
+                const audio = document.getElementById('audioElement');
+                const img = document.getElementById('cockpitPoiImg');
+                const playBtn = document.getElementById('cockpitPlayPauseBtn');
+                const waveform = document.getElementById('cockpitWaveform');
+
+                // Morph Transition
+                arrivalAnimationActive = true;
+                cockpit.classList.add('cockpit-expanded');
+                cockpit.classList.remove('pulse-active'); // Ensure pulse is off
+                if (isManual) backdrop.classList.add('open');
+                
+                // Content Preparation
+                document.getElementById('cockpitTargetName').innerText = poi.name;
+                document.getElementById('cockpitPoiCity').innerText = poi.city;
+                document.getElementById('cockpitPoiCity').classList.remove('hidden');
+                document.getElementById('cockpitLabel').classList.add('hidden');
+                document.getElementById('cockpitScriptText').innerText = "Wird geladen...";
+                document.getElementById('cockpitAudioStatus').innerText = "KI erzählt...";
+                document.getElementById('cockpitProgressFill').style.width = '0%';
+
+                try {
+                    const catParam = selectedCategories.join(',');
+                    const res = await fetch(`${BACKEND_URL}/poi/${poi.id}/audio?persona=${selectedPersona}&categories=${catParam}`);
+                    const data = await res.json();
+
+                    renderScriptText('cockpitScriptText', data.script);
+                    if (data.image) await loadPoiImage(img, data.image);
+                    
+                    audio.src = data.audio_url;
+                    if (isManual || (isAudioMasterOn && isAutoPlayOn)) {
+                        fadeInAudio(audio);
+                        document.getElementById('cockpitAudioStatus').innerText = "Wird erzählt...";
+                        playBtn.innerText = '⏸️';
+                        if (waveform) waveform.classList.add('active');
+                    } else {
+                        document.getElementById('cockpitAudioStatus').innerText = "Bereit";
+                        playBtn.innerText = '▶️';
+                        if (waveform) waveform.classList.remove('active');
+                    }
+                    updateProgress();
+                } catch (e) {
+                    document.getElementById('cockpitAudioStatus').innerText = "Fehler";
+                } finally {
+                    // Animation guard reset after 1s (matching transitions)
+                    setTimeout(() => { arrivalAnimationActive = false; }, 1000);
+                }
+                return;
+            }
+
+            const sheet = document.getElementById('bottomSheet');
+            const backdrop = document.getElementById('backdrop');
+            const audio = document.getElementById('audioElement');
+            const img = document.getElementById('poiImg');
+            const playBtn = document.getElementById('playPauseBtn');
+            const waveform = document.getElementById('waveform');
+
+            document.getElementById('discoveryModal').classList.remove('open');
+            document.getElementById('preferencesModal').classList.remove('open');
+
+            img.style.opacity = '0';
+            document.getElementById('poiName').innerText = poi.name;
+            document.getElementById('poiCity').innerText = poi.city;
+            document.getElementById('scriptText').innerText = "Wird geladen...";
+            document.getElementById('audioStatus').innerText = "KI erzählt...";
+            document.getElementById('progressFill').style.width = '0%';
+
+            playBtn.classList.add('pulse-blue');
+            sheet.classList.add('open');
+            if (isManual) backdrop.classList.add('open');
+
+            const timeoutId = setTimeout(() => {
+                if (document.getElementById('audioStatus').innerText === "KI erzählt...") {
+                    document.getElementById('audioStatus').innerText = "Verbindung langsam...";
+                    playBtn.classList.remove('pulse-blue');
+                }
+            }, 12000);
+
+            try {
+                const catParam = selectedCategories.join(',');
+                const res = await fetch(`${BACKEND_URL}/poi/${poi.id}/audio?persona=${selectedPersona}&categories=${catParam}`);
+                const data = await res.json();
+
+                clearTimeout(timeoutId);
+                playBtn.classList.remove('pulse-blue');
+
+                renderScriptText('scriptText', data.script);
+                if (data.image) await loadPoiImage(img, data.image);
+                else img.src = `${BACKEND_URL}/static/fallback.svg`;
+
+                audio.src = data.audio_url;
+                const shouldPlay = isManual || (isAudioMasterOn && isAutoPlayOn);
+                if (shouldPlay && isAudioMasterOn) {
+                    fadeInAudio(audio);
+                    document.getElementById('audioStatus').innerText = "Wird erzählt...";
+                    document.getElementById('playPauseBtn').innerText = '⏸️';
+                    if (waveform) waveform.classList.add('active');
+                } else {
+                    document.getElementById('audioStatus').innerText = "Bereit";
+                    document.getElementById('playPauseBtn').innerText = '▶️';
+                    if (waveform) waveform.classList.remove('active');
+                }
+                updateProgress();
+            } catch (e) {
+                clearTimeout(timeoutId);
+                playBtn.classList.remove('pulse-blue');
+                document.getElementById('audioStatus').innerText = "Fehler";
+            }
+        }
+
+        function togglePlayback() {
+            const audio = document.getElementById('audioElement');
+            const prefix = isTourActive ? 'cockpit' : '';
+            const btnId = prefix ? 'cockpitPlayPauseBtn' : 'playPauseBtn';
+            const statusId = prefix ? 'cockpitAudioStatus' : 'audioStatus';
+            const waveformId = prefix ? 'cockpitWaveform' : 'waveform';
+            const btn = document.getElementById(btnId);
+            const status = document.getElementById(statusId);
+            const waveform = document.getElementById(waveformId);
+            
+            if (audio.paused) { 
+                fadeInAudio(audio); 
+                if (btn) btn.innerText = '⏸️'; 
+                if (status) status.innerText = "Wird erzählt..."; 
+                if (waveform) waveform.classList.add('active');
+            }
+            else { 
+                audio.pause(); 
+                if (btn) btn.innerText = '▶️'; 
+                if (waveform) waveform.classList.remove('active');
+            }
+        }
+
+        function updateProgress() {
+            const audio = document.getElementById('audioElement');
+            const prefix = isTourActive ? 'cockpit' : '';
+            const fillId = prefix ? 'cockpitProgressFill' : 'progressFill';
+            const btnId = prefix ? 'cockpitPlayPauseBtn' : 'playPauseBtn';
+            const waveformId = prefix ? 'cockpitWaveform' : 'waveform';
+            const fill = document.getElementById(fillId);
+            const btn = document.getElementById(btnId);
+            const waveform = document.getElementById(waveformId);
+            
+            const interval = setInterval(() => {
+                if (audio.duration) {
+                    const pct = (audio.currentTime / audio.duration) * 100;
+                    if (fill) fill.style.width = pct + '%';
+                }
+                
+                const cockpit = document.getElementById('activeTourCockpit');
+                const sheet = document.getElementById('bottomSheet');
+                const isVisible = isTourActive ? 
+                    !cockpit.classList.contains('hidden') :
+                    sheet.classList.contains('open');
+                    
+                if (audio.ended || !isVisible) {
+                    clearInterval(interval);
+                    if (audio.ended) {
+                        if (btn) btn.innerText = '▶️';
+                        if (waveform) waveform.classList.remove('active');
+                    }
+                }
+            }, 100);
+        }
+
+        function closeSheet() {
+            if (isTourActive) {
+                const cockpit = document.getElementById('activeTourCockpit');
+                if (cockpit.classList.contains('cockpit-expanded')) {
+                    cockpit.classList.remove('cockpit-expanded');
+                    document.getElementById('backdrop').classList.remove('open');
+                    document.getElementById('cockpitPoiCity').classList.add('hidden');
+                    document.getElementById('cockpitLabel').classList.remove('hidden');
+                    return;
+                }
+            }
+            document.getElementById('bottomSheet').classList.remove('open');
+            document.getElementById('backdrop').classList.remove('open');
+            document.getElementById('audioElement').pause();
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3; // Earth radius in meters
+            const phi1 = lat1 * Math.PI/180;
+            const phi2 = lat2 * Math.PI/180;
+            const dPhi = (lat2-lat1) * Math.PI/180;
+            const dLambda = (lon2-lon1) * Math.PI/180;
+            const a = Math.sin(dPhi/2) * Math.sin(dPhi/2) +
+                      Math.cos(phi1) * Math.cos(phi2) *
+                      Math.sin(dLambda/2) * Math.sin(dLambda/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        function getCurrentLocation() {
+            return new Promise((resolve, reject) => {
+                if (isMockingGps) {
+                    addDebugLog("Nutze simulierte Mannheim-Koordinaten", "info");
+                    return resolve(MOCK_MANNHEIM);
+                }
+                if (!navigator.geolocation) return reject("No GPS");
+                navigator.geolocation.getCurrentPosition(
+                    pos => resolve([pos.coords.longitude, pos.coords.latitude]),
+                    err => reject(err),
+                    { enableHighAccuracy: true, timeout: 5000 }
+                );
+            });
+        }
+
+        async function generateRouteFromDiscovery() {
+            if (selectedPoiIds.length < 2) return alert("Wähle mindestens 2 Orte aus.");
+            toggleDiscovery();
+            await generateRoute();
+        }
+
+        function triggerArrivalHaptics() {
+            if (navigator.vibrate) {
+                navigator.vibrate([100, 50, 100]);
+            }
+        }
+
+        function playArrivalSound() {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const ctx = new AudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(440, ctx.currentTime);
+                
+                gain.gain.setValueAtTime(0, ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                osc.start();
+                osc.stop(ctx.currentTime + 0.2);
+            } catch (e) {
+                console.warn("Could not play arrival sound:", e);
+            }
+        }
+
+        async function checkGeofences(uLat, uLng) {
+            const now = Date.now();
+            const distMoved = calculateDistance(uLat, uLng, lastCheckLat, lastCheckLng);
+            
+            // 1. Battery Saver / Throttling: Only check every 10s OR if moved > 20m
+            // But ALWAYS check POIs for immediate feedback
+            let shouldCheckBackend = (now - lastCheckTime > 10000) || (distMoved > 20);
+
+            // Check for POIs (Highest Priority) - Always run for accuracy
+            let triggeredPoi = null;
+            if (isTourActive && selectedPoiIds.length > 0) {
+                const targetId = selectedPoiIds[currentRouteIndex];
+                const poi = pois.find(p => String(p.id) === String(targetId));
+                if (poi) {
+                    const dist = calculateDistance(uLat, uLng, poi.lat, poi.lng);
+                    if (typeof updateCockpitUI === 'function') updateCockpitUI(poi, dist);
+                    if (dist < GEOFENCE_RADIUS) triggeredPoi = poi;
+                }
+            } else {
+                for (const poi of pois) {
+                    const dist = calculateDistance(uLat, uLng, poi.lat, poi.lng);
+                    if (dist < GEOFENCE_RADIUS) {
+                        triggeredPoi = poi;
+                        break;
+                    }
+                }
+            }
+
+            if (triggeredPoi && lastTriggeredPoiId !== triggeredPoi.id) {
+                if (arrivalAnimationActive) return; // Wait for current animation to finish
+                
+                lastTriggeredPoiId = triggeredPoi.id;
+                addDebugLog(`POI erreicht: ${triggeredPoi.name}`, 'success');
+                
+                // Arrival Effects
+                triggerArrivalHaptics();
+                playArrivalSound();
+                map.flyTo([triggeredPoi.lat, triggeredPoi.lng], 18, { animate: true, duration: 1.5 });
+
+                openSheet(triggeredPoi, false);
+                if (isTourActive) currentRouteIndex++;
+                return; 
+            }
+
+            // 2. Check for Geofences (Second Priority) - Throttled
+            if (shouldCheckBackend) {
+                lastCheckTime = now;
+                lastCheckLat = uLat;
+                lastCheckLng = uLng;
+
+                try {
+                    const res = await fetch(`${BACKEND_URL}/geofence/check?lat=${uLat}&lng=${uLng}`);
+                    const fence = await res.json();
+                    
+                    if (fence.id && fence.id !== lastTriggeredFenceId) {
+                        lastTriggeredFenceId = fence.id;
+                        addDebugLog(`Zone betreten: ${fence.name}`, 'info');
+                        openFenceSheet(fence);
+                    } else if (!fence.id) {
+                        lastTriggeredFenceId = null; 
+                    }
+                } catch (e) {
+                    console.warn("Geofence check failed", e);
+                }
+            }
+        }
+
+        async function openFenceSheet(fence) {
+            initApp();
+            
+            // If tour is active, don't show zone info as a bottom sheet to avoid cluttering the cockpit
+            if (isTourActive) {
+                addDebugLog(`Zone betreten (Tour aktiv): ${fence.name} - Info unterdrückt`, 'info');
+                return;
+            }
+
+            const sheet = document.getElementById('bottomSheet');
+            const audio = document.getElementById('audioElement');
+            const img = document.getElementById('poiImg');
+            const playBtn = document.getElementById('playPauseBtn');
+            const waveform = document.getElementById('waveform');
+
+            document.getElementById('poiName').innerText = fence.name;
+            document.getElementById('poiCity').innerText = "Aktuelle Zone";
+            document.getElementById('scriptText').innerText = "Lade Stadtteil-Intro...";
+            document.getElementById('audioStatus').innerText = "Guide bereitet sich vor...";
+            
+            img.style.opacity = '0';
+            img.src = `${BACKEND_URL}/static/fallback.svg`; // Zones use fallback or city images
+            sheet.classList.add('open');
+
+            try {
+                const res = await fetch(`${BACKEND_URL}/geofence/${fence.id}/audio?persona=${selectedPersona}`);
+                const data = await res.json();
+
+                renderScriptText('scriptText', data.script);
+                audio.src = data.audio_url;
+                
+                if (isAudioMasterOn && isAutoPlayOn) {
+                    fadeInAudio(audio);
+                    document.getElementById('audioStatus').innerText = "Intro läuft...";
+                    playBtn.innerText = '⏸️';
+                    if (waveform) waveform.classList.add('active');
+                } else {
+                    document.getElementById('audioStatus').innerText = "Bereit";
+                    playBtn.innerText = '▶️';
+                    if (waveform) waveform.classList.remove('active');
+                }
+                updateProgress();
+            } catch (e) {
+                document.getElementById('audioStatus').innerText = "Fehler";
+            }
+        }
+
+        function togglePreferences() {
+            initApp();
+            const modal = document.getElementById('preferencesModal');
+            const backdrop = document.getElementById('backdrop');
+            if (!modal || !backdrop) return;
+
+            const isOpen = modal.classList.toggle('open');
+            backdrop.classList.toggle('open', isOpen);
+
+            if (isOpen) {
+                document.getElementById('discoveryModal').classList.remove('open');
+                document.getElementById('bottomSheet').classList.remove('open');
+                renderCategories();
+                updatePersonaUI();
+            }
+        }
+
+        function toggleDiscovery() {
+            initApp();
+            const modal = document.getElementById('discoveryModal');
+            const backdrop = document.getElementById('backdrop');
+            if (!modal || !backdrop) return;
+
+            const isOpen = modal.classList.toggle('open');
+            backdrop.classList.toggle('open', isOpen);
+
+            // Safe check for legacy button
+            const btn = document.getElementById('discoverBtn');
+            btn?.classList.toggle('on', isOpen);
+            btn?.classList.toggle('off', !isOpen);
+
+            if (isOpen) {
+                document.getElementById('preferencesModal')?.classList.remove('open');
+                document.getElementById('bottomSheet')?.classList.remove('open');
+                renderDiscovery();
+            }
+        }
+
+        async function renderDiscovery(showLoader = true) {
+            addDebugLog('renderDiscovery gestartet', 'info');
+            const list = document.getElementById('discoveryList');
+            if (showLoader) {
+                list.innerHTML = '<div class="text-center py-8 opacity-50 text-sm">Suche nach passenden Orten...</div>';
+            }
+            try {
+                const catParam = selectedCategories.join(',');
+                // If we have cached results and showLoader is false, skip the fetch
+                let suggestedPois = discoveryCache;
+                if (showLoader || discoveryCache.length === 0) {
+                    addDebugLog(`Fetching /discover?categories=${catParam}`, 'info');
+                    const res = await fetch(`${BACKEND_URL}/discover?categories=${catParam}`);
+                    suggestedPois = await res.json();
+                    discoveryCache = suggestedPois;
+                }
+
+                addDebugLog(`Discovery: ${suggestedPois.length} POIs gesamt`, 'success');
+
+                if (suggestedPois.length === 0) {
+                    list.innerHTML = `<div class="text-center py-10 opacity-50 text-sm">Keine passenden Orte für deine Interessen gefunden.</div>`;
+                    return;
+                }
+
+                list.innerHTML = suggestedPois.map(poi => {
+                    const active = hasSelectedPoiId(poi.id);
+                    return `
+                        <div onclick="togglePoiSelection('${poi.id}')" class="glass-card p-4 flex items-center justify-between cursor-pointer transition-all ${active ? 'selected' : ''}" data-poi-id="${poi.id}">
+                            <div class="flex items-center gap-4">
+                                <div class="text-2xl">${poi.emoji}</div>
+                                <div>
+                                    <div class="font-bold text-sm">${poi.name}</div>
+                                    <div class="text-[10px] opacity-40 uppercase tracking-wider">${poi.categories.slice(0, 2).join(' • ')}</div>
+                                </div>
+                            </div>
+                            <div class="w-10 h-10 ${active ? 'bg-sky-500 text-white' : 'bg-[#0ea5e9]/10 text-[#0ea5e9]'} rounded-xl flex items-center justify-center transition-colors">
+                                ${active ? '✅' : '➕'}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {
+                addDebugLog(`renderDiscovery Fehler: ${e.message}`, 'error');
+                list.innerHTML = '<div class="text-center py-8 text-red-400">Fehler beim Laden.</div>';
+            }
+        }
+
+        function renderCategories() {
+            const grid = document.getElementById('categoryGrid');
+            grid.innerHTML = ALL_CATEGORIES.map(cat => `
+                <div onclick="selectCategory('${cat}')" class="px-4 py-3 rounded-2xl border ${selectedCategories.includes(cat) ? 'bg-[#0ea5e9] border-white/20 text-white shadow-lg' : 'bg-white/5 border-white/10 text-white/40'} text-[13px] font-bold text-center cursor-pointer transition-all">
+                    ${cat}
+                </div>
+            `).join('');
+        }
+
+        function selectCategory(cat) {
+            if (selectedCategories.includes(cat)) selectedCategories = selectedCategories.filter(c => c !== cat);
+            else selectedCategories.push(cat);
+            renderCategories();
+        }
+
+        async function savePreferences() {
+            await saveSetting('userPreferences', selectedCategories);
+            closeAll();
+            renderMarkers();
+        }
+
+        async function runStressTest() {
+            initApp();
+            const audio = document.getElementById('audioElement');
+            
+            // Force Audio/Autoplay for the test
+            isAudioMasterOn = true;
+            isAutoPlayOn = true;
+            updatePersonaUI();
+
+            addDebugLog("Dynamic-Walk (Route-Following) gestartet...", "info");
+            const btn = document.getElementById('stressTestBtn');
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+
+            // 1. Get POIs in order
+            let poiPoints = [];
+            if (selectedPoiIds.length > 0) {
+                poiPoints = selectedPoiIds.map(id => {
+                    const found = pois.find(p => String(p.id) === String(id));
+                    return found ? { lat: found.lat, lng: found.lng, name: found.name, id: found.id } : null;
+                }).filter(p => p !== null);
+            }
+
+            if (poiPoints.length < 1) {
+                addDebugLog("Keine Tour aktiv. Bitte erstelle erst eine Route!", "error");
+                alert("Bitte wähle erst Orte aus und klicke auf 'Weg berechnen'!");
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                return;
+            }
+
+            // 2. Prepare Path Segments from lastCalculatedRoutePoints
+            // We need to slice the full route into segments between our target POIs
+            let segments = [];
+            if (lastCalculatedRoutePoints && lastCalculatedRoutePoints.length > 0) {
+                let currentPathIdx = 0;
+                for (let i = 0; i < poiPoints.length - 1; i++) {
+                    const nextPoi = poiPoints[i+1];
+                    const segment = [];
+                    
+                    // Find points until we reach the next POI (roughly)
+                    while (currentPathIdx < lastCalculatedRoutePoints.length) {
+                        const p = lastCalculatedRoutePoints[currentPathIdx];
+                        segment.push(p);
+                        currentPathIdx++;
+                        
+                        // Check if we reached the next POI
+                        const d = calculateDistance(p.lat, p.lng, nextPoi.lat, nextPoi.lng);
+                        if (d < 10) break; // Close enough to next POI
+                    }
+                    segments.push(segment);
+                }
+            }
+
+            // Reset state
+            lastTriggeredFenceId = null;
+            lastTriggeredPoiId = null;
+            shouldFollowUser = true;
+
+            for (let i = 0; i < poiPoints.length; i++) {
+                const currentPoi = poiPoints[i];
+                
+                // A. Arrive at current point
+                addDebugLog(`Erreiche: ${currentPoi.name}`, 'success');
+                updatePosition(currentPoi.lat, currentPoi.lng, 5);
+                
+                // B. Wait for audio to start
+                await new Promise(resolve => {
+                    let attempts = 0;
+                    const checkAudio = setInterval(() => {
+                        attempts++;
+                        if (!audio.paused && audio.duration > 0) {
+                            clearInterval(checkAudio);
+                            resolve();
+                        }
+                        if (attempts > 20) { clearInterval(checkAudio); resolve(); } 
+                    }, 500);
+                });
+
+                if (i >= poiPoints.length - 1) break; // End of tour
+
+                // C. Walk the segment to next POI
+                const segment = segments[i] || [];
+                const duration = Math.max(audio.duration || 15, 10) * 1000;
+                const startTime = Date.now();
+                
+                addDebugLog(`Laufe zu ${poiPoints[i+1].name} (entlang der Route, ${Math.round(duration/1000)}s)`, 'info');
+
+                if (segment.length > 0) {
+                    await new Promise(resolve => {
+                        const walkInterval = setInterval(() => {
+                            const elapsed = Date.now() - startTime;
+                            const progress = Math.min(elapsed / duration, 1);
+                            
+                            // Find corresponding point in segment based on progress
+                            const pointIdx = Math.floor(progress * (segment.length - 1));
+                            const p = segment[pointIdx];
+                            
+                            updatePosition(p.lat, p.lng, 5);
+
+                            if (progress >= 1 || audio.ended) {
+                                clearInterval(walkInterval);
+                                resolve();
+                            }
+                        }, 100);
+                    });
+                } else {
+                    // Fallback to linear if no segment found
+                    const next = poiPoints[i+1];
+                    await new Promise(resolve => {
+                        const walkInterval = setInterval(() => {
+                            const elapsed = Date.now() - startTime;
+                            const progress = Math.min(elapsed / duration, 1);
+                            const curLat = currentPoi.lat + (next.lat - currentPoi.lat) * progress;
+                            const curLng = currentPoi.lng + (next.lng - currentPoi.lng) * progress;
+                            updatePosition(curLat, curLng, 5);
+                            if (progress >= 1 || audio.ended) { clearInterval(walkInterval); resolve(); }
+                        }, 100);
+                    });
+                }
+
+                // D. Wait for audio to finish
+                if (!audio.ended) {
+                    await new Promise(resolve => {
+                        audio.addEventListener('ended', resolve, { once: true });
+                        setTimeout(resolve, 4000); 
+                    });
+                }
+            }
+
+            addDebugLog("Stress-Test beendet!", "success");
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            alert("Simulation abgeschlossen. Der Guide ist der eingezeichneten Route gefolgt.");
+        }
+
+        async function updateStorageInfo() {
+            if (navigator.storage && navigator.storage.estimate) {
+                const estimate = await navigator.storage.estimate();
+                const usedMB = Math.round(estimate.usage / (1024 * 1024));
+                document.getElementById('storageInfo').innerText = `Aktuell belegter Speicher: ca. ${usedMB} MB`;
+            }
+        }
+
+        async function startCityDownload(city) {
+            const cityPois = pois.filter(p => p.city === city);
+            const btn = document.getElementById(`btn-${city}`);
+            const statusText = document.getElementById(`status-${city}`);
+
+            btn.disabled = true;
+            btn.classList.add('opacity-50');
+
+            let count = 0;
+            for (const poi of cityPois) {
+                count++;
+                statusText.innerText = `Lade: ${count}/${cityPois.length} POIs...`;
+                try {
+                    const catParam = selectedCategories.join(',');
+                    await fetch(`${BACKEND_URL}/poi/${poi.id}/audio?persona=${selectedPersona}&categories=${catParam}`);
+                } catch (e) { console.error(`Failed to download ${poi.name}`, e); }
+            }
+
+            statusText.innerText = "Offline verfügbar";
+            btn.innerText = "Aktualisieren";
+            btn.disabled = false;
+            btn.classList.remove('opacity-50');
+            updateStorageInfo();
+        }
+
+        async function clearOfflineData() {
+            if (confirm("Möchtest du wirklich alle heruntergeladenen Audios und Bilder löschen?")) {
+                const cacheNames = await caches.keys();
+                for (const name of cacheNames) {
+                    await caches.delete(name);
+                }
+                alert("Speicher geleert.");
+                updateStorageInfo();
+            }
+        }
+
+        async function runFullAutoTest() {
+            closeAll(); // 0. Close all modals for a clean start
+            initApp();
+            addDebugLog("Full Auto-Test (Mannheim) gestartet...", "info");
+            
+            // 1. Enable GPS Mock
+            if (!isMockingGps) toggleGpsMock();
+            
+            // 2. Select ALL Mannheim POIs (up to limit of 12)
+            const mannheimPois = pois.filter(p => p.city === 'Mannheim').slice(0, 12);
+            selectedPoiIds = mannheimPois.map(p => p.id);
+            renderPoiChips();
+            renderMarkers();
+            
+            addDebugLog(`Wähle ${selectedPoiIds.length} Orte aus...`, 'success');
+            addDebugLog("Berechne Route von Spoofed Location...", "info");
+            
+            // 3. Generate Route (Current location is MOCK_MANNHEIM)
+            await generateRoute();
+            
+            // 4. Wait for overlay and start tour + stress test
+            setTimeout(async () => {
+                const overlay = document.getElementById('smartStartOverlay');
+                if (overlay && !overlay.classList.contains('hidden')) {
+                    addDebugLog("Starte Tour und Stress-Test...", "success");
+                    startActiveTour();
+                    await new Promise(r => setTimeout(r, 1500));
+                    runStressTest();
+                } else {
+                    // Fallback: if overlay didn't show for some reason, try starting directly
+                    addDebugLog("Start-Overlay nicht erkannt, starte direkt...", "warn");
+                    startActiveTour();
+                    await new Promise(r => setTimeout(r, 1500));
+                    runStressTest();
+                }
+            }, 3000);
+        }
+
+        loadData();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CityWhisper - Entwicklungs-Historie & Deep Dive</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
+        
+        @media print {
+            .page-break { page-break-after: always; }
+            body { background: white !important; color: black !important; }
+            .no-print { display: none; }
+            .track-card { border: 1px solid #e2e8f0 !important; box-shadow: none !important; }
+        }
+        
+        body { 
+            background: #050810; 
+            color: #e2e8f0; 
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            line-height: 1.6;
+        }
+        
+        .hero-gradient {
+            background: radial-gradient(circle at top right, rgba(14, 165, 233, 0.15), transparent),
+                        radial-gradient(circle at bottom left, rgba(14, 165, 233, 0.05), transparent);
+        }
+        
+        .track-card { 
+            background: rgba(30, 41, 59, 0.5); 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            border-radius: 32px; 
+            padding: 2.5rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .track-number {
+            font-family: monospace;
+            background: rgba(14, 165, 233, 0.1);
+            color: #0ea5e9;
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.8rem;
+        }
+        
+        .screenshot-container {
+            position: relative;
+            width: 100%;
+            max-width: 280px;
+            margin: 0 auto;
+        }
+        
+        .screenshot-container img {
+            border-radius: 24px;
+            border: 6px solid #1e293b;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+        }
+        
+        .status-badge {
+            background: #10b981;
+            color: white;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        h2, h3 { color: #fff; }
+        b { color: #0ea5e9; }
+    </style>
+</head>
+<body class="hero-gradient min-h-screen">
+
+    <!-- Header Section -->
+    <div class="max-w-6xl mx-auto px-8 pt-20 pb-16 text-center page-break">
+        <div class="inline-block mb-6">
+            <span class="status-badge">Release Candidate v2.0</span>
+        </div>
+        <h1 class="text-7xl font-black mb-6 tracking-tighter">City<span class="text-[#0ea5e9]">Whisper</span></h1>
+        <p class="text-2xl text-slate-400 max-w-3xl mx-auto font-light">
+            Die KI-gestützte Stadtführung der nächsten Generation: <br>
+            <b>Vom ersten Algorithmus bis zum Mannheim-Feldtest.</b>
+        </p>
+        
+        <div class="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm font-bold opacity-60">
+            <div>📍 MAPBOX INTEGRATION</div>
+            <div>🤖 LLAMA-3 AI</div>
+            <div>🎙️ NEURAL VOICES</div>
+            <div>📱 PWA READY</div>
+        </div>
+    </div>
+
+    <!-- MAIN TRACKS SECTION -->
+    <main class="max-w-6xl mx-auto px-8 space-y-12 pb-32">
+
+        <!-- Track 1 & 2: AI & CONTENT -->
+        <section class="track-card page-break">
+            <div class="flex flex-col md:flex-row gap-12 items-center">
+                <div class="flex-1">
+                    <span class="track-number">TRK-002 / TRK-003</span>
+                    <h2 class="text-4xl font-extrabold mt-4 mb-6 italic">KI-Audio-Pipeline & Content-Engine</h2>
+                    <p class="text-lg text-slate-400 mb-8 text-justify">
+                        Das Herzstück von CityWhisper. Ich habe eine skalierbare Pipeline entwickelt, die <b>Groq/Llama-3</b> nutzt, um für jeden Ort in Mannheim und Schönau dynamische, historisch fundierte Geschichten zu generieren. 
+                    </p>
+                    <ul class="space-y-4">
+                        <li class="flex items-start gap-3">
+                            <span class="text-[#0ea5e9] mt-1">✔</span>
+                            <span><b>Persona-System:</b> Implementierung von "Katja" (Insiderin) und "Killian" (Historiker) mit individuellen Sprachstilen.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-[#0ea5e9] mt-1">✔</span>
+                            <span><b>Neural TTS:</b> Integration von <code>edge-tts</code> für lebensechte, menschenähnliche Audio-Führungen.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-[#0ea5e9] mt-1">✔</span>
+                            <span><b>Wikipedia-Bot:</b> Automatisches Sourcing von Fakten zur Verifizierung der KI-Inhalte.</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="screenshot-container">
+                    <img src="img_start.png" alt="Smart Start UI">
+                    <div class="absolute -bottom-4 -right-4 bg-[#0ea5e9] p-4 rounded-2xl shadow-xl font-black text-xs">AI POWERED</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Track 5: IMAGE INFRASTRUCTURE -->
+        <section class="track-card page-break">
+            <div class="flex flex-col md:flex-row-reverse gap-12 items-center">
+                <div class="flex-1">
+                    <span class="track-number">TRK-005</span>
+                    <h2 class="text-4xl font-extrabold mt-4 mb-6 italic">Bild-Discovery & Proxy-Infrastruktur</h2>
+                    <p class="text-lg text-slate-400 mb-8 text-justify">
+                        Um eine ansprechende visuelle Erfahrung zu bieten, ohne manuell Tausende Bilder zu pflegen, habe ich ein <b>automatisiertes Discovery-System</b> entwickelt.
+                    </p>
+                    <ul class="space-y-4">
+                        <li class="flex items-start gap-3">
+                            <span class="text-[#0ea5e9] mt-1">✔</span>
+                            <span><b>Multi-API Search:</b> Abfrage von Wikipedia-REST und Unsplash für hochwertige POI-Fotos.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-[#0ea5e9] mt-1">✔</span>
+                            <span><b>Image Proxy Service:</b> Eigenes Backend-System zur Umgehung von CORS und Opaque-Blocking.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-[#0ea5e9] mt-1">✔</span>
+                            <span><b>Smart Caching:</b> Lokales Server-Caching zur Reduzierung von API-Kosten und Ladezeiten.</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="screenshot-container">
+                    <img src="img_debug.png" alt="Debug Panel & Image State">
+                </div>
+            </div>
+        </section>
+
+        <!-- NEW UPDATE SECTION -->
+        <div class="text-center py-16 page-break">
+            <h2 class="text-5xl font-black tracking-tight mb-4 text-[#0ea5e9]">DAS NEUE UPDATE</h2>
+            <p class="text-xl opacity-50">Implementierung für den Mannheim-Feldtest (März 2026)</p>
+        </div>
+
+        <!-- Track 8: CORE HARDENING -->
+        <section class="track-card page-break border-[#0ea5e9]/30">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-16">
+                <div>
+                    <span class="track-number">TRK-008</span>
+                    <h2 class="text-4xl font-extrabold mt-4 mb-6 italic text-white">Active Tour Experience</h2>
+                    <div class="space-y-10">
+                        <div class="bg-white/5 p-6 rounded-3xl border border-white/5">
+                            <h3 class="text-xl font-bold mb-2 text-[#0ea5e9]">Smart GPS Start & Simulation</h3>
+                            <p class="text-slate-400 text-sm">
+                                Die Route startet nun exakt dort, wo der Nutzer steht. Für Remote-Tests habe ich einen <b>GPS-Simulator</b> integriert, der einen Standort in Mannheim vorgaukelt.
+                            </p>
+                        </div>
+                        <div class="bg-white/5 p-6 rounded-3xl border border-white/5">
+                            <h3 class="text-xl font-bold mb-2 text-[#0ea5e9]">Active Tour Cockpit</h3>
+                            <p class="text-slate-400 text-sm">
+                                Eine neue Oberfläche für die Straße: Distanzanzeige, Zielname und Fortschritt. Optimiert für die <b>Hands-Free Nutzung</b> in der Hosentasche via Geofencing.
+                            </p>
+                        </div>
+                        <div class="bg-white/5 p-6 rounded-3xl border border-white/5">
+                            <h3 class="text-xl font-bold mb-2 text-[#0ea5e9]">Intelligente Sortierung</h3>
+                            <p class="text-slate-400 text-sm">
+                                Automatisches Fallback auf <b>Nearest-Neighbor Sortierung</b>, falls die Mapbox-Optimierung fehlschlägt. Garantiert eine logische Wegführung.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-col gap-8 justify-center">
+                    <div class="screenshot-container">
+                        <img src="img_cockpit.png" alt="Active Cockpit">
+                    </div>
+                    <div class="screenshot-container">
+                        <img src="img_summary.png" alt="Tour Summary">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Final Summary -->
+        <section class="text-center pt-20 no-print">
+            <h2 class="text-3xl font-bold mb-8">Bereit für die Straße.</h2>
+            <p class="opacity-40 text-sm mb-12">Erstellt von Pascal • März 2026 • CityWhisper Dev Team</p>
+            <button onclick="window.print()" class="bg-[#0ea5e9] text-white px-10 py-4 rounded-full font-black hover:scale-105 transition-all shadow-2xl shadow-[#0ea5e9]/40">
+                PDF JETZT SPEICHERN (STRG + P)
+            </button>
+        </section>
+
+    </main>
+
+</body>
+</html>

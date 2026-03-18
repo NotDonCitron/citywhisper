@@ -1,0 +1,17 @@
+{
+  "name": "CityWhisper",
+  "short_name": "CityWhisper",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0e1a",
+  "theme_color": "#0ea5e9",
+  "description": "Dein KI-gestützter City-Guide für Schönau und Mannheim.",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/201/201623.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

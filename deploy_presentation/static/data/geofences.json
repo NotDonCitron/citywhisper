@@ -1,0 +1,37 @@
+[
+  {
+    "id": "dist_quadrate",
+    "name": "Mannheimer Quadrate",
+    "type": "district",
+    "geometry": "{\"type\": \"Polygon\", \"coordinates\": [[[8.46, 49.48], [8.475, 49.48], [8.475, 49.495], [8.46, 49.495], [8.46, 49.48]]]}",
+    "priority": 10
+  },
+  {
+    "id": "area_wasserturm",
+    "name": "Friedrichsplatz & Wasserturm",
+    "type": "area",
+    "geometry": "{\"type\": \"Polygon\", \"coordinates\": [[[8.474, 49.483], [8.477, 49.483], [8.477, 49.485], [8.474, 49.485], [8.474, 49.483]]]}",
+    "priority": 20
+  },
+  {
+    "id": "dist_jungbusch",
+    "name": "Jungbusch",
+    "type": "district",
+    "geometry": "{\"type\": \"Polygon\", \"coordinates\": [[[8.45, 49.49], [8.46, 49.49], [8.46, 49.498], [8.45, 49.498], [8.45, 49.49]]]}",
+    "priority": 10
+  },
+  {
+    "id": "dist_schloss",
+    "name": "Schloss & Universität",
+    "type": "district",
+    "geometry": "{\"type\": \"Polygon\", \"coordinates\": [[[8.458, 49.48], [8.468, 49.48], [8.468, 49.485], [8.458, 49.485], [8.458, 49.48]]]}",
+    "priority": 10
+  },
+  {
+    "id": "dist_neckarstadt",
+    "name": "Neckarstadt-West",
+    "type": "district",
+    "geometry": "{\"type\": \"Polygon\", \"coordinates\": [[[8.46, 49.498], [8.475, 49.498], [8.475, 49.505], [8.46, 49.505], [8.46, 49.498]]]}",
+    "priority": 10
+  }
+]
