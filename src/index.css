@@ -1,0 +1,93 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --cat-history: #f59e0b;
+  --cat-art: #ec4899;
+  --cat-architecture: #0ea5e9;
+  --cat-subculture: #8b5cf6;
+  --cat-default: #334155;
+  --pulse-color: var(--cat-default);
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: #0a0e1a;
+  color: white;
+  margin: 0;
+  overflow: hidden;
+  height: 100vh;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Custom Animations from Prototype */
+@keyframes fadeInScale {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+@keyframes wave {
+  0%, 100% { height: 4px; }
+  50% { height: 12px; }
+}
+
+@keyframes cockpitPulse {
+  0%, 100% { opacity: 0.9; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.01); box-shadow: 0 0 30px var(--pulse-color); }
+}
+
+/* Custom Classes */
+.animate-wave {
+  animation: wave 1s ease-in-out infinite;
+}
+
+.pulse-active { 
+  animation: cockpitPulse 2s infinite ease-in-out;
+  border-color: var(--pulse-color) !important;
+  background: rgba(15, 23, 42, 0.95) !important;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+}
+
+.glass-card.selected {
+  border-color: #0ea5e9;
+  background: rgba(14, 165, 233, 0.1);
+}
+
+.user-location-dot::after {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  right: -3px;
+  bottom: -3px;
+  border-radius: 50%;
+  background: rgba(66, 133, 244, 0.2);
+  animation: pulse 2s infinite;
+}
+
+.waveform-bar {
+  animation: wave 1s ease-in-out infinite;
+}

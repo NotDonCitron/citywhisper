@@ -23,8 +23,9 @@ export const api = {
     return response.json();
   },
 
-  fetchAudio: async (poiId) => {
-    const response = await fetch(`${API_BASE_URL}/poi/${poiId}/audio`);
+  fetchAudio: async (poiId, persona = 'insider', categories = []) => {
+    const catParam = categories.join(',');
+    const response = await fetch(`${API_BASE_URL}/poi/${poiId}/audio?persona=${persona}&categories=${catParam}`);
     if (!response.ok) {
       throw new Error(`Error fetching audio: ${response.statusText}`);
     }

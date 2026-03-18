@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <script src="/static/js/db.js"></script>
+    <script src="http://localhost:8000/static/js/db.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -1130,7 +1130,7 @@
         </div>
     </div>
     <script>
-        const BACKEND_URL = window.location.origin;
+        const BACKEND_URL = 'http://localhost:8000';
         const GEOFENCE_RADIUS = 50;
         const ALL_CATEGORIES = ['History', 'Art', 'Subculture', 'Architecture', 'Nature', 'Food', 'Nightlife', 'Religion', 'Urban', 'Views', 'Family', 'Culture'];
         let pois = [], markers = [], userLocationMarker = null, lastTriggeredPoiId = null, lastTriggeredFenceId = null, selectedPoiIds = [], currentRouteLayer = null;
