@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CityWhisper – Schönau & Mannheim</title>
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#0ea5e9">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -1131,128 +1131,68 @@
     </div>
     <script>
         const IS_STATIC_DEMO = true;
-        const BACKEND_URL = IS_STATIC_DEMO ? "." : window.location.origin;
+        const BACKEND_URL = ".";
+        const MOCK_MANNHEIM = [8.475441, 49.484224];
+        const AUDIO_MAP = {"poi_collini_center_historian": "collini_center_historian_eaa9e1b1.mp3", "poi_collini_center_insider": "collini_center_insider_none.mp3", "fence_area_wasserturm_historian": "fence_area_wasserturm_historian.mp3", "fence_area_wasserturm_insider": "fence_area_wasserturm_insider.mp3", "fence_dist_jungbusch_historian": "fence_dist_jungbusch_historian.mp3", "fence_dist_jungbusch_insider": "fence_dist_jungbusch_insider.mp3", "fence_dist_neckarstadt_historian": "fence_dist_neckarstadt_historian.mp3", "fence_dist_neckarstadt_insider": "fence_dist_neckarstadt_insider.mp3", "fence_dist_quadrate_historian": "fence_dist_quadrate_historian.mp3", "fence_dist_quadrate_insider": "fence_dist_quadrate_insider.mp3", "fence_dist_schloss_historian": "fence_dist_schloss_historian.mp3", "fence_dist_schloss_insider": "fence_dist_schloss_insider.mp3", "poi_fernmeldeturm_historian": "fernmeldeturm_historian_c117e988.mp3", "poi_fernmeldeturm_insider": "fernmeldeturm_insider_none.mp3", "poi_friedrichsplatz_historian": "friedrichsplatz_historian_c117e988.mp3", "poi_friedrichsplatz_insider": "friedrichsplatz_insider_none.mp3", "poi_hafen_historian": "hafen_historian_eaa9e1b1.mp3", "poi_hafen_insider": "hafen_insider_eaa9e1b1.mp3", "poi_herzogenriedpark_historian": "herzogenriedpark_historian_eaa9e1b1.mp3", "poi_herzogenriedpark_insider": "herzogenriedpark_insider_none.mp3", "poi_huehnerberg_insider": "huehnerberg_insider.mp3", "poi_jesuitenkirche_historian": "jesuitenkirche_historian_eaa9e1b1.mp3", "poi_jesuitenkirche_insider": "jesuitenkirche_insider_eaa9e1b1.mp3", "poi_jungbusch_historian": "jungbusch_historian_c117e988.mp3", "poi_jungbusch_insider": "jungbusch_insider_eaa9e1b1.mp3", "poi_klosterkirche_insider": "klosterkirche_insider.mp3", "poi_klosterkirche_schoenau_historian": "klosterkirche_schoenau_historian_eaa9e1b1.mp3", "poi_kunsthalle_historian": "kunsthalle_historian_eaa9e1b1.mp3", "poi_kunsthalle_insider": "kunsthalle_insider_eaa9e1b1.mp3", "poi_kurpfalzbruecke_historian": "kurpfalzbruecke_historian_eaa9e1b1.mp3", "poi_kurpfalzbruecke_insider": "kurpfalzbruecke_insider_eaa9e1b1.mp3", "poi_luisenpark_historian": "luisenpark_historian_c117e988.mp3", "poi_luisenpark_insider": "luisenpark_insider_eaa9e1b1.mp3", "poi_marktplatz_historian": "marktplatz_historian_c117e988.mp3", "poi_marktplatz_insider": "marktplatz_insider_none.mp3", "poi_moschee_historian": "moschee_historian_eaa9e1b1.mp3", "poi_moschee_insider": "moschee_insider_eaa9e1b1.mp3", "poi_nationaltheater_historian": "nationaltheater_historian_c117e988.mp3", "poi_nationaltheater_insider": "nationaltheater_insider_eaa9e1b1.mp3", "poi_paradeplatz_historian": "paradeplatz_historian_eaa9e1b1.mp3", "poi_paradeplatz_insider": "paradeplatz_insider_none.mp3", "poi_planetarium_historian": "planetarium_historian_c117e988.mp3", "poi_planetarium_insider": "planetarium_insider_eaa9e1b1.mp3", "poi_popakademie_historian": "popakademie_historian_c117e988.mp3", "poi_popakademie_insider": "popakademie_insider_eaa9e1b1.mp3", "poi_rathaus_schoenau_insider": "rathaus_schoenau_insider.mp3", "poi_reiss_engelhorn_museen_historian": "reiss_engelhorn_museen_historian_c117e988.mp3", "poi_reiss_engelhorn_museen_insider": "reiss_engelhorn_museen_insider_none.mp3", "poi_rem_historian": "rem_historian_c117e988.mp3", "poi_rem_insider": "rem_insider_none.mp3", "poi_rosengarten_historian": "rosengarten_historian_c117e988.mp3", "poi_rosengarten_insider": "rosengarten_insider_eaa9e1b1.mp3", "poi_schloss_mannheim_historian": "schloss_mannheim_historian_c117e988.mp3", "poi_schloss_mannheim_insider": "schloss_mannheim_insider_none.mp3", "poi_synagoge_historian": "synagoge_historian_c117e988.mp3", "poi_synagoge_insider": "synagoge_insider_eaa9e1b1.mp3", "poi_technoseum_historian": "technoseum_historian_c117e988.mp3", "poi_technoseum_insider": "technoseum_insider_eaa9e1b1.mp3", "poi_teehaus_historian": "teehaus_historian_c117e988.mp3", "poi_teehaus_insider": "teehaus_insider_none.mp3", "poi_torhaus_historian": "torhaus_historian_c117e988.mp3", "poi_torhaus_insider": "torhaus_insider.mp3", "poi_wasserturm_historian": "wasserturm_historian_c117e988.mp3", "poi_wasserturm_insider": "wasserturm_insider_none.mp3", "poi_water_tower_park_historian": "water_tower_park_historian_c117e988.mp3", "poi_water_tower_park_insider": "water_tower_park_insider_none.mp3", "poi_zeughaus_historian": "zeughaus_historian_c117e988.mp3", "poi_zeughaus_insider": "zeughaus_insider_none.mp3"};
 
-        // --- Static Demo Fetch Interceptor ---
         if (IS_STATIC_DEMO) {
             const originalFetch = window.fetch;
-            window.fetch = async (url, options) => {
+            window.fetch = (url, options) => {
                 const urlStr = url.toString();
-                console.log(`[DEMO FETCH] Intercepting: ${urlStr}`);
-
-                // 1. POI List
-                if (urlStr.includes('/pois')) {
-                    return originalFetch('./static/data/pois.json');
-                }
-
-                // 2. Discover sugeriert alle POIs
-                if (urlStr.includes('/discover')) {
-                    return originalFetch('./static/data/pois.json');
-                }
-
-                // 3. Geofence Check
-                if (urlStr.includes('/geofence/check')) {
-                    const data = await originalFetch('./static/data/geofences.json').then(r => r.json());
-                    // Simply return first fence for demo if coordinates match Mannheim roughly
-                    const latMatch = urlStr.includes('lat=49.4');
-                    return new Response(JSON.stringify(latMatch ? data[0] : {id: null}), {
-                        headers: { 'Content-Type': 'application/json' }
-                    });
-                }
-
-                // 4. Audio & Script for POIs
+                if (urlStr.includes('/pois') || urlStr.includes('/discover')) return originalFetch('./static/data/pois.json');
+                if (urlStr.includes('/geofence/check')) return Promise.resolve(new Response(JSON.stringify({id: 'dist_quadrate', name: 'Mannheimer Quadrate'}), { headers: { 'Content-Type': 'application/json' } }));
+                
                 if (urlStr.includes('/poi/') && urlStr.includes('/audio')) {
                     const idMatch = urlStr.match(/\/poi\/([^/?]+)\/audio/);
-                    const persona = urlStr.includes('persona=historian') ? 'historian' : 'insider';
                     if (idMatch) {
                         const id = idMatch[1];
-                        const audioUrl = `./static/audio/poi_${id}_${persona}.mp3`;
-                        const scriptUrl = `./static/audio/poi_${id}_${persona}.txt`;
+                        const persona = urlStr.includes('persona=historian') ? 'historian' : 'insider';
+                        const mapKey = "poi_" + id + "_" + persona;
+                        const audioFile = AUDIO_MAP[mapKey] || AUDIO_MAP["poi_" + id + "_insider"] || (id + "_insider_none.mp3");
+                        const audioUrl = `./static/audio/${audioFile}`;
                         
-                        let script = "Audio-Guide verfügbar.";
-                        try {
-                            const txtRes = await originalFetch(scriptUrl);
-                            if (txtRes.ok) script = await txtRes.text();
-                        } catch(e) {}
-
-                        return new Response(JSON.stringify({
-                            id: id,
-                            audio_url: audioUrl,
-                            script: script,
-                            type: 'poi'
-                        }), { headers: { 'Content-Type': 'application/json' } });
+                        const isPng = ['reiss_engelhorn_museen', 'rem'].includes(id);
+                        const img = `./static/images/${id}.${isPng ? 'png' : 'jpg'}`;
+                        
+                        return (async () => {
+                            let script = "Audio-Guide verfügbar.";
+                            try { 
+                                const res = await originalFetch(audioUrl.replace('.mp3', '.txt')); 
+                                if (res.ok) script = await res.text(); 
+                            } catch(e) {}
+                            return new Response(JSON.stringify({ 
+                                id, audio_url: audioUrl, script, type: 'poi', image: { cached: img, fallback: img } 
+                            }), { headers: { 'Content-Type': 'application/json' } });
+                        })();
                     }
                 }
-
-                // 5. Audio & Script for Geofences
+                
                 if (urlStr.includes('/geofence/') && urlStr.includes('/audio')) {
                     const idMatch = urlStr.match(/\/geofence\/([^/?]+)\/audio/);
-                    const persona = urlStr.includes('persona=historian') ? 'historian' : 'insider';
                     if (idMatch) {
                         const id = idMatch[1];
-                        const audioUrl = `./static/audio/fence_${id}_${persona}.mp3`;
-                        const scriptUrl = `./static/audio/fence_${id}_${persona}.txt`;
-                        
-                        let script = "Willkommen in der Zone!";
-                        try {
-                            const txtRes = await originalFetch(scriptUrl);
-                            if (txtRes.ok) script = await txtRes.text();
-                        } catch(e) {}
-
-                        return new Response(JSON.stringify({
-                            id: id,
-                            audio_url: audioUrl,
-                            script: script,
-                            type: 'geofence'
-                        }), { headers: { 'Content-Type': 'application/json' } });
+                        const persona = urlStr.includes('persona=historian') ? 'historian' : 'insider';
+                        const mapKey = "fence_" + id + "_" + persona;
+                        const audioFile = AUDIO_MAP[mapKey] || `fence_${id}_insider.mp3`;
+                        return (async () => {
+                            let script = "Willkommen!";
+                            try {
+                                const res = await originalFetch(`./static/audio/${audioFile.replace('.mp3', '.txt')}`);
+                                if (res.ok) script = await res.text();
+                            } catch(e) {}
+                            return new Response(JSON.stringify({ id, audio_url: `./static/audio/${audioFile}`, script, type: 'geofence' }), { headers: { 'Content-Type': 'application/json' } });
+                        })();
                     }
                 }
-
-                // 6. Route Calculation Mock
+                
                 if (urlStr.includes('/route')) {
-                    addDebugLog("DEMO: Generiere detaillierte Demo-Route", "info");
-                    
-                    const reqOrder = selectedPoiIds.length > 0 ? selectedPoiIds : ['wasserturm', 'paradeplatz'];
-                    
-                    // Start at mock location
-                    let fullPath = [[MOCK_MANNHEIM[0], MOCK_MANNHEIM[1]]];
-                    
-                    // Connect each POI with intermediate points to simulate "walking along streets"
-                    for (let i = 0; i < reqOrder.length; i++) {
-                        const poi = pois.find(p => String(p.id) === String(reqOrder[i]));
-                        if (!poi) continue;
-                        
-                        const start = fullPath[fullPath.length - 1];
-                        const end = [poi.lng, poi.lat];
-                        
-                        // Generate 10 jittered intermediate points to make it look less like a straight line
-                        for (let j = 1; j <= 10; j++) {
-                            const ratio = j / 10;
-                            const intermediate = [
-                                start[0] + (end[0] - start[0]) * ratio,
-                                start[1] + (end[1] - start[1]) * ratio
-                            ];
-                            // Add very small random offset to look like street corners (jitter)
-                            if (j < 10) {
-                                intermediate[0] += (Math.random() - 0.5) * 0.0002;
-                                intermediate[1] += (Math.random() - 0.5) * 0.0002;
-                            }
-                            fullPath.push(intermediate);
-                        }
-                    }
-
-                    return new Response(JSON.stringify({
-                        optimized_poi_order: reqOrder,
-                        geometry: {
-                            type: "LineString",
-                            coordinates: fullPath
-                        }
-                    }), { headers: { 'Content-Type': 'application/json' } });
+                    return Promise.resolve(new Response(JSON.stringify({"geometry": {"coordinates": [[8.475441, 49.484224], [8.475483, 49.484268], [8.475115, 49.484406], [8.475083, 49.484418], [8.475178, 49.484526], [8.475215, 49.484567], [8.475322, 49.484688], [8.475445, 49.484827], [8.475361, 49.484924], [8.475397, 49.484964], [8.475413, 49.484958], [8.47547, 49.484936], [8.475486, 49.48493], [8.475501, 49.484948], [8.475391, 49.48499], [8.475429, 49.485043], [8.475456, 49.485082], [8.475377, 49.48512], [8.475306, 49.485153], [8.475267, 49.485166], [8.475232, 49.485177], [8.475226, 49.485179], [8.475195, 49.485189], [8.475081, 49.485228], [8.474972, 49.485264], [8.474966, 49.485286], [8.474796, 49.485273], [8.474711, 49.485312], [8.474616, 49.485348], [8.474578, 49.485364], [8.474391, 49.485437], [8.473621, 49.485738], [8.473551, 49.485765], [8.473448, 49.485805], [8.473225, 49.485892], [8.473111, 49.485937], [8.473037, 49.485966], [8.472939, 49.486005], [8.472582, 49.486136], [8.472148, 49.486313], [8.472059, 49.486348], [8.471992, 49.486375], [8.471461, 49.486582], [8.471188, 49.486692], [8.470953, 49.486779], [8.470719, 49.486866], [8.470115, 49.4871], [8.469303, 49.487415], [8.468487, 49.487733], [8.467744, 49.488019], [8.467655, 49.488051], [8.467501, 49.488091], [8.467386, 49.488136], [8.466973, 49.488295], [8.466872, 49.488335], [8.466792, 49.488367], [8.466774, 49.488374], [8.466812, 49.488416], [8.467475, 49.489128], [8.467451, 49.489137], [8.466868, 49.489365], [8.466651, 49.48945], [8.466619, 49.489471], [8.466699, 49.489557], [8.466843, 49.489715], [8.46725, 49.490167], [8.46731, 49.490233], [8.466495, 49.490555], [8.46568, 49.490877], [8.464845, 49.4912], [8.464027, 49.491515], [8.463436, 49.491747], [8.463271, 49.491814], [8.463, 49.491921], [8.460496, 49.492914], [8.460445, 49.49295], [8.460428, 49.492962], [8.46032, 49.492899], [8.460187, 49.492945], [8.460001, 49.493008], [8.459933, 49.493032], [8.45989, 49.49313], [8.459244, 49.49339], [8.459155, 49.49343], [8.459162, 49.493445], [8.459169, 49.493462], [8.45923, 49.493596], [8.459537, 49.49427], [8.459541, 49.494281], [8.459542, 49.494292], [8.459542, 49.494302], [8.459538, 49.494361], [8.459496, 49.494355], [8.459464, 49.494354], [8.459418, 49.494358], [8.459366, 49.494379], [8.458972, 49.494538], [8.458652, 49.494664], [8.457927, 49.494948], [8.457372, 49.495168], [8.457295, 49.495176], [8.457234, 49.494844], [8.457182, 49.494561], [8.457152, 49.494402], [8.457125, 49.494257], [8.457106, 49.494153], [8.45706, 49.493902], [8.457053, 49.493866], [8.456942, 49.49326], [8.456905, 49.493061], [8.45686, 49.492817], [8.456794, 49.492459], [8.456762, 49.492241], [8.456758, 49.492214], [8.456798, 49.492154], [8.456787, 49.492079], [8.45678, 49.492027], [8.456772, 49.491975], [8.456714, 49.491608], [8.456669, 49.491471], [8.456568, 49.491306], [8.456535, 49.4912], [8.456529, 49.491165], [8.456522, 49.491128], [8.456502, 49.491023], [8.45646, 49.490782], [8.456419, 49.490543], [8.456294, 49.489896], [8.456264, 49.489748], [8.456227, 49.489583], [8.456245, 49.48938], [8.456133, 49.488836], [8.456108, 49.488693], [8.456048, 49.488341], [8.456009, 49.488132], [8.455939, 49.487777], [8.455901, 49.487585], [8.45585, 49.48734], [8.455806, 49.487126], [8.455924, 49.487115], [8.455993, 49.487103], [8.456108, 49.487079], [8.456098, 49.48701], [8.456086, 49.486925], [8.456078, 49.48687], [8.45613, 49.486805], [8.456246, 49.486706], [8.456289, 49.486666], [8.456296, 49.48666], [8.456462, 49.486601], [8.456372, 49.486543], [8.456343, 49.486512], [8.456333, 49.48648], [8.456326, 49.486425], [8.456333, 49.486343], [8.45636, 49.486263], [8.456451, 49.48609], [8.456492, 49.486009], [8.456522, 49.485965], [8.456602, 49.485849], [8.456777, 49.485626], [8.456788, 49.485612], [8.456837, 49.485551], [8.45687, 49.485494], [8.456906, 49.485433], [8.456964, 49.485358], [8.457, 49.485327], [8.457065, 49.485271], [8.457317, 49.4851], [8.457397, 49.485046], [8.457413, 49.485035], [8.457589, 49.484935], [8.457655, 49.484899], [8.457712, 49.484868], [8.457799, 49.484821], [8.457869, 49.484767], [8.45794, 49.484753], [8.45795, 49.484748], [8.458011, 49.484719], [8.458054, 49.484689], [8.458091, 49.48463], [8.458131, 49.484573], [8.458161, 49.484518], [8.458195, 49.484457], [8.458241, 49.484432], [8.458375, 49.484362], [8.458594, 49.484274], [8.458692, 49.484228], [8.458746, 49.484173], [8.458769, 49.48416], [8.458799, 49.484143], [8.458922, 49.484096], [8.459185, 49.483991], [8.459268, 49.483971], [8.459391, 49.483949], [8.459555, 49.483895], [8.459609, 49.483875], [8.45972, 49.483834], [8.459806, 49.483817], [8.460092, 49.483707], [8.460224, 49.483716], [8.460477, 49.48362], [8.460649, 49.483649], [8.461008, 49.483713], [8.461248, 49.483707], [8.46133, 49.483675], [8.461346, 49.483669], [8.461594, 49.48358], [8.461869, 49.483466], [8.462129, 49.483359], [8.462803, 49.484075], [8.462918, 49.484197], [8.462997, 49.484281], [8.463163, 49.484219], [8.463204, 49.484264], [8.463234, 49.484297], [8.46325, 49.484314], [8.46326, 49.484324], [8.463286, 49.484353], [8.463304, 49.484373], [8.463369, 49.484444], [8.463409, 49.484452], [8.46351, 49.48447], [8.463558, 49.484519], [8.464172, 49.484281], [8.464725, 49.484882], [8.4655, 49.485725], [8.465826, 49.485598], [8.466359, 49.485391], [8.46666, 49.485719], [8.466786, 49.485855], [8.46688, 49.485957], [8.466986, 49.486079], [8.46693, 49.4861], [8.466795, 49.486152], [8.46693, 49.4861], [8.466986, 49.486079], [8.467148, 49.48626], [8.467213, 49.486333], [8.467294, 49.486301], [8.468032, 49.486017], [8.468119, 49.485986], [8.468549, 49.485822], [8.468845, 49.48571], [8.468919, 49.485682], [8.469254, 49.485553], [8.469584, 49.485427], [8.469668, 49.485395], [8.469762, 49.48536], [8.469836, 49.48533], [8.470262, 49.485155], [8.47045, 49.485075], [8.470642, 49.484966], [8.470707, 49.484938], [8.471129, 49.484772], [8.471346, 49.484687], [8.471536, 49.484614], [8.471784, 49.484521], [8.472248, 49.484335], [8.472349, 49.484295], [8.472499, 49.484235], [8.472843, 49.484098], [8.472989, 49.48404], [8.473053, 49.484014], [8.47311, 49.483993], [8.473168, 49.483975], [8.473301, 49.48394], [8.473348, 49.483992], [8.473689, 49.483901], [8.474154, 49.484388], [8.474233, 49.484471], [8.474258, 49.484496], [8.474293, 49.484531], [8.474352, 49.484506], [8.474441, 49.484467], [8.474593, 49.484406], [8.474631, 49.484391], [8.474721, 49.484355], [8.474823, 49.484458], [8.474941, 49.484582], [8.475015, 49.484553], [8.475073, 49.484606], [8.475159, 49.484573], [8.47518, 49.484597], [8.475164, 49.484603], [8.475112, 49.484622], [8.475101, 49.48461], [8.475215, 49.484567], [8.475178, 49.484526], [8.475083, 49.484418], [8.475115, 49.484406], [8.475483, 49.484268], [8.475441, 49.484224]], "type": "LineString"}, "duration": 3754.8999999999996, "optimized_poi_order": ["wasserturm", "marktplatz", "jungbusch", "schloss_mannheim", "paradeplatz"]}), { headers: { 'Content-Type': 'application/json' } }));
                 }
-
                 return originalFetch(url, options);
             };
         }
+
+        
         const GEOFENCE_RADIUS = 50;
         const ALL_CATEGORIES = ['History', 'Art', 'Subculture', 'Architecture', 'Nature', 'Food', 'Nightlife', 'Religion', 'Urban', 'Views', 'Family', 'Culture'];
         let pois = [], markers = [], userLocationMarker = null, lastTriggeredPoiId = null, lastTriggeredFenceId = null, selectedPoiIds = [], currentRouteLayer = null;
@@ -1904,7 +1844,7 @@
 
         let gpsAccuracy = 0;
         let isMockingGps = false;
-        const MOCK_MANNHEIM = [8.4660, 49.4836]; // [lng, lat]
+         // [lng, lat]
 
         function toggleGpsMock() {
             isMockingGps = !isMockingGps;
@@ -2847,42 +2787,23 @@
             }
         }
 
+         
+
+        
         async function runFullAutoTest() {
-            closeAll(); // 0. Close all modals for a clean start
+            if (typeof closeAll === 'function') closeAll();
             initApp();
-            addDebugLog("Full Auto-Test (Mannheim) gestartet...", "info");
-            
-            // 1. Enable GPS Mock
-            if (!isMockingGps) toggleGpsMock();
-            
-            // 2. Select ALL Mannheim POIs (up to limit of 12)
-            const mannheimPois = pois.filter(p => p.city === 'Mannheim').slice(0, 12);
-            selectedPoiIds = mannheimPois.map(p => p.id);
-            renderPoiChips();
-            renderMarkers();
-            
-            addDebugLog(`Wähle ${selectedPoiIds.length} Orte aus...`, 'success');
-            addDebugLog("Berechne Route von Spoofed Location...", "info");
-            
-            // 3. Generate Route (Current location is MOCK_MANNHEIM)
+            addDebugLog("Full Auto-Test gestartet...", "info");
+            isMockingGps = true;
+            updatePosition(MOCK_MANNHEIM[1], MOCK_MANNHEIM[0], 5);
+            selectedPoiIds = ['wasserturm', 'schloss_mannheim', 'paradeplatz', 'marktplatz', 'jungbusch'];
+            if (typeof renderPoiChips === 'function') renderPoiChips();
+            if (typeof renderMarkers === 'function') renderMarkers();
             await generateRoute();
-            
-            // 4. Wait for overlay and start tour + stress test
-            setTimeout(async () => {
-                const overlay = document.getElementById('smartStartOverlay');
-                if (overlay && !overlay.classList.contains('hidden')) {
-                    addDebugLog("Starte Tour und Stress-Test...", "success");
-                    startActiveTour();
-                    await new Promise(r => setTimeout(r, 1500));
-                    runStressTest();
-                } else {
-                    // Fallback: if overlay didn't show for some reason, try starting directly
-                    addDebugLog("Start-Overlay nicht erkannt, starte direkt...", "warn");
-                    startActiveTour();
-                    await new Promise(r => setTimeout(r, 1500));
-                    runStressTest();
-                }
-            }, 3000);
+            setTimeout(() => {
+                if (typeof startActiveTour === 'function') startActiveTour();
+                setTimeout(runStressTest, 2000);
+            }, 3500);
         }
 
         loadData();
