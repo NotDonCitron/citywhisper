@@ -69,7 +69,20 @@ export const useAudio = () => {
    * Caches a single audio file by POI ID.
    */
   const cacheAudio = useCallback(async (poiId, persona = 'insider', categories = []) => {
-    const fileName = `${poiId}_${persona}.mp3`;
+    // Ensure categories are sorted for consistent hashing
+    const sortedCats = Array.isArray(categories) ? [...categories].sort() : [categories];
+    const catString = sortedCats.join(',');
+    
+    // Simple hash function to create CAT_HASH
+    let hashValue = 0;
+    for (let i = 0; i < catString.length; i++) {
+        const char = catString.charCodeAt(i);
+        hashValue = ((hashValue << 5) - hashValue) + char;
+        hashValue |= 0; // Convert to 32bit integer
+    }
+    const catHash = Math.abs(hashValue).toString(16);
+
+    const fileName = `${poiId}_${persona}_${catHash}.mp3`;
     const filePath = `${cacheDir}/${fileName}`;
 
     try {
@@ -80,11 +93,12 @@ export const useAudio = () => {
           directory: Directory.Data
         });
         if (stat.size > 0) {
-          console.log(`Audio for ${poiId} already cached.`);
-          return Capacitor.convertFileSrc((await Filesystem.getUri({
+          console.log(`Audio for ${poiId} (persona: ${persona}, hash: ${catHash}) already cached.`);
+          const uri = await Filesystem.getUri({
             path: filePath,
             directory: Directory.Data
-          })).uri);
+          });
+          return Capacitor.convertFileSrc(uri.uri);
         }
       } catch (e) {
         // File does not exist, proceed to download
@@ -112,7 +126,7 @@ export const useAudio = () => {
         directory: Directory.Data
       });
 
-      console.log(`Audio for ${poiId} cached successfully.`);
+      console.log(`Audio for ${poiId} (persona: ${persona}, hash: ${catHash}) cached successfully.`);
       
       const uri = await Filesystem.getUri({
         path: filePath,

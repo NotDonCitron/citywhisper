@@ -24,7 +24,7 @@ export const api = {
   },
 
   fetchAudio: async (poiId, persona = 'insider', categories = []) => {
-    const catParam = categories.join(',');
+    const catParam = Array.isArray(categories) ? categories.join(',') : categories;
     const response = await fetch(`${API_BASE_URL}/poi/${poiId}/audio?persona=${persona}&categories=${catParam}`);
     if (!response.ok) {
       throw new Error(`Error fetching audio: ${response.statusText}`);

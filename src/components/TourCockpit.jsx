@@ -11,7 +11,8 @@ const TourCockpit = () => {
     userLocation, 
     stopTour,
     selectedPois,
-    phase
+    phase,
+    selectedCategories
   } = useTour();
 
   const {
@@ -32,9 +33,9 @@ const TourCockpit = () => {
   useEffect(() => {
     if (phase === 'ACTIVE' && selectedPois.length > 0) {
       const poiIds = selectedPois.map(p => p.id);
-      preFetchAll(poiIds, 'insider', []);
+      preFetchAll(poiIds, 'insider', selectedCategories);
     }
-  }, [phase, selectedPois, preFetchAll]);
+  }, [phase, selectedPois, selectedCategories, preFetchAll]);
 
   useEffect(() => {
     if (isTourActive && selectedPois.length > 0) {
