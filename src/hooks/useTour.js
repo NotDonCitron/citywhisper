@@ -50,8 +50,8 @@ export const useTour = () => {
         if (dist < GEOFENCE_RADIUS && lastTriggeredPoiId !== poi.id) {
           setLastTriggeredPoiId(poi.id);
           Haptics.notification({ type: NotificationType.Success });
-          console.log(`POI Reached: ${poi.name}. Triggering haptics.`);
-          // Note: Audio triggering should be handled by the context or a dedicated effect
+          console.log(`POI Reached: ${poi.name}. Triggering audio + display.`);
+          context.setActiveDisplayPoi(poi);
         }
       }
     }

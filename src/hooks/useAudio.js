@@ -20,6 +20,7 @@ export const useAudio = () => {
   const audioRef = useRef(new Audio());
   const cacheDir = 'audio_cache';
   const scriptCache = useRef({}); // Temporary in-memory cache for scripts
+  const webCache = useRef({}); // In-memory cache for web: cacheKey → {url, script}
   const fadeIntervalRef = useRef(null); // Track fade-out interval for cleanup
 
   // Ensure cache directory exists
@@ -169,11 +170,16 @@ export const useAudio = () => {
       // 1. Check in-memory script cache
       let script = scriptCache.current[cacheKey];
 
-      // 2. On Web, just return the direct API URL to avoid complex filesystem issues
+      // 2. On Web, check in-memory cache first, then fetch
       if (isWeb) {
+        if (webCache.current[cacheKey]) {
+          return webCache.current[cacheKey];
+        }
         const data = await api.fetchAudio(poiId, persona, categories);
         const fullUrl = data.audio_url.startsWith('http') ? data.audio_url : `${API_BASE_URL}${data.audio_url}`;
-        return { url: fullUrl, script: data.script };
+        const result = { url: fullUrl, script: data.script };
+        webCache.current[cacheKey] = result;
+        return result;
       }
 
       // 3. Check if file already exists (Native only)

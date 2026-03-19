@@ -1,14 +1,86 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTourContext } from '../context/TourContext';
-import { X, Save } from 'lucide-react';
+import { X, Save, Download, CheckCircle, Loader2 } from 'lucide-react';
 import { showToast } from './ToastContainer';
+import { api, API_BASE_URL } from '../services/api';
+import { offlineCache } from '../utils/offlineCache';
 
 const ALL_CATEGORIES = ['History', 'Art', 'Subculture', 'Architecture', 'Nature', 'Food', 'Nightlife', 'Religion', 'Urban', 'Views', 'Family', 'Culture'];
 
 const ProfileOverlay = ({ isOpen, onClose }) => {
-  const { selectedCategories, toggleCategory, persona, changePersona } = useTourContext();
+  const { selectedCategories, toggleCategory, persona, changePersona, markerStyle, changeMarkerStyle, pois } = useTourContext();
+
+  const [downloadingCity, setDownloadingCity] = useState(null);
+  const [downloadProgress, setDownloadProgress] = useState(0);
+  const [downloadTotal, setDownloadTotal] = useState(0);
+  const [downloadedCities, setDownloadedCities] = useState(() => offlineCache.getDownloadedCities());
+
+  // Extract unique cities from POIs
+  const cities = useMemo(() => {
+    const cityMap = {};
+    pois.forEach(poi => {
+      const city = poi.city || 'Unbekannt';
+      if (!cityMap[city]) cityMap[city] = 0;
+      cityMap[city]++;
+    });
+    return Object.entries(cityMap).sort((a, b) => b[1] - a[1]); // Sort by count desc
+  }, [pois]);
 
   if (!isOpen) return null;
+
+  const handleDownloadCity = async (cityName) => {
+    const cityPois = pois.filter(p => p.city === cityName);
+    if (cityPois.length === 0) return;
+
+    setDownloadingCity(cityName);
+    setDownloadTotal(cityPois.length);
+    setDownloadProgress(0);
+
+    try {
+      for (let i = 0; i < cityPois.length; i++) {
+        setDownloadProgress(i);
+        const poi = cityPois[i];
+        try {
+          // Fetch audio + script from backend (triggers AI generation + TTS if needed)
+          const data = await api.fetchAudio(poi.id, persona, selectedCategories);
+          const audioUrl = data.audio_url
+            ? (data.audio_url.startsWith('http') ? data.audio_url : `${API_BASE_URL}${data.audio_url}`)
+            : null;
+
+          // Store in offline cache
+          offlineCache.set(poi.id, persona, { script: data.script, audioUrl });
+
+          // Pre-fetch actual audio file into browser cache
+          if (audioUrl) {
+            await fetch(audioUrl).catch(() => {});
+          }
+
+          // Pre-fetch image into browser cache
+          if (poi.image) {
+            const imgSrc = typeof poi.image === 'string'
+              ? poi.image
+              : poi.image.cached || poi.image.direct || poi.image.fallback;
+            if (imgSrc) {
+              const imgUrl = imgSrc.startsWith('http') ? imgSrc : `${API_BASE_URL}${imgSrc}`;
+              await fetch(imgUrl).catch(() => {});
+            }
+          }
+        } catch (e) {
+          console.warn(`Offline download failed for ${poi.name}:`, e);
+        }
+      }
+
+      setDownloadProgress(cityPois.length);
+      offlineCache.markCityDownloaded(cityName);
+      setDownloadedCities(offlineCache.getDownloadedCities());
+      showToast(`${cityName}: ${cityPois.length} POIs offline bereit!`, 'success');
+    } catch (err) {
+      console.error('City download failed:', err);
+      showToast('Download fehlgeschlagen', 'error');
+    } finally {
+      setDownloadingCity(null);
+    }
+  };
 
   const handleSave = () => {
     showToast(`Profil gespeichert: ${persona === 'insider' ? 'Insiderin' : 'Historiker'}, ${selectedCategories.length} Interessen`, 'success');
@@ -85,20 +157,111 @@ const ProfileOverlay = ({ isOpen, onClose }) => {
           </div>
         </section>
 
-        {/* Offline Section Placeholder */}
-        <section className="pb-10">
-          <h3 className="text-[11px] font-black tracking-[0.25em] text-sky-500 uppercase mb-6 px-1">System</h3>
-          <div className="p-6 rounded-[28px] bg-white/5 border border-white/10 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-500">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        {/* Kartenstil Section */}
+        <section>
+          <h3 className="text-[11px] font-black tracking-[0.25em] text-sky-500 uppercase mb-6 px-1">Karten-Marker</h3>
+          <div className="grid grid-cols-2 gap-3">
+            <div
+              onClick={() => changeMarkerStyle('minimal')}
+              className={`p-5 rounded-2xl flex flex-col items-center gap-3 cursor-pointer transition-all active:scale-95 ${
+                markerStyle === 'minimal'
+                  ? 'bg-sky-500/10 border-2 border-sky-500/50'
+                  : 'bg-white/5 border border-white/10 opacity-60 hover:opacity-80'
+              }`}
+            >
+              <div className="flex gap-1.5">
+                <div className="w-8 h-8 rounded-full bg-slate-600 border-2 border-slate-500/60 flex items-center justify-center text-sm">⛲</div>
+                <div className="w-8 h-8 rounded-full bg-slate-600 border-2 border-slate-500/60 flex items-center justify-center text-sm">🎨</div>
               </div>
-              <div>
-                <div className="text-sm text-white font-bold">Offline-Modus</div>
-                <div className="text-[10px] text-white/40 font-medium">Alle Audio-Daten geladen</div>
-              </div>
+              <span className="text-xs font-bold text-white">Schlicht</span>
             </div>
-            <div className="px-4 py-1.5 bg-emerald-500/20 text-emerald-400 rounded-full text-[10px] font-black tracking-widest border border-emerald-500/30">BEREIT</div>
+            <div
+              onClick={() => changeMarkerStyle('colorful')}
+              className={`p-5 rounded-2xl flex flex-col items-center gap-3 cursor-pointer transition-all active:scale-95 ${
+                markerStyle === 'colorful'
+                  ? 'bg-sky-500/10 border-2 border-sky-500/50'
+                  : 'bg-white/5 border border-white/10 opacity-60 hover:opacity-80'
+              }`}
+            >
+              <div className="flex gap-1.5">
+                <div className="w-8 h-8 rounded-full bg-amber-500 border-2 border-white flex items-center justify-center text-sm">⛲</div>
+                <div className="w-8 h-8 rounded-full bg-pink-500 border-2 border-white flex items-center justify-center text-sm">🎨</div>
+              </div>
+              <span className="text-xs font-bold text-white">Bunt</span>
+            </div>
+          </div>
+        </section>
+
+        {/* Offline Download Section */}
+        <section className="pb-10">
+          <h3 className="text-[11px] font-black tracking-[0.25em] text-sky-500 uppercase mb-6 px-1">Offline-Download</h3>
+          <p className="text-xs text-white/40 mb-4 px-1">Lade Audio, Texte & Bilder einer Stadt herunter, um sie ohne Internet zu nutzen.</p>
+
+          <div className="space-y-3">
+            {cities.map(([city, count]) => {
+              const isDownloaded = downloadedCities.includes(city);
+              const isDownloading = downloadingCity === city;
+
+              return (
+                <div key={city} className="rounded-[20px] bg-white/5 border border-white/10 overflow-hidden">
+                  <div
+                    onClick={() => !isDownloading && handleDownloadCity(city)}
+                    className={`p-5 flex items-center justify-between cursor-pointer transition-all active:scale-[0.98] ${
+                      isDownloading ? 'opacity-70' : ''
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      {isDownloaded ? (
+                        <CheckCircle size={22} className="text-emerald-400" />
+                      ) : isDownloading ? (
+                        <Loader2 size={22} className="text-sky-400 animate-spin" />
+                      ) : (
+                        <Download size={22} className="text-sky-400" />
+                      )}
+                      <div>
+                        <div className="text-sm text-white font-bold">{city}</div>
+                        <div className="text-[10px] text-white/40 font-medium">
+                          {isDownloading
+                            ? `Lade POI ${downloadProgress + 1}/${downloadTotal}...`
+                            : isDownloaded
+                              ? `${count} POIs offline bereit`
+                              : `${count} POIs verfügbar`
+                          }
+                        </div>
+                      </div>
+                    </div>
+                    {!isDownloading && !isDownloaded && (
+                      <div className="px-4 py-1.5 bg-sky-500/20 text-sky-400 rounded-full text-[10px] font-black tracking-widest border border-sky-500/30">
+                        LADEN
+                      </div>
+                    )}
+                    {isDownloaded && (
+                      <div className="px-4 py-1.5 bg-emerald-500/20 text-emerald-400 rounded-full text-[10px] font-black tracking-widest border border-emerald-500/30">
+                        BEREIT
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Progress bar */}
+                  {isDownloading && downloadTotal > 0 && (
+                    <div className="px-5 pb-4">
+                      <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-sky-500 rounded-full transition-all duration-500"
+                          style={{ width: `${(downloadProgress / downloadTotal) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {cities.length === 0 && (
+              <div className="text-center py-8 text-white/20 text-sm">
+                Keine POIs geladen
+              </div>
+            )}
           </div>
         </section>
       </div>

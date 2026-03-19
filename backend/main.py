@@ -233,6 +233,7 @@ async def generate_script(target_data, target_type='poi', persona_id='insider', 
                     },
                     timeout=30.0
                 )
+                response.encoding = 'utf-8'
                 if response.status_code == 200:
                     data = response.json()
                     return data['choices'][0]['message']['content']

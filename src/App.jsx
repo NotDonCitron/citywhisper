@@ -7,6 +7,7 @@ import DiscoveryOverlay from './components/DiscoveryOverlay';
 import ProfileOverlay from './components/ProfileOverlay';
 import TourOverlay from './components/TourOverlay';
 import ToastContainer, { showToast } from './components/ToastContainer';
+import PoiPreview from './components/PoiPreview';
 
 // Internal component to handle the Auto-Demo logic with access to TourContext
 const AutoDemoButton = () => {
@@ -96,6 +97,9 @@ function App() {
           <div className="pointer-events-auto">
             <TourCockpit />
           </div>
+
+          {/* POI Preview (tap on map marker) */}
+          <PoiPreview />
 
           {/* Overlays */}
           <DiscoveryOverlay 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMap, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useTourContext } from '../context/TourContext';
@@ -68,8 +68,9 @@ const MapController = ({ center, zoom, isTourActive, flyTarget }) => {
 };
 
 // Memoized POI Marker Component to prevent flickering
-const POIMarker = React.memo(({ poi, isSelected, stopNumber, isMatch, isNear, onClick }) => {
+const POIMarker = ({ poi, isSelected, stopNumber, isMatch, isNear, markerStyle, onClick }) => {
   const getCategoryColor = (cat) => {
+    if (markerStyle === 'minimal') return '#475569'; // slate-600 for all
     switch(cat?.toLowerCase()) {
       case 'history': return '#f59e0b';
       case 'art': return '#ec4899';
@@ -84,11 +85,15 @@ const POIMarker = React.memo(({ poi, isSelected, stopNumber, isMatch, isNear, on
   const catColor = getCategoryColor(Array.isArray(poi.categories) ? poi.categories[0] : poi.category);
   
   // CRITICAL: Memoize the icon object so Leaflet doesn't re-render it unless state changes
+  const borderStyle = markerStyle === 'minimal'
+    ? (isMatch && !isSelected ? 'border-sky-400' : 'border-slate-500/60')
+    : (isMatch && !isSelected ? 'border-orange-400' : 'border-white');
+
   const icon = React.useMemo(() => L.divIcon({
     className: 'custom-poi-marker-container',
     html: `
       <div class="custom-marker ${isNear ? 'pulse-active' : ''}">
-        <div class="marker-dot ${isMatch && !isSelected ? 'border-orange-400' : 'border-white'} flex items-center justify-center shadow-lg transition-all duration-300" style="background-color: ${isSelected ? '#0ea5e9' : catColor}">
+        <div class="marker-dot ${borderStyle} flex items-center justify-center shadow-lg transition-all duration-300" style="background-color: ${isSelected ? '#0ea5e9' : catColor}">
           <span class="text-xl">${poi.emoji || '📍'}</span>
         </div>
         ${stopNumber ? `<div class="stop-badge">${stopNumber}</div>` : ''}
@@ -97,23 +102,16 @@ const POIMarker = React.memo(({ poi, isSelected, stopNumber, isMatch, isNear, on
     `,
     iconSize: [40, 40],
     iconAnchor: [20, 20]
-  }), [isSelected, stopNumber, isMatch, isNear, poi.emoji, catColor]);
+  }), [isSelected, stopNumber, isMatch, isNear, poi.emoji, catColor, borderStyle, markerStyle]);
 
   return (
-    <Marker 
+    <Marker
       position={[poi.lat, poi.lng]}
       eventHandlers={{ click: onClick }}
       icon={icon}
-    >
-      <Popup>
-        <div className="text-black">
-          <h4 className="font-bold">{poi.name}</h4>
-          <p className="text-xs">{poi.categories?.join(', ')}</p>
-        </div>
-      </Popup>
-    </Marker>
+    />
   );
-});
+};
 
 const MapContainerComponent = () => {
   const {
@@ -124,7 +122,9 @@ const MapContainerComponent = () => {
     togglePoiSelection,
     selectedPois,
     selectedCategories,
-    activeDisplayPoi
+    activeDisplayPoi,
+    markerStyle,
+    setPreviewPoi
   } = useTourContext();
 
   const [mapCenter, setMapCenter] = useState([49.4875, 8.4660]); // Default Mannheim center
@@ -178,7 +178,8 @@ const MapContainerComponent = () => {
               stopNumber={stopNumber}
               isMatch={isMatch}
               isNear={isNear}
-              onClick={() => togglePoiSelection(poi)}
+              markerStyle={markerStyle}
+              onClick={() => isTourActive ? togglePoiSelection(poi) : setPreviewPoi(poi)}
             />
           );
         })}

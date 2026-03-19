@@ -17,6 +17,7 @@ export const TourProvider = ({ children }) => {
     try { return JSON.parse(localStorage.getItem('cw_categories') || '[]'); } catch { return []; }
   });
   const [persona, setPersona] = useState(() => localStorage.getItem('cw_persona') || 'insider');
+  const [markerStyle, setMarkerStyle] = useState(() => localStorage.getItem('cw_markers') || 'minimal');
   const [isSimulationActive, setIsSimulationActive] = useState(false);
   const [simSpeed, setSimSpeed] = useState(20); // Dynamic speed in km/h
 
@@ -24,6 +25,7 @@ export const TourProvider = ({ children }) => {
   // This is the POI whose content (audio/text/image) is currently shown in the cockpit.
   // It changes ONLY when the simulation reaches a new POI, not based on geographic proximity.
   const [activeDisplayPoi, setActiveDisplayPoi] = useState(null);
+  const [previewPoi, setPreviewPoi] = useState(null);
   const [routeSteps, setRouteSteps] = useState([]);
 
   // Callback fired by useSimulation when the sim-point arrives at a POI (25m radius)
@@ -83,6 +85,11 @@ export const TourProvider = ({ children }) => {
   const changePersona = (p) => {
     setPersona(p);
     localStorage.setItem('cw_persona', p);
+  };
+
+  const changeMarkerStyle = (s) => {
+    setMarkerStyle(s);
+    localStorage.setItem('cw_markers', s);
   };
 
   const startTour = useCallback(async (route, useSimulationMode = false) => {
@@ -153,6 +160,8 @@ export const TourProvider = ({ children }) => {
     toggleCategory,
     persona,
     changePersona,
+    markerStyle,
+    changeMarkerStyle,
     userLocation,
     setUserLocation,
     activeRoute,
@@ -167,6 +176,9 @@ export const TourProvider = ({ children }) => {
     // Non-Stop Demo Walk
     activeDisplayPoi,
     setActiveDisplayPoi,
+    // POI Preview (tap on map)
+    previewPoi,
+    setPreviewPoi,
     simSpeed,
     setSimSpeed,
     // Turn-by-turn navigation steps
@@ -176,6 +188,7 @@ export const TourProvider = ({ children }) => {
     selectedPois,
     selectedCategories,
     persona,
+    markerStyle,
     userLocation,
     activeRoute,
     isTourActive,
@@ -184,6 +197,7 @@ export const TourProvider = ({ children }) => {
     startTour,
     stopTour,
     activeDisplayPoi,
+    previewPoi,
     simSpeed,
     routeSteps,
   ]);

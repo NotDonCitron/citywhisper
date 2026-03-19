@@ -1,19 +1,75 @@
 import React, { useState } from 'react';
 import { useTourContext } from '../context/TourContext';
-import { api } from '../services/api';
-import { X, Map as MapIcon, Play, Trash2 } from 'lucide-react';
+import { useAudio } from '../hooks/useAudio';
+import { api, API_BASE_URL } from '../services/api';
+import { showToast } from './ToastContainer';
+import { X, Play, Trash2, Download, CheckCircle, Loader2 } from 'lucide-react';
 
 const TourOverlay = ({ isOpen, onClose }) => {
-  const { selectedPois, setSelectedPois, togglePoiSelection, startTour, userLocation } = useTourContext();
+  const { selectedPois, setSelectedPois, togglePoiSelection, startTour, persona, selectedCategories } = useTourContext();
+  const { preFetchAll } = useAudio();
   const [loading, setLoading] = useState(false);
   const [useSimulation, setUseSimulation] = useState(false);
   const [isRoundtrip, setIsRoundtrip] = useState(true);
 
+  // Offline pre-load state
+  const [isPreloading, setIsPreloading] = useState(false);
+  const [preloadProgress, setPreloadProgress] = useState(0);
+  const [preloadTotal, setPreloadTotal] = useState(0);
+  const [preloadDone, setPreloadDone] = useState(false);
+
   if (!isOpen) return null;
+
+  const handlePreload = async () => {
+    if (selectedPois.length === 0) return;
+    setIsPreloading(true);
+    setPreloadDone(false);
+    const total = selectedPois.length;
+    setPreloadTotal(total);
+    setPreloadProgress(0);
+
+    try {
+      // 1. Pre-fetch audio sequentially (each needs AI generation + TTS)
+      for (let i = 0; i < selectedPois.length; i++) {
+        setPreloadProgress(i);
+        try {
+          const poiId = selectedPois[i].id;
+          const catParam = Array.isArray(selectedCategories) ? selectedCategories.join(',') : '';
+          await fetch(`${API_BASE_URL}/poi/${poiId}/audio?persona=${persona}&categories=${catParam}`);
+        } catch (e) {
+          console.warn(`Pre-load audio failed for ${selectedPois[i].name}:`, e);
+        }
+      }
+
+      // 2. Pre-fetch images (parallel, fast)
+      const imagePromises = selectedPois.map(poi => {
+        if (poi.image) {
+          const src = typeof poi.image === 'string'
+            ? poi.image
+            : poi.image.cached || poi.image.direct || poi.image.fallback;
+          if (src) {
+            const url = src.startsWith('http') ? src : `${API_BASE_URL}${src}`;
+            return fetch(url).catch(() => {});
+          }
+        }
+        return Promise.resolve();
+      });
+      await Promise.all(imagePromises);
+
+      setPreloadProgress(total);
+      setPreloadDone(true);
+      showToast(`${total} POIs offline bereit!`, 'success');
+    } catch (err) {
+      console.error('Preload failed:', err);
+      showToast('Offline-Vorbereitung fehlgeschlagen', 'error');
+    } finally {
+      setIsPreloading(false);
+    }
+  };
 
   const handleStartTour = async () => {
     if (selectedPois.length < 2) {
-      alert("Bitte wähle mindestens 2 Orte für eine Tour aus.");
+      showToast("Bitte wähle mindestens 2 Orte für eine Tour aus.");
       return;
     }
 
@@ -22,10 +78,10 @@ const TourOverlay = ({ isOpen, onClose }) => {
       const poiIds = selectedPois.map(p => p.id);
       const routeData = await api.fetchRoute(poiIds, isRoundtrip);
       await startTour(routeData, useSimulation);
-      onClose(); // Close overlay when tour starts
+      onClose();
     } catch (err) {
       console.error("Failed to start tour:", err);
-      alert("Fehler beim Berechnen der Route.");
+      showToast("Fehler beim Berechnen der Route.");
     } finally {
       setLoading(false);
     }
@@ -45,14 +101,14 @@ const TourOverlay = ({ isOpen, onClose }) => {
       <div className="flex-1 overflow-y-auto space-y-4 pr-1">
         {/* Route Options */}
         <div className="grid grid-cols-2 gap-3 mb-6">
-          <button 
+          <button
             onClick={() => setIsRoundtrip(true)}
             className={`p-4 rounded-2xl border transition-all flex flex-col items-center gap-2 ${isRoundtrip ? 'bg-sky-500/20 border-sky-500 text-white' : 'bg-white/5 border-white/10 text-white/40'}`}
           >
             <span className="text-2xl">🔄</span>
             <span className="text-[10px] font-black uppercase tracking-widest">Rundkurs</span>
           </button>
-          <button 
+          <button
             onClick={() => setIsRoundtrip(false)}
             className={`p-4 rounded-2xl border transition-all flex flex-col items-center gap-2 ${!isRoundtrip ? 'bg-sky-500/20 border-sky-500 text-white' : 'bg-white/5 border-white/10 text-white/40'}`}
           >
@@ -73,17 +129,17 @@ const TourOverlay = ({ isOpen, onClose }) => {
           <>
             <div className="flex justify-between items-center px-2">
               <span className="text-[10px] font-black tracking-widest text-sky-500 uppercase">Gewählte Orte ({selectedPois.length})</span>
-              <button 
+              <button
                 onClick={() => setSelectedPois([])}
                 className="text-[10px] font-bold text-red-400 uppercase flex items-center gap-1"
               >
                 <Trash2 size={12} /> Alle löschen
               </button>
             </div>
-            
+
             <div className="space-y-2">
               {selectedPois.map((poi, index) => (
-                <div 
+                <div
                   key={poi.id}
                   className="p-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between"
                 >
@@ -96,7 +152,7 @@ const TourOverlay = ({ isOpen, onClose }) => {
                       <div className="text-[10px] opacity-40 text-slate-300 capitalize">{poi.city}</div>
                     </div>
                   </div>
-                  <button 
+                  <button
                     onClick={() => togglePoiSelection(poi)}
                     className="text-slate-500 hover:text-white transition-colors"
                   >
@@ -106,8 +162,55 @@ const TourOverlay = ({ isOpen, onClose }) => {
               ))}
             </div>
 
-            <div className="mt-8 pt-6 border-t border-white/5">
-              <div 
+            {/* Offline Pre-Load */}
+            <div className="mt-6 pt-6 border-t border-white/5">
+              <button
+                onClick={handlePreload}
+                disabled={isPreloading || preloadDone}
+                className={`w-full p-4 rounded-2xl border transition-all flex items-center justify-between ${
+                  preloadDone
+                    ? 'bg-emerald-500/10 border-emerald-500/50'
+                    : isPreloading
+                      ? 'bg-sky-500/10 border-sky-500/30'
+                      : 'bg-white/5 border-white/10 hover:bg-white/10 active:scale-[0.98]'
+                }`}
+              >
+                <div className="flex items-center gap-4">
+                  {preloadDone ? (
+                    <CheckCircle size={24} className="text-emerald-400" />
+                  ) : isPreloading ? (
+                    <Loader2 size={24} className="text-sky-400 animate-spin" />
+                  ) : (
+                    <Download size={24} className="text-sky-400" />
+                  )}
+                  <div className="text-left">
+                    <div className="font-bold text-sm text-white">
+                      {preloadDone ? 'Offline bereit!' : isPreloading ? `Lade POI ${preloadProgress + 1}/${preloadTotal}...` : 'Offline vorbereiten'}
+                    </div>
+                    <div className="text-[10px] opacity-40 text-slate-300">
+                      {preloadDone ? 'Audio + Bilder heruntergeladen' : isPreloading ? selectedPois[preloadProgress]?.name || '' : 'Audio & Bilder vorladen für unterwegs'}
+                    </div>
+                  </div>
+                </div>
+                {isPreloading && preloadTotal > 0 && (
+                  <div className="text-xs font-bold text-sky-400">{Math.round((preloadProgress / preloadTotal) * 100)}%</div>
+                )}
+              </button>
+
+              {/* Progress bar */}
+              {(isPreloading || preloadDone) && (
+                <div className="mt-2 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${preloadDone ? 'bg-emerald-500' : 'bg-sky-500'}`}
+                    style={{ width: `${preloadTotal > 0 ? (preloadProgress / preloadTotal) * 100 : 0}%` }}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Simulation toggle */}
+            <div className="mt-4">
+              <div
                 onClick={() => setUseSimulation(!useSimulation)}
                 className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
                   useSimulation ? 'bg-sky-500/10 border-sky-500/50' : 'bg-white/5 border-white/10'
@@ -132,12 +235,12 @@ const TourOverlay = ({ isOpen, onClose }) => {
       </div>
 
       <div className="mt-6">
-        <button 
+        <button
           onClick={handleStartTour}
           disabled={loading || selectedPois.length < 2}
           className={`w-full py-5 rounded-3xl font-black text-xl flex items-center justify-center gap-3 shadow-2xl transition-all active:scale-95 ${
-            selectedPois.length < 2 
-              ? 'bg-slate-800 text-slate-500 cursor-not-allowed' 
+            selectedPois.length < 2
+              ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
               : 'bg-sky-500 hover:bg-sky-400 text-white shadow-sky-500/20'
           }`}
         >
