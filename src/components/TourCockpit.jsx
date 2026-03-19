@@ -234,7 +234,32 @@ const TourCockpit = () => {
     setImageFailed(false);
   }, [activeDisplayPoi?.id]);
 
+  // Determine display data (before hooks that depend on it)
+  const displayPoi = activeDisplayPoi || nearestPoi;
+
+  // Split text into lead paragraph and body
+  const fullText = currentScript || displayPoi?.description || '';
+  const splitIndex = fullText.indexOf('\n');
+  const leadText = splitIndex > 0 ? fullText.slice(0, splitIndex).trim() : (fullText.length > 120 ? fullText.slice(0, fullText.indexOf('.', 80) + 1) : fullText);
+  const bodyText = splitIndex > 0 ? fullText.slice(splitIndex).trim() : (fullText.length > 120 ? fullText.slice(leadText.length).trim() : '');
+
+  // Waveform bar heights (deterministic, no random) — must be called unconditionally
+  const waveformHeights = useMemo(() =>
+    Array.from({ length: 40 }, (_, i) =>
+      Math.max(4, Math.sin(i * 0.7) * 12 + Math.cos(i * 0.4) * 6 + 14)
+    ), []
+  );
+
+  // Extract a callout sentence from body text — must be called unconditionally
+  const calloutSentence = useMemo(() => {
+    if (!bodyText) return null;
+    const sentences = bodyText.split(/(?<=[.!?])\s+/).filter(s => s.length > 30 && s.length < 150);
+    return sentences.length > 1 ? sentences[1] : sentences[0] || null;
+  }, [bodyText]);
+
+  // Early returns AFTER all hooks
   if (!isTourActive) return null;
+  if (!displayPoi) return null;
 
   const handleFocusMap = (e) => {
     e.stopPropagation();
@@ -244,10 +269,6 @@ const TourCockpit = () => {
   const handleToggleExpand = () => {
     setCockpitState(cockpitState === CockpitState.EXPANDED ? CockpitState.NAV_HUD : CockpitState.EXPANDED);
   };
-
-  // Determine display data
-  const displayPoi = activeDisplayPoi || nearestPoi;
-  if (!displayPoi) return null;
 
   // Category helper
   const getCategoryInfo = (cat) => {
@@ -262,30 +283,10 @@ const TourCockpit = () => {
 
   const categoryInfo = getCategoryInfo(displayPoi.category);
 
-  // Split text into lead paragraph and body
-  const fullText = currentScript || displayPoi.description || '';
-  const splitIndex = fullText.indexOf('\n');
-  const leadText = splitIndex > 0 ? fullText.slice(0, splitIndex).trim() : (fullText.length > 120 ? fullText.slice(0, fullText.indexOf('.', 80) + 1) : fullText);
-  const bodyText = splitIndex > 0 ? fullText.slice(splitIndex).trim() : (fullText.length > 120 ? fullText.slice(leadText.length).trim() : '');
-
   // Image source
   const imageSrc = displayPoi.image && typeof displayPoi.image === 'string'
     ? (displayPoi.image.startsWith('http') ? displayPoi.image : `${API_BASE_URL}${displayPoi.image}`)
     : null;
-
-  // Waveform bar heights (deterministic, no random)
-  const waveformHeights = useMemo(() =>
-    Array.from({ length: 40 }, (_, i) =>
-      Math.max(4, Math.sin(i * 0.7) * 12 + Math.cos(i * 0.4) * 6 + 14)
-    ), []
-  );
-
-  // Extract a callout sentence from body text
-  const calloutSentence = useMemo(() => {
-    if (!bodyText) return null;
-    const sentences = bodyText.split(/(?<=[.!?])\s+/).filter(s => s.length > 30 && s.length < 150);
-    return sentences.length > 1 ? sentences[1] : sentences[0] || null;
-  }, [bodyText]);
 
   // Format time from progress percentage
   const formatTime = (progressPct, totalDuration) => {
