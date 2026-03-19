@@ -356,7 +356,7 @@ const TourCockpit = () => {
               <img
                 src={imageSrc}
                 alt={displayPoi.name}
-                className="poi-hero-image"
+                className={`poi-hero-image blur-in${imageLoaded ? ' loaded' : ''}`}
                 onLoad={() => setImageLoaded(true)}
                 onError={() => setImageFailed(true)}
               />
@@ -441,7 +441,19 @@ const TourCockpit = () => {
                     </div>
                   )}
 
-                  {bodyText && <div className="poi-body-text">{bodyText}</div>}
+                  {bodyText && (
+                    <div className="poi-body-text">
+                      {bodyText.split('\n').filter(Boolean).map((line, i) => (
+                        <span
+                          key={i}
+                          className="text-line-fade"
+                          style={{ animationDelay: `${500 + i * 120}ms` }}
+                        >
+                          {line}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </>
               ) : (
                 <p className="poi-lead-text" style={{ opacity: 0.5 }}>Bereite Guide-Informationen vor...</p>

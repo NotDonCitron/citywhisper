@@ -553,6 +553,18 @@ body {
   animation: heroReveal 900ms cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
 
+/* Image blur-in effect — starts blurred, sharpens on load */
+.poi-hero-image.blur-in {
+  filter: blur(10px);
+  opacity: 0;
+  transition: filter 1s ease-out, opacity 1s ease-out;
+}
+
+.poi-hero-image.blur-in.loaded {
+  filter: blur(0);
+  opacity: 1;
+}
+
 /* Loading skeleton when image hasn't loaded yet */
 .poi-hero-skeleton {
   position: absolute;
@@ -768,6 +780,24 @@ body {
   color: rgba(255, 255, 255, 0.7);
   white-space: pre-wrap;
   letter-spacing: 0.005em;
+}
+
+/* Line-by-line text fade-in */
+@keyframes lineFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.text-line-fade {
+  display: block;
+  opacity: 0;
+  animation: lineFadeIn 400ms ease-out forwards;
 }
 
 /* Callout box — "Wusstest du?" glass card */

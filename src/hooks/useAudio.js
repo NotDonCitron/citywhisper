@@ -122,13 +122,25 @@ export const useAudio = () => {
       });
     }
 
-    // Start new audio at full volume
-    audio.volume = 1;
+    // Start new audio at zero volume and fade in over 500ms
+    audio.volume = 0;
     setCurrentScript(script || '');
     audio.src = newSrc;
     await audio.play();
     setIsPlaying(true);
     setAudioStatus('Wiedergabe...');
+
+    // Fade in: 0 → 1 over 500ms (10 steps × 50ms)
+    let fadeStep = 0;
+    const fadeSteps = 10;
+    fadeIntervalRef.current = setInterval(() => {
+      fadeStep++;
+      audio.volume = Math.min(1, fadeStep / fadeSteps);
+      if (fadeStep >= fadeSteps) {
+        clearInterval(fadeIntervalRef.current);
+        fadeIntervalRef.current = null;
+      }
+    }, 50);
   }, []);
 
   /**
