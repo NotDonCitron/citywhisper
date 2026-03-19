@@ -292,14 +292,18 @@ body {
 /* Shared base for all cockpit states */
 .cockpit-base {
   position: fixed;
-  left: 24px;
-  right: 24px;
+  left: 0;
+  right: 0;
   z-index: 500;
   border-radius: 24px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   transition: all 600ms cubic-bezier(0.32, 0.72, 0, 1);
   overflow: hidden;
+  /* Mobile: full width with padding; Desktop: capped & centered */
+  width: calc(100% - 48px);
+  max-width: 420px;
+  margin: 0 auto;
   /* Glass reflection effect */
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 40%, transparent 60%, rgba(255, 255, 255, 0.02) 100%);
 }

@@ -237,8 +237,21 @@ const TourCockpit = () => {
   // Determine display data (before hooks that depend on it)
   const displayPoi = activeDisplayPoi || nearestPoi;
 
+  // Strip markdown formatting from script text
+  const stripMarkdown = (text) => {
+    if (!text) return '';
+    return text
+      .replace(/^#{1,6}\s+/gm, '')     // headers
+      .replace(/\*\*(.+?)\*\*/g, '$1') // bold
+      .replace(/\*(.+?)\*/g, '$1')     // italic
+      .replace(/_(.+?)_/g, '$1')       // italic alt
+      .replace(/`(.+?)`/g, '$1')       // inline code
+      .replace(/\[(.+?)\]\(.+?\)/g, '$1'); // links
+  };
+
   // Split text into lead paragraph and body
-  const fullText = currentScript || displayPoi?.description || '';
+  const rawText = currentScript || displayPoi?.description || '';
+  const fullText = stripMarkdown(rawText);
   const splitIndex = fullText.indexOf('\n');
   const leadText = splitIndex > 0 ? fullText.slice(0, splitIndex).trim() : (fullText.length > 120 ? fullText.slice(0, fullText.indexOf('.', 80) + 1) : fullText);
   const bodyText = splitIndex > 0 ? fullText.slice(splitIndex).trim() : (fullText.length > 120 ? fullText.slice(leadText.length).trim() : '');
@@ -272,21 +285,36 @@ const TourCockpit = () => {
 
   // Category helper
   const getCategoryInfo = (cat) => {
+    const key = (cat || '').toLowerCase();
     const map = {
       historian: { label: 'Geschichte', color: '#f59e0b', bg: 'rgba(245,158,11,0.2)' },
+      history: { label: 'Geschichte', color: '#f59e0b', bg: 'rgba(245,158,11,0.2)' },
       art: { label: 'Kunst', color: '#ec4899', bg: 'rgba(236,72,153,0.2)' },
       architecture: { label: 'Architektur', color: '#0ea5e9', bg: 'rgba(14,165,233,0.2)' },
       subculture: { label: 'Subkultur', color: '#8b5cf6', bg: 'rgba(139,92,246,0.2)' },
+      culture: { label: 'Kultur', color: '#8b5cf6', bg: 'rgba(139,92,246,0.2)' },
+      nature: { label: 'Natur', color: '#10b981', bg: 'rgba(16,185,129,0.2)' },
+      religion: { label: 'Religion', color: '#f59e0b', bg: 'rgba(245,158,11,0.2)' },
+      urban: { label: 'Urban', color: '#64748b', bg: 'rgba(100,116,139,0.2)' },
     };
-    return map[cat] || { label: 'Ort', color: '#94a3b8', bg: 'rgba(148,163,184,0.2)' };
+    return map[key] || { label: cat || 'Ort', color: '#94a3b8', bg: 'rgba(148,163,184,0.2)' };
   };
 
-  const categoryInfo = getCategoryInfo(displayPoi.category);
+  const primaryCategory = Array.isArray(displayPoi.categories) ? displayPoi.categories[0] : displayPoi.category;
+  const categoryInfo = getCategoryInfo(primaryCategory);
 
-  // Image source
-  const imageSrc = displayPoi.image && typeof displayPoi.image === 'string'
-    ? (displayPoi.image.startsWith('http') ? displayPoi.image : `${API_BASE_URL}${displayPoi.image}`)
-    : null;
+  // Image source — handle both string and object {direct, proxied, cached, fallback}
+  const resolveImageSrc = (img) => {
+    if (!img) return null;
+    if (typeof img === 'string') {
+      return img.startsWith('http') ? img : `${API_BASE_URL}${img}`;
+    }
+    // Object format: try direct → cached → fallback
+    const url = img.direct || img.cached || img.fallback;
+    if (!url) return null;
+    return url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
+  };
+  const imageSrc = resolveImageSrc(displayPoi.image);
 
   // Format time from progress percentage
   const formatTime = (progressPct, totalDuration) => {
@@ -428,7 +456,7 @@ const TourCockpit = () => {
           </div>
 
           {/* === SCROLLABLE CONTENT === */}
-          <div className={`detail-content overflow-y-auto max-h-[30vh] custom-scrollbar ${isArriving ? 'morph-reveal morph-reveal-delay-2' : ''}`}>
+          <div className={`detail-content overflow-y-auto max-h-[20vh] custom-scrollbar ${isArriving ? 'morph-reveal morph-reveal-delay-2' : ''}`}>
             <div className="poi-content-area">
               {fullText ? (
                 <>
