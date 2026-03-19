@@ -3,6 +3,7 @@ import { BackgroundTracker } from '../native/BackgroundTracker';
 import { api } from '../services/api';
 import { useSimulation } from '../hooks/useSimulation';
 import { triggerArrivalHaptics, playArrivalSound } from '../utils/arrivalEffects';
+import { showToast } from '../components/ToastContainer';
 
 const TourContext = createContext();
 
@@ -12,7 +13,10 @@ export const TourProvider = ({ children }) => {
   const [userLocation, setUserLocation] = useState(null);
   const [activeRoute, setActiveRoute] = useState(null);
   const [isTourActive, setIsTourActive] = useState(false);
-  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [selectedCategories, setSelectedCategories] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('cw_categories') || '[]'); } catch { return []; }
+  });
+  const [persona, setPersona] = useState(() => localStorage.getItem('cw_persona') || 'insider');
   const [isSimulationActive, setIsSimulationActive] = useState(false);
   const [simSpeed, setSimSpeed] = useState(20); // Dynamic speed in km/h
 
@@ -49,6 +53,7 @@ export const TourProvider = ({ children }) => {
         setPois(data);
       } catch (err) {
         console.error("Failed to load initial POIs:", err);
+        showToast("POIs konnten nicht geladen werden. Ist das Backend erreichbar?");
       }
     };
     loadPois();
@@ -66,11 +71,18 @@ export const TourProvider = ({ children }) => {
   };
 
   const toggleCategory = (category) => {
-    setSelectedCategories(prev => 
-      prev.includes(category) 
+    setSelectedCategories(prev => {
+      const next = prev.includes(category)
         ? prev.filter(c => c !== category)
-        : [...prev, category]
-    );
+        : [...prev, category];
+      localStorage.setItem('cw_categories', JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const changePersona = (p) => {
+    setPersona(p);
+    localStorage.setItem('cw_persona', p);
   };
 
   const startTour = useCallback(async (route, useSimulationMode = false) => {
@@ -139,6 +151,8 @@ export const TourProvider = ({ children }) => {
     selectedCategories,
     setSelectedCategories,
     toggleCategory,
+    persona,
+    changePersona,
     userLocation,
     setUserLocation,
     activeRoute,
@@ -161,6 +175,7 @@ export const TourProvider = ({ children }) => {
     pois,
     selectedPois,
     selectedCategories,
+    persona,
     userLocation,
     activeRoute,
     isTourActive,

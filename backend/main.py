@@ -2,6 +2,7 @@
 import json
 import time
 import requests
+import httpx
 from fastapi import FastAPI, HTTPException, Response, Query
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,7 +13,6 @@ from typing import List, Optional
 from dotenv import load_dotenv
 import edge_tts
 import wikipediaapi
-from groq import Groq
 from urllib.parse import quote, unquote
 
 # Lade Umgebungsvariablen
@@ -22,10 +22,11 @@ load_dotenv()
 init_db()
 
 # API Keys
-GROQ_API_KEY = os.getenv('GROQ_API_KEY')
+AGENTROUTER_API_KEY = os.getenv('AGENTROUTER_API_KEY')
+AGENTROUTER_BASE_URL = os.getenv('AGENTROUTER_BASE_URL', 'https://agentrouter.org/v1').rstrip('/')
+AGENTROUTER_MODEL = os.getenv('AGENTROUTER_MODEL', 'claude-opus-4-6')
 MAPBOX_ACCESS_TOKEN = os.getenv('MAPBOX_ACCESS_TOKEN')
 UNSPLASH_ACCESS_KEY = os.getenv('unsplash_access_key')
-groq_client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
 
 # BASE DIR for absolute paths
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -219,15 +220,27 @@ async def generate_script(target_data, target_type='poi', persona_id='insider', 
     match_info = f'Interessen-Match: {", ".join(matched_cats)}.' if matched_cats else ''
     prompt = f"{persona['prompt_style']} Wir stehen vor {name}. {match_info} Erzähle eine Geschichte dazu (ca. 80 Wörter). FAKTEN: {facts}"
 
-    if groq_client:
+    if AGENTROUTER_API_KEY:
         try:
-            completion = groq_client.chat.completions.create(
-                model='llama-3.3-70b-versatile',
-                messages=[{'role': 'user', 'content': prompt}],
-                temperature=0.8
-            )
-            return completion.choices[0].message.content
-        except: pass
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    f"{AGENTROUTER_BASE_URL}/chat/completions",
+                    headers={"Authorization": f"Bearer {AGENTROUTER_API_KEY}"},
+                    json={
+                        "model": AGENTROUTER_MODEL,
+                        "messages": [{"role": "user", "content": prompt}],
+                        "temperature": 0.8
+                    },
+                    timeout=30.0
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    return data['choices'][0]['message']['content']
+                else:
+                    print(f"AgentRouter Error: {response.status_code} - {response.text}")
+        except Exception as e:
+            print(f"AgentRouter Exception: {e}")
+            pass
     return f'Willkommen in {name}.'
 
 @app.get('/poi/{poi_id}/audio')
@@ -252,9 +265,19 @@ async def get_audio(poi_id: str, persona: str = 'insider', categories: str = Que
     script = await generate_script(poi, persona_id=persona, user_categories=categories.split(',') if categories else [])
     with open(script_path, 'w', encoding='utf-8') as f: f.write(script)
 
+    # Strip markdown formatting before TTS (prevents "Stern Stern" for **bold**)
+    import re
+    tts_text = script
+    tts_text = re.sub(r'\*\*(.+?)\*\*', r'\1', tts_text)  # **bold**
+    tts_text = re.sub(r'\*(.+?)\*', r'\1', tts_text)        # *italic*
+    tts_text = re.sub(r'_(.+?)_', r'\1', tts_text)          # _italic_
+    tts_text = re.sub(r'#{1,6}\s+', '', tts_text)           # # headers
+    tts_text = re.sub(r'`(.+?)`', r'\1', tts_text)          # `code`
+    tts_text = re.sub(r'\[(.+?)\]\(.+?\)', r'\1', tts_text) # [link](url)
+
     voice = 'de-DE-KatjaNeural' if persona == 'insider' else 'de-DE-KillianNeural'
     try:
-        communicate = edge_tts.Communicate(script, voice)
+        communicate = edge_tts.Communicate(tts_text, voice)
         await communicate.save(audio_path)
     except:
         return {'id': poi_id, 'audio_url': None, 'script': script, 'image': image_data, 'error': 'TTS failed'}  

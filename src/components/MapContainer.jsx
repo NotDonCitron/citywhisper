@@ -28,16 +28,38 @@ const userIcon = L.divIcon({
 // Component to handle map center and view updates
 const MapController = ({ center, zoom, isTourActive, flyTarget }) => {
   const map = useMap();
+  const hasSetInitialZoom = React.useRef(false);
+  const userDragged = React.useRef(false);
 
+  // Detect when user manually drags/moves the map
   useEffect(() => {
-    if (center) {
+    const onDragStart = () => { userDragged.current = true; };
+    map.on('dragstart', onDragStart);
+    return () => { map.off('dragstart', onDragStart); };
+  }, [map]);
+
+  // During tour: only pan to follow user if they haven't dragged the map
+  useEffect(() => {
+    if (!center) return;
+    if (isTourActive) {
+      if (!hasSetInitialZoom.current) {
+        map.setView(center, zoom || 17, { animate: true });
+        hasSetInitialZoom.current = true;
+        userDragged.current = false;
+      } else if (!userDragged.current) {
+        map.setView(center, map.getZoom(), { animate: true, duration: 0.3 });
+      }
+    } else {
+      hasSetInitialZoom.current = false;
+      userDragged.current = false;
       map.setView(center, zoom || map.getZoom());
     }
-  }, [center, map, zoom]);
+  }, [center, map, zoom, isTourActive]);
 
-  // Fly to POI on arrival
+  // Fly to POI on arrival — always fly, and re-enable follow mode
   useEffect(() => {
     if (flyTarget) {
+      userDragged.current = false;
       map.flyTo([flyTarget.lat, flyTarget.lng], 18, { animate: true, duration: 1.5 });
     }
   }, [flyTarget, map]);
@@ -59,7 +81,7 @@ const POIMarker = React.memo(({ poi, isSelected, stopNumber, isMatch, isNear, on
     }
   };
 
-  const catColor = getCategoryColor(poi.category);
+  const catColor = getCategoryColor(Array.isArray(poi.categories) ? poi.categories[0] : poi.category);
   
   // CRITICAL: Memoize the icon object so Leaflet doesn't re-render it unless state changes
   const icon = React.useMemo(() => L.divIcon({
@@ -86,7 +108,7 @@ const POIMarker = React.memo(({ poi, isSelected, stopNumber, isMatch, isNear, on
       <Popup>
         <div className="text-black">
           <h4 className="font-bold">{poi.name}</h4>
-          <p className="text-xs">{poi.category}</p>
+          <p className="text-xs">{poi.categories?.join(', ')}</p>
         </div>
       </Popup>
     </Marker>
@@ -115,10 +137,13 @@ const MapContainerComponent = () => {
 
   return (
     <div id="map" className="h-screen w-full relative z-0">
-      <MapContainer 
-        center={mapCenter} 
-        zoom={13} 
+      <MapContainer
+        center={mapCenter}
+        zoom={13}
         scrollWheelZoom={true}
+        dragging={true}
+        touchZoom={true}
+        doubleClickZoom={true}
         zoomControl={false}
         className="h-full w-full"
       >
@@ -134,7 +159,7 @@ const MapContainerComponent = () => {
           const isSelected = selectedPois.some(p => p.id === poi.id);
           const stopIndex = selectedPois.findIndex(p => p.id === poi.id);
           const stopNumber = isSelected ? stopIndex + 1 : null;
-          const isMatch = selectedCategories.includes(poi.category);
+          const isMatch = selectedCategories.length > 0 && Array.isArray(poi.categories) && poi.categories.some(cat => selectedCategories.includes(cat));
 
           // Calculate distance for pulse animation
           let isNear = false;

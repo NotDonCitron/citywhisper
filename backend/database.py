@@ -58,14 +58,14 @@ def init_db():
         print(f"Database initialization error: {e}")
         return False
 
-from shapely.geometry import shape, Point
-
 def check_geofences(lat: float, lng: float):
     """
     Check if a point is inside any defined geofence polygon.
     Returns the matching geofence with the highest priority.
     """
     try:
+        from shapely.geometry import shape, Point
+
         conn = get_db()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM geofences ORDER BY priority DESC")

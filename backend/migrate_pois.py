@@ -53,17 +53,21 @@ SCHOENAU_POIS = [
 def migrate():
     print("Initializing Database...")
     init_db()
-    
+
     print(f"Migrating {len(MANNHEIM_POIS)} Mannheim POIs...")
     for poi in MANNHEIM_POIS:
         save_poi(poi)
         print(f"  Migrated: {poi['name']}")
-        
-    print(f"Migrating {len(SCHOENAU_POIS)} Schönau POIs...")
-    for poi in SCHOENAU_POIS:
-        save_poi(poi)
-        print(f"  Migrated: {poi['name']}")
-        
+
+    # Remove legacy Schönau POIs (wrong coordinates — Schönau bei Heidelberg, not Mannheim-Schönau)
+    from database import get_db
+    conn = get_db()
+    for poi_id in ['rathaus_schoenau', 'klosterkirche_schoenau', 'huehnerberg', 'torhaus']:
+        conn.execute("DELETE FROM pois WHERE id = ?", (poi_id,))
+        print(f"  Removed legacy: {poi_id}")
+    conn.commit()
+    conn.close()
+
     print("Migration complete!")
 
 if __name__ == "__main__":

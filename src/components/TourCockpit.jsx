@@ -5,7 +5,7 @@ import { useTourContext } from '../context/TourContext';
 import { getDistance, getBearing, findNextStep } from '../utils/geo';
 import { API_BASE_URL } from '../services/api';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
-import { X, Map as MapIcon, ChevronUp, Navigation, Play, Pause, Maximize2, MapPin } from 'lucide-react';
+import { X, Map as MapIcon, ChevronUp, Navigation, Play, Pause, Maximize2, MapPin, Square, Loader2, Trophy } from 'lucide-react';
 
 const CockpitState = {
   EXPANDED: 'EXPANDED',
@@ -32,15 +32,17 @@ const TourCockpit = () => {
     currentScript,
     playPoiAudio,
     togglePlayback,
-    preFetchAll
+    preFetchAll,
+    isCaching
   } = useAudio();
 
-  const { 
-    activeDisplayPoi, 
-    isSimulationActive, 
+  const {
+    activeDisplayPoi,
+    isSimulationActive,
     setSimSpeed,
     setActiveDisplayPoi,
-    routeSteps
+    routeSteps,
+    persona
   } = useTourContext();
 
   const [cockpitState, setCockpitState] = useState(CockpitState.NAV_HUD);
@@ -48,6 +50,7 @@ const TourCockpit = () => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
   const [isArriving, setIsArriving] = useState(false);
+  const [showTourComplete, setShowTourComplete] = useState(false);
   
   // Navigation states
   const [nearestPoi, setNearestPoi] = useState(null);
@@ -179,7 +182,7 @@ const TourCockpit = () => {
     if (activeDisplayPoi && activeDisplayPoi.id !== lastPlayedPoiId) {
       console.log(`[TourCockpit] POI reached: ${activeDisplayPoi.name} — morphing`);
       setLastPlayedPoiId(activeDisplayPoi.id);
-      playPoiAudio(activeDisplayPoi.id, 'insider', selectedCategories);
+      playPoiAudio(activeDisplayPoi.id, persona, selectedCategories);
 
       // Clear any pending timers
       if (collapseTimerRef.current) clearTimeout(collapseTimerRef.current);
@@ -224,7 +227,7 @@ const TourCockpit = () => {
   useEffect(() => {
     if (phase === 'ACTIVE' && selectedPois.length > 0) {
       const poiIds = selectedPois.map(p => p.id);
-      preFetchAll(poiIds, 'insider', selectedCategories);
+      preFetchAll(poiIds, persona, selectedCategories);
     }
   }, [phase, selectedPois, selectedCategories, preFetchAll]);
 
@@ -233,6 +236,17 @@ const TourCockpit = () => {
     setImageLoaded(false);
     setImageFailed(false);
   }, [activeDisplayPoi?.id]);
+
+  // Tour completion detection: all POIs visited
+  useEffect(() => {
+    if (!isTourActive || selectedPois.length === 0 || !lastPlayedPoiId) return;
+    const lastPoi = selectedPois[selectedPois.length - 1];
+    if (lastPlayedPoiId === lastPoi.id && !isPlaying) {
+      // Last POI audio finished — show completion after a short delay
+      const timer = setTimeout(() => setShowTourComplete(true), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [lastPlayedPoiId, isPlaying, selectedPois, isTourActive]);
 
   // Determine display data (before hooks that depend on it)
   const displayPoi = activeDisplayPoi || nearestPoi;
@@ -281,6 +295,11 @@ const TourCockpit = () => {
 
   const handleToggleExpand = () => {
     setCockpitState(cockpitState === CockpitState.EXPANDED ? CockpitState.NAV_HUD : CockpitState.EXPANDED);
+  };
+
+  const handleStopTour = () => {
+    setShowTourComplete(false);
+    stopTour();
   };
 
   // Category helper
@@ -489,6 +508,24 @@ const TourCockpit = () => {
               )}
             </div>
           </div>
+
+          {/* === LOADING INDICATOR === */}
+          {isCaching && (
+            <div className="flex items-center gap-3 px-6 py-3 bg-sky-500/10 border-t border-sky-500/20">
+              <Loader2 size={16} className="text-sky-400 animate-spin" />
+              <span className="text-xs font-bold text-sky-400">{audioStatus || 'Lade Audio...'}</span>
+            </div>
+          )}
+
+          {/* === STOP TOUR BUTTON === */}
+          <div className="px-6 py-3 border-t border-white/5">
+            <button
+              onClick={handleStopTour}
+              className="w-full flex items-center justify-center gap-2 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-2xl border border-red-500/20 text-sm font-bold transition-all active:scale-95"
+            >
+              <Square size={14} /> Tour beenden
+            </button>
+          </div>
         </>
       )}
 
@@ -520,6 +557,25 @@ const TourCockpit = () => {
               Details <Maximize2 size={16} />
             </button>
           </div>
+        </div>
+      )}
+
+      {/* === TOUR COMPLETE OVERLAY === */}
+      {showTourComplete && (
+        <div className="absolute inset-0 bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center gap-6 z-50 rounded-[inherit]">
+          <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center">
+            <Trophy size={40} className="text-emerald-400" />
+          </div>
+          <div className="text-center">
+            <h2 className="text-2xl font-black text-white mb-2">Tour abgeschlossen!</h2>
+            <p className="text-sm text-white/50">{selectedPois.length} Orte entdeckt</p>
+          </div>
+          <button
+            onClick={handleStopTour}
+            className="px-8 py-3 bg-emerald-500 hover:bg-emerald-400 text-white font-bold rounded-2xl transition-all active:scale-95 shadow-lg shadow-emerald-500/30"
+          >
+            Zurück zur Karte
+          </button>
         </div>
       )}
     </div>

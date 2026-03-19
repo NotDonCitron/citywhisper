@@ -6,6 +6,7 @@ import TourCockpit from './components/TourCockpit';
 import DiscoveryOverlay from './components/DiscoveryOverlay';
 import ProfileOverlay from './components/ProfileOverlay';
 import TourOverlay from './components/TourOverlay';
+import ToastContainer, { showToast } from './components/ToastContainer';
 
 // Internal component to handle the Auto-Demo logic with access to TourContext
 const AutoDemoButton = () => {
@@ -47,7 +48,7 @@ const AutoDemoButton = () => {
       console.log("[Auto-Demo] Simulation started! Enjoy the ride.");
     } catch (err) {
       console.error("[Auto-Demo] Failed:", err);
-      alert("Auto-Demo fehlgeschlagen. Prüfe die Konsole.");
+      showToast("Auto-Demo fehlgeschlagen: " + err.message);
     } finally {
       setIsAutoLoading(false);
     }
@@ -74,6 +75,8 @@ function App() {
   return (
     <TourProvider>
       <div className="relative h-screen w-full overflow-hidden bg-slate-950">
+        {/* Toast notifications */}
+        <ToastContainer />
         {/* Map Layer */}
         <MapContainer />
 

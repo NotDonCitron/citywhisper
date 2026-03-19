@@ -1,4 +1,14 @@
-export const API_BASE_URL = 'http://localhost:8000';
+// Use VITE_API_URL from .env, or empty string to use Vite proxy (same origin)
+const getApiBaseUrl = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  // In dev mode, Vite proxy forwards /pois, /route, /poi, /static to the backend
+  // This avoids mixed-content issues (HTTPS frontend → HTTP backend)
+  return '';
+};
+
+export const API_BASE_URL = getApiBaseUrl();
 
 export const api = {
   fetchPois: async () => {

@@ -41,8 +41,8 @@ export const useTour = () => {
   useEffect(() => {
     if (context.isTourActive && context.userLocation && context.selectedPois.length > 0) {
       const userPos = {
-        lat: context.userLocation.latitude,
-        lng: context.userLocation.longitude
+        lat: context.userLocation.lat,
+        lng: context.userLocation.lng
       };
 
       for (const poi of context.selectedPois) {
