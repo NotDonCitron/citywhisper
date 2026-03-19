@@ -1,21 +1,26 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
-import { api } from '../services/api';
+import { api, API_BASE_URL } from '../services/api';
 
 /**
  * useAudio Hook
  * 
- * Manages audio playback, pre-fetching and filesystem caching.
+ * Manages audio playback, pre-fetching, filesystem caching,
+ * and smooth crossfade transitions between POI audios.
  */
 export const useAudio = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
   const [audioStatus, setAudioStatus] = useState('Bereit');
   const [isCaching, setIsCaching] = useState(false);
+  const [currentScript, setCurrentScript] = useState('');
   
   const audioRef = useRef(new Audio());
   const cacheDir = 'audio_cache';
+  const scriptCache = useRef({}); // Temporary in-memory cache for scripts
+  const fadeIntervalRef = useRef(null); // Track fade-out interval for cleanup
 
   // Ensure cache directory exists
   useEffect(() => {
@@ -37,6 +42,10 @@ export const useAudio = () => {
   useEffect(() => {
     const audio = audioRef.current;
     
+    const onLoadedMetadata = () => {
+      setDuration(audio.duration);
+    };
+
     const onTimeUpdate = () => {
       const pct = (audio.currentTime / audio.duration) * 100;
       setProgress(isNaN(pct) ? 0 : pct);
@@ -64,6 +73,7 @@ export const useAudio = () => {
       setIsPlaying(false);
     };
 
+    audio.addEventListener('loadedmetadata', onLoadedMetadata);
     audio.addEventListener('timeupdate', onTimeUpdate);
     audio.addEventListener('ended', onEnded);
     audio.addEventListener('pause', onPause);
@@ -71,12 +81,54 @@ export const useAudio = () => {
     audio.addEventListener('error', onError);
 
     return () => {
+      audio.removeEventListener('loadedmetadata', onLoadedMetadata);
       audio.removeEventListener('timeupdate', onTimeUpdate);
       audio.removeEventListener('ended', onEnded);
       audio.removeEventListener('pause', onPause);
       audio.removeEventListener('play', onPlay);
       audio.removeEventListener('error', onError);
     };
+  }, []);
+
+  /**
+   * Fade out currently playing audio over ~500ms, then start the new source.
+   * If nothing is playing, immediately starts the new audio.
+   */
+  const fadeOutAndPlay = useCallback(async (newSrc, script) => {
+    const audio = audioRef.current;
+
+    // Clear any lingering fade interval
+    if (fadeIntervalRef.current) {
+      clearInterval(fadeIntervalRef.current);
+      fadeIntervalRef.current = null;
+    }
+
+    // Fade out if something is currently playing
+    if (!audio.paused && audio.src) {
+      await new Promise((resolve) => {
+        const steps = 10;
+        const stepTime = 50; // 10 steps × 50ms = 500ms total fade
+        let currentStep = steps;
+        fadeIntervalRef.current = setInterval(() => {
+          currentStep--;
+          audio.volume = Math.max(0, currentStep / steps);
+          if (currentStep <= 0) {
+            clearInterval(fadeIntervalRef.current);
+            fadeIntervalRef.current = null;
+            audio.pause();
+            resolve();
+          }
+        }, stepTime);
+      });
+    }
+
+    // Start new audio at full volume
+    audio.volume = 1;
+    setCurrentScript(script || '');
+    audio.src = newSrc;
+    await audio.play();
+    setIsPlaying(true);
+    setAudioStatus('Wiedergabe...');
   }, []);
 
   /**
@@ -95,35 +147,54 @@ export const useAudio = () => {
         hashValue |= 0; // Convert to 32bit integer
     }
     const catHash = Math.abs(hashValue).toString(16);
-
-    const fileName = `${poiId}_${persona}_${catHash}.mp3`;
+    const cacheKey = `${poiId}_${persona}_${catHash}`;
+    const fileName = `${cacheKey}.mp3`;
     const filePath = `${cacheDir}/${fileName}`;
 
     try {
-      // Check if file already exists
+      const isWeb = Capacitor.getPlatform() === 'web';
+
+      // 1. Check in-memory script cache
+      let script = scriptCache.current[cacheKey];
+
+      // 2. On Web, just return the direct API URL to avoid complex filesystem issues
+      if (isWeb) {
+        const data = await api.fetchAudio(poiId, persona, categories);
+        const fullUrl = data.audio_url.startsWith('http') ? data.audio_url : `${API_BASE_URL}${data.audio_url}`;
+        return { url: fullUrl, script: data.script };
+      }
+
+      // 3. Check if file already exists (Native only)
       try {
         const stat = await Filesystem.stat({
           path: filePath,
           directory: Directory.Data
         });
-        if (stat.size > 0) {
-          console.log(`Audio for ${poiId} (persona: ${persona}, hash: ${catHash}) already cached.`);
+        if (stat.size > 0 && script) {
+          console.log(`Audio and script for ${poiId} already cached.`);
           const uri = await Filesystem.getUri({
             path: filePath,
             directory: Directory.Data
           });
-          return Capacitor.convertFileSrc(uri.uri);
+          return { url: Capacitor.convertFileSrc(uri.uri), script };
         }
       } catch (e) {
-        // File does not exist, proceed to download
+        // File or script missing, proceed to fetch
       }
 
-      // Fetch audio info from backend
+      // 3. Fetch audio info from backend
       const data = await api.fetchAudio(poiId, persona, categories);
       if (!data.audio_url) throw new Error("No audio_url returned");
+      
+      script = data.script || '';
+      scriptCache.current[cacheKey] = script;
 
-      // Download audio blob
-      const response = await fetch(data.audio_url);
+      // 4. Download audio blob
+      const fullAudioUrl = data.audio_url.startsWith('http') 
+        ? data.audio_url 
+        : `${API_BASE_URL}${data.audio_url}`;
+        
+      const response = await fetch(fullAudioUrl);
       const blob = await response.blob();
       
       // Convert blob to base64 for Capacitor Filesystem
@@ -133,21 +204,21 @@ export const useAudio = () => {
         reader.readAsDataURL(blob);
       });
 
-      // Save to filesystem
+      // 5. Save to filesystem
       await Filesystem.writeFile({
         path: filePath,
         data: base64,
         directory: Directory.Data
       });
 
-      console.log(`Audio for ${poiId} (persona: ${persona}, hash: ${catHash}) cached successfully.`);
+      console.log(`Audio and script for ${poiId} cached successfully.`);
       
       const uri = await Filesystem.getUri({
         path: filePath,
         directory: Directory.Data
       });
       
-      return Capacitor.convertFileSrc(uri.uri);
+      return { url: Capacitor.convertFileSrc(uri.uri), script };
     } catch (err) {
       console.error(`Failed to cache audio for ${poiId}:`, err);
       return null;
@@ -170,26 +241,25 @@ export const useAudio = () => {
 
   /**
    * Play audio for a specific POI.
+   * Uses crossfade: if audio is already playing, fades it out smoothly
+   * before starting the new one.
    */
   const playPoiAudio = useCallback(async (poiId, persona, categories) => {
     try {
       setAudioStatus('Bereite vor...');
-      const localUrl = await cacheAudio(poiId, persona, categories);
+      const result = await cacheAudio(poiId, persona, categories);
       
-      if (!localUrl) {
+      if (!result || !result.url) {
         throw new Error("Could not get local audio URL");
       }
 
-      const audio = audioRef.current;
-      audio.src = localUrl;
-      await audio.play();
-      setIsPlaying(true);
-      setAudioStatus('Wiedergabe...');
+      // Use fadeOutAndPlay for smooth crossfade transition
+      await fadeOutAndPlay(result.url, result.script);
     } catch (err) {
       console.error("Playback failed:", err);
       setAudioStatus('Wiedergabe fehlgeschlagen');
     }
-  }, [cacheAudio]);
+  }, [cacheAudio, fadeOutAndPlay]);
 
   const togglePlayback = useCallback(() => {
     const audio = audioRef.current;
@@ -206,13 +276,25 @@ export const useAudio = () => {
     }
   }, [isPlaying]);
 
-  return {
+  return useMemo(() => ({
     isPlaying,
     progress,
+    duration,
     audioStatus,
     isCaching,
+    currentScript,
     playPoiAudio,
     togglePlayback,
     preFetchAll
-  };
+  }), [
+    isPlaying,
+    progress,
+    duration,
+    audioStatus,
+    isCaching,
+    currentScript,
+    playPoiAudio,
+    togglePlayback,
+    preFetchAll
+  ]);
 };

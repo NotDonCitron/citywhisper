@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Preferences } from '@capacitor/preferences';
 import { Haptics, NotificationType } from '@capacitor/haptics';
 import { useTourContext } from '../context/TourContext';
+import { getDistance } from '../utils/geo';
 
 export const TourPhases = {
   IDLE: 'IDLE',
@@ -10,24 +11,6 @@ export const TourPhases = {
 };
 
 const GEOFENCE_RADIUS = 50; // meters
-
-/**
- * Helper to calculate distance between two points (Haversine)
- */
-const getDistance = (p1, p2) => {
-  const R = 6371e3; // metres
-  const φ1 = p1.lat * Math.PI / 180;
-  const φ2 = p2.lat * Math.PI / 180;
-  const Δφ = (p2.lat - p1.lat) * Math.PI / 180;
-  const Δλ = (p2.lng - p1.lng) * Math.PI / 180;
-
-  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-    Math.cos(φ1) * Math.cos(φ2) *
-    Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-  return R * c;
-};
 
 /**
  * useTour Hook
@@ -97,11 +80,11 @@ export const useTour = () => {
     await Preferences.remove({ key: 'active_route' });
   }, [context]);
 
-  return {
+  return useMemo(() => ({
     ...context,
     phase,
     startRouting,
     startActive,
     stopTour
-  };
+  }), [context, phase, startRouting, startActive, stopTour]);
 };

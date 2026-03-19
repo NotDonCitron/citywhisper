@@ -1582,7 +1582,7 @@
         }
 
         const map = L.map('map', { zoomControl: false, attributionControl: false, fadeAnimation: true }).setView([49.4836, 8.4660], 15);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png').addTo(map);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
         map.on('dragstart', () => {
             shouldFollowUser = false;

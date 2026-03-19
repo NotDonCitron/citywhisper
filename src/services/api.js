@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8000';
+export const API_BASE_URL = 'http://localhost:8000';
 
 export const api = {
   fetchPois: async () => {
@@ -9,13 +9,13 @@ export const api = {
     return response.json();
   },
 
-  fetchRoute: async (poiIds) => {
+  fetchRoute: async (poiIds, roundtrip = true) => {
     const response = await fetch(`${API_BASE_URL}/route`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ poi_ids: poiIds }),
+      body: JSON.stringify({ poi_ids: poiIds, roundtrip }),
     });
     if (!response.ok) {
       throw new Error(`Error fetching route: ${response.statusText}`);

@@ -33,10 +33,58 @@ const MapController = ({ center, zoom, isTourActive }) => {
     if (center) {
       map.setView(center, zoom || map.getZoom());
     }
-  }, [center, map]);
+  }, [center, map, zoom]);
 
   return null;
 };
+
+// Memoized POI Marker Component to prevent flickering
+const POIMarker = React.memo(({ poi, isSelected, stopNumber, isMatch, isNear, onClick }) => {
+  const getCategoryColor = (cat) => {
+    switch(cat?.toLowerCase()) {
+      case 'history': return '#f59e0b';
+      case 'art': return '#ec4899';
+      case 'architecture': return '#0ea5e9';
+      case 'subculture': return '#8b5cf6';
+      case 'nature': return '#22c55e';
+      case 'urban': return '#64748b';
+      default: return '#334155';
+    }
+  };
+
+  const catColor = getCategoryColor(poi.category);
+  
+  // CRITICAL: Memoize the icon object so Leaflet doesn't re-render it unless state changes
+  const icon = React.useMemo(() => L.divIcon({
+    className: 'custom-poi-marker-container',
+    html: `
+      <div class="custom-marker ${isNear ? 'pulse-active' : ''}">
+        <div class="marker-dot ${isMatch && !isSelected ? 'border-orange-400' : 'border-white'} flex items-center justify-center shadow-lg transition-all duration-300" style="background-color: ${isSelected ? '#0ea5e9' : catColor}">
+          <span class="text-xl">${poi.emoji || '📍'}</span>
+        </div>
+        ${stopNumber ? `<div class="stop-badge">${stopNumber}</div>` : ''}
+        ${isMatch && !stopNumber ? `<div class="interest-badge">✨</div>` : ''}
+      </div>
+    `,
+    iconSize: [40, 40],
+    iconAnchor: [20, 20]
+  }), [isSelected, stopNumber, isMatch, isNear, poi.emoji, catColor]);
+
+  return (
+    <Marker 
+      position={[poi.lat, poi.lng]}
+      eventHandlers={{ click: onClick }}
+      icon={icon}
+    >
+      <Popup>
+        <div className="text-black">
+          <h4 className="font-bold">{poi.name}</h4>
+          <p className="text-xs">{poi.category}</p>
+        </div>
+      </Popup>
+    </Marker>
+  );
+});
 
 const MapContainerComponent = () => {
   const { 
@@ -50,7 +98,6 @@ const MapContainerComponent = () => {
   } = useTourContext();
 
   const [mapCenter, setMapCenter] = useState([49.4875, 8.4660]); // Default Mannheim center
-  const [zoom, setZoom] = useState(13);
 
   useEffect(() => {
     if (userLocation) {
@@ -62,7 +109,7 @@ const MapContainerComponent = () => {
     <div id="map" className="h-screen w-full relative z-0">
       <MapContainer 
         center={mapCenter} 
-        zoom={zoom} 
+        zoom={13} 
         scrollWheelZoom={true}
         zoomControl={false}
         className="h-full w-full"
@@ -70,10 +117,9 @@ const MapContainerComponent = () => {
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
           url="https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png"
-          // The Service Worker handles caching for this URL
         />
         
-        <MapController center={mapCenter} zoom={isTourActive ? 16 : 14} isTourActive={isTourActive} />
+        <MapController center={mapCenter} zoom={isTourActive ? 19 : 14} isTourActive={isTourActive} />
 
         {/* POI Markers */}
         {pois.map((poi) => {
@@ -85,42 +131,22 @@ const MapContainerComponent = () => {
           // Calculate distance for pulse animation
           let isNear = false;
           if (userLocation) {
-            const userLatLng = L.latLng(userLocation.lat, userLocation.lng);
-            const poiLatLng = L.latLng(poi.lat, poi.lng);
-            if (userLatLng.distanceTo(poiLatLng) < 150) {
-              isNear = true;
-            }
+            const dx = userLocation.lng - poi.lng;
+            const dy = userLocation.lat - poi.lat;
+            const dist = Math.sqrt(dx * dx + dy * dy) * 111320;
+            if (dist < 150) isNear = true;
           }
 
           return (
-            <Marker 
-              key={poi.id} 
-              position={[poi.lat, poi.lng]}
-              eventHandlers={{
-                click: () => togglePoiSelection(poi),
-              }}
-              icon={L.divIcon({
-                className: 'custom-poi-marker-container',
-                html: `
-                  <div class="custom-marker ${isNear ? 'pulse-active' : ''}">
-                    <div class="marker-dot ${isSelected ? 'bg-sky-500' : 'bg-slate-700'} ${isMatch && !isSelected ? 'border-orange-400' : 'border-white'} flex items-center justify-center shadow-lg transition-all duration-300">
-                      <span class="text-xl">${poi.emoji || '📍'}</span>
-                    </div>
-                    ${stopNumber ? `<div class="stop-badge">${stopNumber}</div>` : ''}
-                    ${isMatch && !stopNumber ? `<div class="interest-badge">✨</div>` : ''}
-                  </div>
-                `,
-                iconSize: [40, 40],
-                iconAnchor: [20, 20]
-              })}
-            >
-              <Popup>
-                <div className="text-black">
-                  <h4 className="font-bold">{poi.name}</h4>
-                  <p className="text-xs">{poi.category}</p>
-                </div>
-              </Popup>
-            </Marker>
+            <POIMarker 
+              key={poi.id}
+              poi={poi}
+              isSelected={isSelected}
+              stopNumber={stopNumber}
+              isMatch={isMatch}
+              isNear={isNear}
+              onClick={() => togglePoiSelection(poi)}
+            />
           );
         })}
 

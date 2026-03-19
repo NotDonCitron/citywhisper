@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CityWhisper — POI Card Concepts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=Instrument+Serif:ital@0;1&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --void: #060a14;
+  --deep: #0a0e1a;
+  --surface: #0f172a;
+  --glass: rgba(15, 23, 42, 0.78);
+  --glass-border: rgba(255,255,255,0.10);
+  --accent: #0ea5e9;
+  --accent-glow: rgba(14,165,233,0.35);
+  --green: #34d399;
+  --green-bg: rgba(16,185,129,0.12);
+  --green-border: rgba(16,185,129,0.25);
+  --text: #f1f5f9;
+  --text-mid: rgba(255,255,255,0.7);
+  --text-dim: rgba(255,255,255,0.45);
+}
+
+body {
+  background: var(--void);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* === PAGE LAYOUT === */
+.page-header {
+  text-align: center;
+  padding: 3rem 2rem 1rem;
+}
+.page-header h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, #fff 0%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.page-header p {
+  color: var(--text-dim);
+  font-size: 0.95rem;
+  margin-top: 0.5rem;
+  letter-spacing: 0.02em;
+}
+
+.concepts-grid {
+  display: flex;
+  justify-content: center;
+  gap: 2.5rem;
+  padding: 2rem;
+  flex-wrap: wrap;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* === PHONE FRAME === */
+.phone-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2rem;
+  flex: 0 0 auto;
+}
+
+.concept-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--text-dim);
+  text-align: center;
+}
+.concept-label.recommended {
+  color: var(--accent);
+  position: relative;
+}
+.concept-label.recommended::after {
+  content: '★';
+  margin-left: 6px;
+  font-size: 0.8rem;
+}
+
+.phone-frame {
+  width: 390px;
+  height: 780px;
+  border-radius: 44px;
+  border: 3px solid rgba(255,255,255,0.08);
+  background: var(--deep);
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.04),
+    0 40px 80px -20px rgba(0,0,0,0.7),
+    0 0 120px -40px var(--accent-glow);
+}
+
+/* Notch */
+.phone-frame::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 126px;
+  height: 28px;
+  background: #000;
+  border-radius: 0 0 18px 18px;
+  z-index: 100;
+}
+
+/* Map placeholder */
+.map-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 30% 40%, rgba(14,165,233,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 60%, rgba(139,92,246,0.04) 0%, transparent 50%),
+    var(--deep);
+}
+.map-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Card sits at bottom of phone */
+.card-container {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+}
+
+/* === SHARED CARD ELEMENTS === */
+.category-badge {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 20;
+  padding: 5px 12px;
+  border-radius: 100px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  background: rgba(14,165,233,0.18);
+  color: var(--accent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(14,165,233,0.25);
+  animation: badgePop 600ms cubic-bezier(0.34, 1.56, 0.64, 1) 400ms both;
+}
+
+.action-buttons {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 20;
+  display: flex;
+  gap: 8px;
+  animation: badgePop 600ms cubic-bezier(0.34, 1.56, 0.64, 1) 500ms both;
+}
+
+.action-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 200ms;
+}
+.action-btn:hover {
+  background: rgba(255,255,255,0.15);
+}
+
+.distance-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--green-bg);
+  border: 1px solid var(--green-border);
+  color: var(--green);
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: 'Space Mono', monospace;
+}
+
+/* SVG icons inline */
+.icon-map { width: 15px; height: 15px; }
+.icon-close { width: 14px; height: 14px; }
+.icon-play { width: 22px; height: 22px; }
+
+/* === ANIMATIONS === */
+@keyframes badgePop {
+  0% { opacity: 0; transform: scale(0) translateY(8px); }
+  60% { transform: scale(1.12) translateY(0); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes heroReveal {
+  0% { opacity: 0; transform: scale(1.06); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideUp {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes kenBurns {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08) translate(-1%, -1%); }
+  100% { transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes waveBar {
+  0%, 100% { height: 3px; }
+  50% { height: 14px; }
+}
+
+@keyframes progressPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInCard {
+  from { transform: translateY(40px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+
+/* =============================================
+   CONCEPT A — CINEMATIC STORY CARD
+   ============================================= */
+
+.card-a {
+  border-radius: 24px 24px 0 0;
+  overflow: hidden;
+  background: var(--glass);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  border-bottom: none;
+  max-height: 620px;
+  animation: slideInCard 700ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.card-a .hero-a {
+  position: relative;
+  width: 100%;
+  height: 320px;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.card-a .hero-a img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 25%;
+  animation: kenBurns 25s ease-in-out infinite;
+}
+
+.card-a .hero-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 15%,
+    rgba(10,14,26,0.3) 45%,
+    rgba(10,14,26,0.7) 70%,
+    var(--deep) 100%
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Audio pill floating on image */
+.card-a .audio-pill {
+  position: absolute;
+  bottom: 54px;
+  left: 1rem;
+  right: 1rem;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(15,23,42,0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px;
+  animation: slideUp 600ms cubic-bezier(0.34,1.56,0.64,1) 300ms both;
+}
+
+.card-a .audio-pill .play-btn-small {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 20px var(--accent-glow);
+}
+
+.card-a .audio-pill .progress-track {
+  flex: 1;
+  height: 3px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.card-a .audio-pill .progress-fill {
+  height: 100%;
+  width: 38%;
+  background: var(--accent);
+  border-radius: 4px;
+  animation: progressPulse 2s infinite;
+}
+.card-a .audio-pill .time {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+/* Title shelf */
+.card-a .title-shelf {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  padding: 0 1.25rem 1rem;
+  animation: slideUp 600ms cubic-bezier(0.34,1.56,0.64,1) 200ms both;
+}
+.card-a .title-shelf .kicker {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+  font-family: 'Space Mono', monospace;
+}
+.card-a .title-shelf .poi-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.8rem;
+  font-weight: 900;
+  line-height: 1.1;
+  color: #fff;
+  text-shadow: 0 2px 30px rgba(0,0,0,0.6);
+  margin-bottom: 6px;
+}
+
+/* Content scroll */
+.card-a .content-scroll {
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 1rem 1.25rem 2rem;
+}
+
+.card-a .pull-quote {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-size: 1.15rem;
+  line-height: 1.55;
+  color: rgba(255,255,255,0.85);
+  padding: 0.75rem 0;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  margin-bottom: 1rem;
+  animation: slideUp 500ms ease 500ms both;
+}
+
+.card-a .body-text {
+  font-size: 0.88rem;
+  line-height: 1.75;
+  color: var(--text-mid);
+  animation: slideUp 500ms ease 600ms both;
+}
+.card-a .body-text p + p {
+  margin-top: 0.8rem;
+}
+
+
+/* =============================================
+   CONCEPT B — MAGAZINE EDITORIAL
+   ============================================= */
+
+.card-b {
+  border-radius: 24px 24px 0 0;
+  overflow: hidden;
+  background: var(--glass);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  border-bottom: none;
+  max-height: 620px;
+  animation: slideInCard 700ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.card-b .hero-b {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  max-height: 200px;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.card-b .hero-b img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 30%;
+  animation: heroReveal 900ms ease forwards;
+}
+
+.card-b .hero-b .tint-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(14,165,233,0.12) 0%,
+    transparent 60%
+  );
+  mix-blend-mode: multiply;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.card-b .hero-b .hero-gradient-b {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60%;
+  background: linear-gradient(to bottom, transparent, var(--deep));
+  z-index: 3;
+  pointer-events: none;
+}
+
+.card-b .hero-b .title-area {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 0 1.25rem 0.75rem;
+  z-index: 5;
+  animation: slideUp 600ms cubic-bezier(0.34,1.56,0.64,1) 200ms both;
+}
+.card-b .hero-b .title-area .kicker {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--text-dim);
+  font-family: 'Space Mono', monospace;
+}
+.card-b .hero-b .title-area .poi-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.15;
+  margin: 2px 0 4px;
+}
+
+/* Editorial content */
+.card-b .editorial-content {
+  max-height: 380px;
+  overflow-y: auto;
+  padding: 1rem 1.25rem 2rem;
+}
+
+/* Drop-cap lead */
+.card-b .lead-dropcap {
+  font-size: 0.95rem;
+  font-weight: 400;
+  line-height: 1.7;
+  color: rgba(255,255,255,0.85);
+  margin-bottom: 1rem;
+  animation: slideUp 500ms ease 400ms both;
+}
+.card-b .lead-dropcap .dropcap {
+  float: left;
+  font-family: 'Playfair Display', serif;
+  font-size: 3.2rem;
+  font-weight: 900;
+  line-height: 0.8;
+  color: var(--accent);
+  margin-right: 8px;
+  margin-top: 4px;
+}
+
+/* Slim audio bar */
+.card-b .audio-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 14px;
+  margin-bottom: 1rem;
+  animation: slideUp 500ms ease 500ms both;
+}
+
+.card-b .audio-bar .play-btn-mini {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 12px var(--accent-glow);
+}
+
+.card-b .audio-bar .bar-track {
+  flex: 1;
+  height: 3px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+.card-b .audio-bar .bar-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 38%;
+  background: linear-gradient(90deg, var(--accent), #38bdf8);
+  border-radius: 4px;
+}
+.card-b .audio-bar .bar-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Fact cards row */
+.card-b .fact-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  animation: slideUp 500ms ease 550ms both;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.card-b .fact-row::-webkit-scrollbar { display: none; }
+
+.card-b .fact-card {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-mid);
+  backdrop-filter: blur(8px);
+}
+.card-b .fact-card .fact-emoji {
+  font-size: 14px;
+}
+
+.card-b .body-text-b {
+  font-size: 0.88rem;
+  line-height: 1.75;
+  color: var(--text-mid);
+  animation: slideUp 500ms ease 600ms both;
+}
+.card-b .body-text-b p + p {
+  margin-top: 0.8rem;
+}
+
+
+/* =============================================
+   CONCEPT C — IMMERSIVE FULLBLEED
+   ============================================= */
+
+.card-c {
+  border-radius: 24px 24px 0 0;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--glass-border);
+  border-bottom: none;
+  max-height: 640px;
+  animation: slideInCard 700ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.card-c .hero-c {
+  position: relative;
+  width: 100%;
+  height: 280px;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.card-c .hero-c img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 20%;
+  animation: heroReveal 1000ms ease forwards;
+}
+
+.card-c .hero-c .gradient-c {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 10%,
+    rgba(15,23,42,0.2) 35%,
+    rgba(15,23,42,0.65) 60%,
+    var(--surface) 88%
+  );
+  z-index: 2;
+  pointer-events: none;
+}
+
+.card-c .hero-c .title-block {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  padding: 0 1.25rem 0.5rem;
+  animation: slideUp 600ms cubic-bezier(0.34,1.56,0.64,1) 200ms both;
+}
+
+.card-c .hero-c .title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 2px;
+}
+
+.card-c .hero-c .kicker {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--text-dim);
+  font-family: 'Space Mono', monospace;
+}
+
+.card-c .hero-c .poi-name-c {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  font-weight: 900;
+  line-height: 1.05;
+  color: #fff;
+  text-shadow: 0 2px 30px rgba(0,0,0,0.5);
+  letter-spacing: -0.02em;
+  margin-bottom: 2px;
+}
+
+/* Waveform audio bar */
+.card-c .waveform-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 1.25rem;
+  background: rgba(255,255,255,0.03);
+  border-top: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  animation: slideUp 500ms ease 350ms both;
+}
+
+.card-c .waveform-bar .play-btn-c {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 24px var(--accent-glow);
+  transition: transform 150ms;
+}
+.card-c .waveform-bar .play-btn-c:hover {
+  transform: scale(1.05);
+}
+
+.card-c .waveform-visual {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 28px;
+}
+
+.card-c .waveform-visual .wv-bar {
+  width: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+  opacity: 0.5;
+  transition: height 200ms;
+}
+.card-c .waveform-visual .wv-bar.active {
+  opacity: 1;
+}
+.card-c .waveform-visual .wv-bar.playing {
+  animation: waveBar 0.8s ease-in-out infinite;
+}
+
+.card-c .waveform-bar .wv-time {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+/* Content area */
+.card-c .content-c {
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 0.75rem 1.25rem 2rem;
+}
+
+.card-c .lead-c {
+  font-size: 0.95rem;
+  font-weight: 400;
+  line-height: 1.7;
+  color: rgba(255,255,255,0.88);
+  border-left: 3px solid var(--accent);
+  padding-left: 14px;
+  margin-bottom: 1rem;
+  animation: slideUp 500ms ease 450ms both;
+}
+
+.card-c .callout-box {
+  background: rgba(14,165,233,0.06);
+  border: 1px solid rgba(14,165,233,0.15);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 12px 12px 0;
+  padding: 12px 16px;
+  margin: 1rem 0;
+  animation: slideUp 500ms ease 550ms both;
+}
+.card-c .callout-box .callout-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.card-c .callout-box p {
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: rgba(255,255,255,0.8);
+  font-style: italic;
+}
+
+.card-c .body-text-c {
+  font-size: 0.88rem;
+  line-height: 1.75;
+  color: var(--text-mid);
+  animation: slideUp 500ms ease 600ms both;
+}
+.card-c .body-text-c p + p {
+  margin-top: 0.8rem;
+}
+.card-c .body-text-c .hl {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Scrollbar styling */
+.content-scroll::-webkit-scrollbar,
+.editorial-content::-webkit-scrollbar,
+.content-c::-webkit-scrollbar {
+  width: 3px;
+}
+.content-scroll::-webkit-scrollbar-track,
+.editorial-content::-webkit-scrollbar-track,
+.content-c::-webkit-scrollbar-track {
+  background: transparent;
+}
+.content-scroll::-webkit-scrollbar-thumb,
+.editorial-content::-webkit-scrollbar-thumb,
+.content-c::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.08);
+  border-radius: 10px;
+}
+
+/* Drag handle */
+.drag-handle {
+  width: 40px;
+  height: 4px;
+  background: rgba(255,255,255,0.18);
+  border-radius: 100px;
+  margin: 10px auto;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 1280px) {
+  .concepts-grid { gap: 1.5rem; }
+  .phone-frame { width: 360px; height: 720px; }
+}
+@media (max-width: 900px) {
+  .concepts-grid {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>CityWhisper — POI Card Redesign</h1>
+  <p>3 Konzepte für die Detailansicht · Wasserturm Mannheim</p>
+</div>
+
+<div class="concepts-grid">
+
+  <!-- ===== CONCEPT A ===== -->
+  <div class="phone-wrapper">
+    <div class="concept-label">Konzept A · Cinematic Story Card</div>
+    <div class="phone-frame">
+      <div class="map-bg"></div>
+      <div class="card-container">
+        <div class="card-a">
+          <div class="drag-handle"></div>
+
+          <div class="hero-a">
+            <div class="category-badge">Architektur</div>
+            <div class="action-buttons">
+              <div class="action-btn">
+                <svg class="icon-map" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+              </div>
+              <div class="action-btn">
+                <svg class="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </div>
+            </div>
+
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Mannheim_Wasserturm_2019.jpg/800px-Mannheim_Wasserturm_2019.jpg" alt="Wasserturm Mannheim">
+            <div class="hero-gradient"></div>
+
+            <div class="audio-pill">
+              <div class="play-btn-small">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="white"><polygon points="6,3 20,12 6,21"/></svg>
+              </div>
+              <div class="progress-track"><div class="progress-fill"></div></div>
+              <span class="time">1:23</span>
+            </div>
+
+            <div class="title-shelf">
+              <div class="kicker">Mannheim</div>
+              <h2 class="poi-name">Wasserturm</h2>
+              <div class="distance-pill">~ 42m</div>
+            </div>
+          </div>
+
+          <div class="content-scroll">
+            <div class="pull-quote">
+              „Der Wasserturm ist das Wahrzeichen Mannheims und der Mittelpunkt der Jugendstilanlage Friedrichsplatz."
+            </div>
+            <div class="body-text">
+              <p>Er wurde zwischen 1886 und 1889 nach Plänen von Gustav Halmhuber erbaut. Mit einer Höhe von 60 Metern überragt der sandsteinerne Turm im Stil des Neobarock die umliegenden Grünanlagen.</p>
+              <p>Die Figurengruppen am Sockel symbolisieren die Kraft des Wassers. Der Friedrichsplatz selbst gilt als eine der schönsten Jugendstil-Anlagen Europas.</p>
+              <p>Die symmetrisch angelegten Wasserspiele und Arkadengänge schaffen eine einzigartige Atmosphäre, besonders bei der abendlichen Beleuchtung. Seit 1987 steht der Wasserturm unter Denkmalschutz.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===== CONCEPT B ===== -->
+  <div class="phone-wrapper">
+    <div class="concept-label">Konzept B · Magazine Editorial</div>
+    <div class="phone-frame">
+      <div class="map-bg"></div>
+      <div class="card-container">
+        <div class="card-b">
+          <div class="drag-handle"></div>
+
+          <div class="hero-b">
+            <div class="category-badge">Architektur</div>
+            <div class="action-buttons">
+              <div class="action-btn">
+                <svg class="icon-map" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+              </div>
+              <div class="action-btn">
+                <svg class="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </div>
+            </div>
+
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Mannheim_Wasserturm_2019.jpg/800px-Mannheim_Wasserturm_2019.jpg" alt="Wasserturm Mannheim">
+            <div class="tint-overlay"></div>
+            <div class="hero-gradient-b"></div>
+            <div class="title-area">
+              <div class="kicker">Mannheim</div>
+              <h2 class="poi-name">Wasserturm</h2>
+              <div class="distance-pill">~ 42m</div>
+            </div>
+          </div>
+
+          <div class="editorial-content">
+            <div class="lead-dropcap">
+              <span class="dropcap">D</span>er Wasserturm ist das Wahrzeichen Mannheims und der Mittelpunkt der Jugendstilanlage Friedrichsplatz. Er wurde zwischen 1886 und 1889 nach Plänen von Gustav Halmhuber erbaut.
+            </div>
+
+            <div class="audio-bar">
+              <div class="play-btn-mini">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="white"><polygon points="6,3 20,12 6,21"/></svg>
+              </div>
+              <div class="bar-track"><div class="bar-fill"></div></div>
+              <span class="bar-label">Guide · 3:42</span>
+            </div>
+
+            <div class="fact-row">
+              <div class="fact-card"><span class="fact-emoji">📅</span> 1886–1889</div>
+              <div class="fact-card"><span class="fact-emoji">📏</span> 60 Meter</div>
+              <div class="fact-card"><span class="fact-emoji">🏛</span> Neobarock</div>
+              <div class="fact-card"><span class="fact-emoji">🛡</span> Denkmalschutz</div>
+            </div>
+
+            <div class="body-text-b">
+              <p>Mit einer Höhe von 60 Metern überragt der sandsteinerne Turm die umliegenden Grünanlagen. Die Figurengruppen am Sockel symbolisieren die Kraft des Wassers.</p>
+              <p>Der Friedrichsplatz selbst gilt als eine der schönsten Jugendstil-Anlagen Europas. Die symmetrisch angelegten Wasserspiele und Arkadengänge schaffen eine einzigartige Atmosphäre.</p>
+              <p>Seit 1987 steht der Wasserturm unter Denkmalschutz und ist heute ein beliebter Treffpunkt für Einheimische und Touristen gleichermaßen.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===== CONCEPT C ===== -->
+  <div class="phone-wrapper">
+    <div class="concept-label recommended">Konzept C · Immersive Fullbleed — Empfohlen</div>
+    <div class="phone-frame">
+      <div class="map-bg"></div>
+      <div class="card-container">
+        <div class="card-c">
+          <div class="drag-handle"></div>
+
+          <div class="hero-c">
+            <div class="category-badge">Architektur</div>
+            <div class="action-buttons">
+              <div class="action-btn">
+                <svg class="icon-map" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+              </div>
+              <div class="action-btn">
+                <svg class="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </div>
+            </div>
+
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Mannheim_Wasserturm_2019.jpg/800px-Mannheim_Wasserturm_2019.jpg" alt="Wasserturm Mannheim">
+            <div class="gradient-c"></div>
+
+            <div class="title-block">
+              <div class="title-row">
+                <span class="kicker">Mannheim</span>
+                <div class="distance-pill">~ 42m</div>
+              </div>
+              <h2 class="poi-name-c">Wasserturm</h2>
+            </div>
+          </div>
+
+          <div class="waveform-bar">
+            <div class="play-btn-c">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="white"><polygon points="6,3 20,12 6,21"/></svg>
+            </div>
+            <div class="waveform-visual" id="waveform-c"></div>
+            <span class="wv-time">1:23 / 3:42</span>
+          </div>
+
+          <div class="content-c">
+            <div class="lead-c">
+              Der Wasserturm ist das Wahrzeichen Mannheims und der Mittelpunkt der Jugendstilanlage Friedrichsplatz. Er wurde zwischen 1886 und 1889 nach Plänen von <span class="hl" style="color:var(--accent);font-weight:600">Gustav Halmhuber</span> erbaut.
+            </div>
+
+            <div class="callout-box">
+              <div class="callout-label">Wusstest du?</div>
+              <p>Der Friedrichsplatz gilt als eine der schönsten Jugendstil-Anlagen Europas — mit symmetrischen Wasserspielen und Arkadengängen.</p>
+            </div>
+
+            <div class="body-text-c">
+              <p>Mit einer Höhe von <span class="hl">60 Metern</span> überragt der sandsteinerne Turm im Stil des <span class="hl">Neobarock</span> die umliegenden Grünanlagen. Die Figurengruppen am Sockel symbolisieren die Kraft des Wassers.</p>
+              <p>Die symmetrisch angelegten Wasserspiele und Arkadengänge schaffen eine einzigartige Atmosphäre, besonders bei der abendlichen Beleuchtung.</p>
+              <p>Seit <span class="hl">1987</span> steht der Wasserturm unter Denkmalschutz und ist heute ein beliebter Treffpunkt für Einheimische und Touristen gleichermaßen.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// Generate waveform bars for Concept C
+const waveform = document.getElementById('waveform-c');
+const barCount = 45;
+const heights = [];
+for (let i = 0; i < barCount; i++) {
+  // Generate organic-looking waveform heights
+  const base = Math.sin(i * 0.3) * 6 + Math.random() * 10 + 4;
+  heights.push(Math.round(base));
+}
+
+const playedBars = Math.floor(barCount * 0.38); // 38% progress
+
+heights.forEach((h, i) => {
+  const bar = document.createElement('div');
+  bar.className = 'wv-bar' + (i < playedBars ? ' active' : '') + (i >= playedBars - 3 && i <= playedBars ? ' playing' : '');
+  bar.style.height = h + 'px';
+  if (i >= playedBars - 3 && i <= playedBars) {
+    bar.style.animationDelay = (i * 0.12) + 's';
+  }
+  if (i >= playedBars) {
+    bar.style.opacity = '0.2';
+  }
+  waveform.appendChild(bar);
+});
+</script>
+
+</body>
+</html>

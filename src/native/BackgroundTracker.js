@@ -1,4 +1,4 @@
-import { registerPlugin } from "@capacitor/core";
+import { registerPlugin, Capacitor } from "@capacitor/core";
 
 const BackgroundGeolocation = registerPlugin("BackgroundGeolocation");
 
@@ -14,6 +14,11 @@ export const BackgroundTracker = {
    * @returns {Promise<string>} The watcher ID.
    */
   async startTracking(onLocationUpdate) {
+    if (Capacitor.getPlatform() === 'web') {
+      console.warn("Background tracking is not supported on web.");
+      return null;
+    }
+
     if (this.watcherId) {
       console.warn("Background tracking is already active.");
       return this.watcherId;
