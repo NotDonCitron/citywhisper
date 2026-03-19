@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect, useCallback, use
 import { BackgroundTracker } from '../native/BackgroundTracker';
 import { api } from '../services/api';
 import { useSimulation } from '../hooks/useSimulation';
+import { triggerArrivalHaptics, playArrivalSound } from '../utils/arrivalEffects';
 
 const TourContext = createContext();
 
@@ -24,6 +25,8 @@ export const TourProvider = ({ children }) => {
   // Callback fired by useSimulation when the sim-point arrives at a POI (25m radius)
   const handlePoiReached = useCallback((poi) => {
     console.log(`[TourContext] POI reached: ${poi.name}`);
+    triggerArrivalHaptics();
+    playArrivalSound();
     setActiveDisplayPoi(poi);
   }, []);
 

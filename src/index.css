@@ -298,8 +298,28 @@ body {
   border-radius: 24px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-  transition: all 600ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 600ms cubic-bezier(0.32, 0.72, 0, 1);
   overflow: hidden;
+  /* Glass reflection effect */
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 40%, transparent 60%, rgba(255, 255, 255, 0.02) 100%);
+}
+
+.cockpit-base::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.05), transparent);
+  transform: skewX(-25deg);
+  transition: left 0.8s ease;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.cockpit-base:hover::after {
+  left: 200%;
 }
 
 /* NAV_HUD — ultra-slim glass strip */
@@ -311,10 +331,11 @@ body {
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   cursor: pointer;
+  transform: scale(1);
 }
 
 .cockpit-nav-hud:active {
-  transform: scale(0.98);
+  transform: scale(0.97);
 }
 
 /* MINIMIZED — compact audio strip */
@@ -326,16 +347,17 @@ body {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   cursor: pointer;
+  transform: scale(1);
 }
 
 .cockpit-minimized:active {
-  transform: scale(0.98);
+  transform: scale(0.97);
 }
 
 /* EXPANDED — compact floating card */
 .cockpit-expanded {
   bottom: 24px;
-  max-height: 60vh;
+  max-height: 80vh;
   padding: 0;
   background: rgba(15, 23, 42, 0.78);
   backdrop-filter: blur(28px) saturate(180%);
@@ -344,6 +366,66 @@ body {
   box-shadow:
     0 25px 60px -12px rgba(0, 0, 0, 0.6),
     inset 0 1px 1px rgba(255, 255, 255, 0.08);
+  transform: scale(1.02);
+}
+
+/* ===== Morph Arrival Animation ===== */
+
+/* Staggered reveal for expanded content during morph */
+@keyframes morphReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.morph-reveal {
+  animation: morphReveal 400ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.morph-reveal-delay-1 { animation-delay: 150ms; }
+.morph-reveal-delay-2 { animation-delay: 300ms; }
+.morph-reveal-delay-3 { animation-delay: 450ms; }
+
+/* Title morph — grows from nav-hud inline size to hero size */
+@keyframes titleMorph {
+  0% {
+    font-size: 0.875rem;
+    letter-spacing: 0;
+    opacity: 0.7;
+  }
+  100% {
+    font-size: 2rem;
+    letter-spacing: -0.03em;
+    opacity: 1;
+  }
+}
+
+.morph-title {
+  animation: titleMorph 600ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+/* Badge morph — pops in from the nav-hud distance pill */
+@keyframes badgeMorph {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) translateY(10px);
+  }
+  60% {
+    transform: scale(1.1) translateY(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.morph-badge {
+  animation: badgeMorph 500ms cubic-bezier(0.32, 0.72, 0, 1) 200ms both;
 }
 
 /* Bearing arrow with smooth rotation */

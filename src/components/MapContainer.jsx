@@ -26,14 +26,21 @@ const userIcon = L.divIcon({
 });
 
 // Component to handle map center and view updates
-const MapController = ({ center, zoom, isTourActive }) => {
+const MapController = ({ center, zoom, isTourActive, flyTarget }) => {
   const map = useMap();
-  
+
   useEffect(() => {
     if (center) {
       map.setView(center, zoom || map.getZoom());
     }
   }, [center, map, zoom]);
+
+  // Fly to POI on arrival
+  useEffect(() => {
+    if (flyTarget) {
+      map.flyTo([flyTarget.lat, flyTarget.lng], 18, { animate: true, duration: 1.5 });
+    }
+  }, [flyTarget, map]);
 
   return null;
 };
@@ -87,14 +94,15 @@ const POIMarker = React.memo(({ poi, isSelected, stopNumber, isMatch, isNear, on
 });
 
 const MapContainerComponent = () => {
-  const { 
-    pois, 
-    userLocation, 
-    activeRoute, 
+  const {
+    pois,
+    userLocation,
+    activeRoute,
     isTourActive,
     togglePoiSelection,
     selectedPois,
-    selectedCategories
+    selectedCategories,
+    activeDisplayPoi
   } = useTourContext();
 
   const [mapCenter, setMapCenter] = useState([49.4875, 8.4660]); // Default Mannheim center
@@ -119,7 +127,7 @@ const MapContainerComponent = () => {
           url="https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png"
         />
         
-        <MapController center={mapCenter} zoom={isTourActive ? 19 : 14} isTourActive={isTourActive} />
+        <MapController center={mapCenter} zoom={isTourActive ? 19 : 14} isTourActive={isTourActive} flyTarget={activeDisplayPoi} />
 
         {/* POI Markers */}
         {pois.map((poi) => {

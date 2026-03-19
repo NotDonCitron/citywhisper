@@ -47,6 +47,7 @@ const TourCockpit = () => {
   const [lastPlayedPoiId, setLastPlayedPoiId] = useState(null);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
+  const [isArriving, setIsArriving] = useState(false);
   
   // Navigation states
   const [nearestPoi, setNearestPoi] = useState(null);
@@ -57,6 +58,7 @@ const TourCockpit = () => {
   const prevInstructionRef = useRef(null);
   
   const collapseTimerRef = useRef(null);
+  const morphTimerRef = useRef(null);
   const stateRef = useRef({ syncedPoiId: null });
 
   // Reset step index when a new tour starts or route changes
@@ -172,18 +174,26 @@ const TourCockpit = () => {
     }
   }, [isPlaying, audioDuration, activeDisplayPoi, selectedPois, isSimulationActive, userLocation, setSimSpeed, lastPlayedPoiId]);
 
-  // Auto-trigger audio + expand when a new POI is reached
+  // Auto-trigger audio + morph-expand when a new POI is reached
   useEffect(() => {
     if (activeDisplayPoi && activeDisplayPoi.id !== lastPlayedPoiId) {
-      console.log(`[TourCockpit] POI reached: ${activeDisplayPoi.name}`);
+      console.log(`[TourCockpit] POI reached: ${activeDisplayPoi.name} — morphing`);
       setLastPlayedPoiId(activeDisplayPoi.id);
       playPoiAudio(activeDisplayPoi.id, 'insider', selectedCategories);
-      
-      // Clear any pending collapse timers
+
+      // Clear any pending timers
       if (collapseTimerRef.current) clearTimeout(collapseTimerRef.current);
-      
-      // Automatically expand to show content
+      if (morphTimerRef.current) clearTimeout(morphTimerRef.current);
+
+      // Start morph: set arriving flag, then switch to EXPANDED
+      // The flag triggers CSS morph-reveal animations on content
+      setIsArriving(true);
       setCockpitState(CockpitState.EXPANDED);
+
+      // Clear arriving flag after morph animation completes (600ms)
+      morphTimerRef.current = setTimeout(() => {
+        setIsArriving(false);
+      }, 650);
     }
   }, [activeDisplayPoi, lastPlayedPoiId, playPoiAudio, selectedCategories]);
 
@@ -206,6 +216,7 @@ const TourCockpit = () => {
 
     return () => {
       if (collapseTimerRef.current) clearTimeout(collapseTimerRef.current);
+      if (morphTimerRef.current) clearTimeout(morphTimerRef.current);
     };
   }, [isPlaying, cockpitState, userLocation, activeDisplayPoi, lastPlayedPoiId]);
 
@@ -284,51 +295,59 @@ const TourCockpit = () => {
     return `${m}:${String(s).padStart(2, '0')}`;
   };
 
-  // --- RENDERING NAV_HUD ---
-  if (cockpitState === CockpitState.NAV_HUD) {
-    return (
-      <div 
-        className="cockpit-base cockpit-nav-hud cockpit-enter"
-        onClick={() => setCockpitState(CockpitState.EXPANDED)}
-      >
-      <div className="bearing-arrow" style={{ transform: `rotate(${bearingToNearest}deg)` }}>
-          <Navigation size={24} fill="#0ea5e9" className="text-sky-500" />
-        </div>
-        <div className="flex-1 ml-4 overflow-hidden">
-          {nextInstruction ? (
-            <>
-              <p className="text-[10px] font-black uppercase tracking-widest text-amber-400 leading-none mb-1">Weghinweis</p>
-              <h3 className="font-bold text-white truncate text-sm tracking-tight">
-                {nextInstruction.instruction}
-              </h3>
-            </>
-          ) : (
-            <>
-              <p className="text-[10px] font-black uppercase tracking-widest text-sky-400 leading-none mb-1">NÃ¤chster Halt</p>
-              <h3 className="font-bold text-white truncate text-sm uppercase tracking-tight">
-                {nearestPoi?.name || 'Wird berechnet...'}
-              </h3>
-            </>
-          )}
-        </div>
-        <div className="bg-sky-500/20 text-sky-400 px-3 py-1.5 rounded-xl text-xs font-black border border-sky-500/30 ml-2">
-          {nextInstruction ? `${nextInstruction.distance}m` : `${distanceToNearest}m`}
-        </div>
-      </div>
-    );
-  }
+  // Determine CSS state class
+  const stateClass = cockpitState === CockpitState.NAV_HUD
+    ? 'cockpit-nav-hud'
+    : cockpitState === CockpitState.EXPANDED
+      ? 'cockpit-expanded'
+      : 'cockpit-minimized';
 
-  // --- RENDERING EXPANDED (Story Card) ---
+  // Morph class: applied on arrival transitions for staggered content reveal
+  const morphClass = isArriving ? 'morph-reveal' : '';
+
+  // --- UNIFIED RENDERING ---
   return (
-    <div className={`cockpit-base ${cockpitState === CockpitState.EXPANDED ? 'cockpit-expanded' : 'cockpit-minimized'} cockpit-enter`}>
+    <div
+      className={`cockpit-base ${stateClass} cockpit-enter`}
+      onClick={cockpitState === CockpitState.NAV_HUD ? () => setCockpitState(CockpitState.EXPANDED) : undefined}
+    >
+      {/* === NAV_HUD STATE === */}
+      {cockpitState === CockpitState.NAV_HUD && (
+        <>
+          <div className="bearing-arrow" style={{ transform: `rotate(${bearingToNearest}deg)` }}>
+            <Navigation size={24} fill="#0ea5e9" className="text-sky-500" />
+          </div>
+          <div className="flex-1 ml-4 overflow-hidden">
+            {nextInstruction ? (
+              <>
+                <p className="text-[10px] font-black uppercase tracking-widest text-amber-400 leading-none mb-1">Weghinweis</p>
+                <h3 className="font-bold text-white truncate text-sm tracking-tight">
+                  {nextInstruction.instruction}
+                </h3>
+              </>
+            ) : (
+              <>
+                <p className="text-[10px] font-black uppercase tracking-widest text-sky-400 leading-none mb-1">Nächster Halt</p>
+                <h3 className="font-bold text-white truncate text-sm uppercase tracking-tight">
+                  {nearestPoi?.name || 'Wird berechnet...'}
+                </h3>
+              </>
+            )}
+          </div>
+          <div className="bg-sky-500/20 text-sky-400 px-3 py-1.5 rounded-xl text-xs font-black border border-sky-500/30 ml-2">
+            {nextInstruction ? `${nextInstruction.distance}m` : `${distanceToNearest}m`}
+          </div>
+        </>
+      )}
 
-      {cockpitState === CockpitState.EXPANDED ? (
+      {/* === EXPANDED STATE (with morph animations on arrival) === */}
+      {cockpitState === CockpitState.EXPANDED && (
         <>
           {/* Drag Handle */}
           <div className="poi-drag-handle" onClick={handleToggleExpand} />
 
           {/* === HERO IMAGE SECTION === */}
-          <div className="poi-hero">
+          <div className={`poi-hero ${morphClass}`}>
             {/* Loading skeleton */}
             {!imageLoaded && !imageFailed && <div className="poi-hero-skeleton" />}
 
@@ -356,7 +375,7 @@ const TourCockpit = () => {
 
             {/* Category badge */}
             <div
-              className="poi-category-badge"
+              className={`poi-category-badge ${isArriving ? 'morph-badge' : ''}`}
               style={{ background: categoryInfo.bg, color: categoryInfo.color }}
             >
               {categoryInfo.label}
@@ -378,12 +397,12 @@ const TourCockpit = () => {
                 <div className="poi-kicker">{displayPoi.city || 'Mannheim'}</div>
                 <div className="poi-distance-pill">~ {distanceToNearest}m</div>
               </div>
-              <h2 className="poi-name">{displayPoi.name}</h2>
+              <h2 className={`poi-name ${isArriving ? 'morph-title' : ''}`}>{displayPoi.name}</h2>
             </div>
           </div>
 
           {/* === INLINE WAVEFORM BAR === */}
-          <div className="poi-waveform">
+          <div className={`poi-waveform ${isArriving ? 'morph-reveal morph-reveal-delay-1' : ''}`}>
             <button className="play-btn-waveform" onClick={togglePlayback}>
               {isPlaying ? <Pause size={18} /> : <Play size={18} style={{ marginLeft: 2 }} />}
             </button>
@@ -408,8 +427,7 @@ const TourCockpit = () => {
           </div>
 
           {/* === SCROLLABLE CONTENT === */}
-          <div className="detail-content overflow-y-auto max-h-[30vh] custom-scrollbar">
-            {/* Text Content */}
+          <div className={`detail-content overflow-y-auto max-h-[30vh] custom-scrollbar ${isArriving ? 'morph-reveal morph-reveal-delay-2' : ''}`}>
             <div className="poi-content-area">
               {fullText ? (
                 <>
@@ -417,7 +435,7 @@ const TourCockpit = () => {
 
                   {/* Callout box */}
                   {calloutSentence && (
-                    <div className="callout-box">
+                    <div className={`callout-box ${isArriving ? 'morph-reveal morph-reveal-delay-3' : ''}`}>
                       <div className="callout-label">Wusstest du?</div>
                       <div className="callout-text">{calloutSentence}</div>
                     </div>
@@ -431,8 +449,10 @@ const TourCockpit = () => {
             </div>
           </div>
         </>
-      ) : (
-        /* --- MINIMIZED STATE --- */
+      )}
+
+      {/* === MINIMIZED STATE === */}
+      {cockpitState === CockpitState.MINIMIZED && (
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
             <div className="flex-1 overflow-hidden">
