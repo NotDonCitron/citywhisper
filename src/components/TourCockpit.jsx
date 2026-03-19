@@ -456,7 +456,7 @@ const TourCockpit = () => {
           </div>
 
           {/* === SCROLLABLE CONTENT === */}
-          <div className={`detail-content overflow-y-auto max-h-[20vh] custom-scrollbar ${isArriving ? 'morph-reveal morph-reveal-delay-2' : ''}`}>
+          <div className={`detail-content overflow-y-auto flex-1 custom-scrollbar ${isArriving ? 'morph-reveal morph-reveal-delay-2' : ''}`}>
             <div className="poi-content-area">
               {fullText ? (
                 <>

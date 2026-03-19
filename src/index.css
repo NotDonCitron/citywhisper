@@ -292,20 +292,45 @@ body {
 /* Shared base for all cockpit states */
 .cockpit-base {
   position: fixed;
-  left: 0;
-  right: 0;
   z-index: 500;
   border-radius: 24px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   transition: all 600ms cubic-bezier(0.32, 0.72, 0, 1);
   overflow: hidden;
-  /* Mobile: full width with padding; Desktop: capped & centered */
+  /* Mobile default: bottom-centered */
+  left: 0;
+  right: 0;
   width: calc(100% - 48px);
   max-width: 420px;
   margin: 0 auto;
   /* Glass reflection effect */
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 40%, transparent 60%, rgba(255, 255, 255, 0.02) 100%);
+}
+
+/* Desktop: float left as a sidebar card */
+@media (min-width: 768px) {
+  .cockpit-base {
+    left: 24px;
+    right: auto;
+    margin: 0;
+    width: 380px;
+    max-width: none;
+  }
+
+  .cockpit-base.cockpit-nav-hud {
+    bottom: 24px;
+  }
+
+  .cockpit-base.cockpit-expanded {
+    top: 80px;
+    bottom: 24px;
+    max-height: calc(100vh - 104px);
+  }
+
+  .cockpit-base.cockpit-minimized {
+    bottom: 24px;
+  }
 }
 
 .cockpit-base::after {
@@ -371,6 +396,8 @@ body {
     0 25px 60px -12px rgba(0, 0, 0, 0.6),
     inset 0 1px 1px rgba(255, 255, 255, 0.08);
   transform: scale(1.02);
+  display: flex;
+  flex-direction: column;
 }
 
 /* ===== Morph Arrival Animation ===== */
