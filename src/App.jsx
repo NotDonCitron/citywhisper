@@ -8,6 +8,8 @@ import ProfileOverlay from './components/ProfileOverlay';
 import TourOverlay from './components/TourOverlay';
 import ToastContainer, { showToast } from './components/ToastContainer';
 import PoiPreview from './components/PoiPreview';
+import SplashScreen from './components/SplashScreen';
+import Onboarding from './components/Onboarding';
 
 // PWA Install Banner component
 const PwaInstallBanner = () => {
@@ -144,9 +146,31 @@ const AutoDemoButton = () => {
 function App() {
   const [activeTab, setActiveTab] = useState('map');
 
+  // Onboarding flow state: 'splash' → 'onboarding' → 'app'
+  const isOnboarded = localStorage.getItem('cw_onboarded') === 'true';
+  const [appPhase, setAppPhase] = useState(isOnboarded ? 'app' : 'splash');
+
+  const handleSplashFinished = useCallback(() => {
+    setAppPhase('onboarding');
+  }, []);
+
+  const handleOnboardingFinished = useCallback(() => {
+    setAppPhase('app');
+  }, []);
+
   return (
     <TourProvider>
       <div className="relative h-screen w-full overflow-hidden bg-slate-950">
+        {/* Splash Screen — first-time only */}
+        {appPhase === 'splash' && (
+          <SplashScreen onFinished={handleSplashFinished} />
+        )}
+
+        {/* Onboarding — after splash, before app */}
+        {appPhase === 'onboarding' && (
+          <Onboarding onFinished={handleOnboardingFinished} />
+        )}
+
         {/* PWA Install Banner */}
         <PwaInstallBanner />
         {/* Toast notifications */}
