@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="64" fill="#0a0e1a"/>
+  <g fill="#0ea5e9">
+    <!-- Location pin -->
+    <path d="M256 60 C256 60 140 210 140 290 C140 354 192 406 256 406 C320 406 372 354 372 290 C372 210 256 60 256 60Z"/>
+    <circle cx="256" cy="280" r="56" fill="#0a0e1a"/>
+    <circle cx="256" cy="280" r="26" fill="#0ea5e9"/>
+  </g>
+</svg>
