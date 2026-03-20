@@ -5,7 +5,8 @@ import { useTourContext } from '../context/TourContext';
 import { getDistance, getBearing, findNextStep } from '../utils/geo';
 import { API_BASE_URL } from '../services/api';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
-import { X, Map as MapIcon, ChevronUp, Navigation, Play, Pause, Maximize2, MapPin, Square, Loader2, Trophy } from 'lucide-react';
+import { X, Map as MapIcon, ChevronUp, Navigation, Play, Pause, Maximize2, MapPin, Square, Loader2, Trophy, Route, Clock, Footprints } from 'lucide-react';
+import { useTourStats } from '../hooks/useTourStats';
 
 const CockpitState = {
   EXPANDED: 'EXPANDED',
@@ -284,6 +285,22 @@ const TourCockpit = () => {
     return sentences.length > 1 ? sentences[1] : sentences[0] || null;
   }, [bodyText]);
 
+  // Tour statistics (distance, duration, POIs visited, steps)
+  const { distanceWalked, duration, poisVisited, stepsEstimate } = useTourStats();
+
+  // Format helpers for stats display
+  const formatDistance = (metres) => {
+    if (metres >= 1000) return `${(metres / 1000).toFixed(1)} km`;
+    return `${Math.round(metres)} m`;
+  };
+  const formatDuration = (seconds) => {
+    if (seconds < 60) return `${seconds}s`;
+    const mins = Math.floor(seconds / 60);
+    if (mins < 60) return `${mins} min`;
+    const hrs = Math.floor(mins / 60);
+    return `${hrs}h ${mins % 60}m`;
+  };
+
   // Early returns AFTER all hooks
   if (!isTourActive) return null;
   if (!displayPoi) return null;
@@ -361,31 +378,50 @@ const TourCockpit = () => {
     >
       {/* === NAV_HUD STATE === */}
       {cockpitState === CockpitState.NAV_HUD && (
-        <>
-          <div className="bearing-arrow" style={{ transform: `rotate(${bearingToNearest}deg)` }}>
-            <Navigation size={24} fill="#0ea5e9" className="text-sky-500" />
+        <div className="flex flex-col w-full gap-2">
+          {/* Navigation row */}
+          <div className="flex items-center w-full">
+            <div className="bearing-arrow" style={{ transform: `rotate(${bearingToNearest}deg)` }}>
+              <Navigation size={24} fill="#0ea5e9" className="text-sky-500" />
+            </div>
+            <div className="flex-1 ml-4 overflow-hidden">
+              {nextInstruction ? (
+                <>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-amber-400 leading-none mb-1">Weghinweis</p>
+                  <h3 className="font-bold text-white truncate text-sm tracking-tight">
+                    {nextInstruction.instruction}
+                  </h3>
+                </>
+              ) : (
+                <>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-sky-400 leading-none mb-1">Nächster Halt</p>
+                  <h3 className="font-bold text-white truncate text-sm uppercase tracking-tight">
+                    {nearestPoi?.name || 'Wird berechnet...'}
+                  </h3>
+                </>
+              )}
+            </div>
+            <div className="bg-sky-500/20 text-sky-400 px-3 py-1.5 rounded-xl text-xs font-black border border-sky-500/30 ml-2">
+              {nextInstruction ? `${nextInstruction.distance}m` : `${distanceToNearest}m`}
+            </div>
           </div>
-          <div className="flex-1 ml-4 overflow-hidden">
-            {nextInstruction ? (
-              <>
-                <p className="text-[10px] font-black uppercase tracking-widest text-amber-400 leading-none mb-1">Weghinweis</p>
-                <h3 className="font-bold text-white truncate text-sm tracking-tight">
-                  {nextInstruction.instruction}
-                </h3>
-              </>
-            ) : (
-              <>
-                <p className="text-[10px] font-black uppercase tracking-widest text-sky-400 leading-none mb-1">Nächster Halt</p>
-                <h3 className="font-bold text-white truncate text-sm uppercase tracking-tight">
-                  {nearestPoi?.name || 'Wird berechnet...'}
-                </h3>
-              </>
-            )}
+
+          {/* Live stats bar */}
+          <div className="flex items-center gap-2 ml-1">
+            <div className="flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded-full">
+              <Route size={10} className="text-white/40" />
+              <span className="text-[10px] text-white/40 font-medium">{formatDistance(distanceWalked)}</span>
+            </div>
+            <div className="flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded-full">
+              <Clock size={10} className="text-white/40" />
+              <span className="text-[10px] text-white/40 font-medium">{formatDuration(duration)}</span>
+            </div>
+            <div className="flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded-full">
+              <MapPin size={10} className="text-white/40" />
+              <span className="text-[10px] text-white/40 font-medium">{poisVisited}/{selectedPois.length}</span>
+            </div>
           </div>
-          <div className="bg-sky-500/20 text-sky-400 px-3 py-1.5 rounded-xl text-xs font-black border border-sky-500/30 ml-2">
-            {nextInstruction ? `${nextInstruction.distance}m` : `${distanceToNearest}m`}
-          </div>
-        </>
+        </div>
       )}
 
       {/* === EXPANDED STATE (with morph animations on arrival) === */}
@@ -562,17 +598,50 @@ const TourCockpit = () => {
 
       {/* === TOUR COMPLETE OVERLAY === */}
       {showTourComplete && (
-        <div className="absolute inset-0 bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center gap-6 z-50 rounded-[inherit]">
+        <div className="absolute inset-0 bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center gap-5 z-50 rounded-[inherit] px-6">
           <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center">
             <Trophy size={40} className="text-emerald-400" />
           </div>
           <div className="text-center">
-            <h2 className="text-2xl font-black text-white mb-2">Tour abgeschlossen!</h2>
-            <p className="text-sm text-white/50">{selectedPois.length} Orte entdeckt</p>
+            <h2 className="text-2xl font-black text-white mb-1">Tour abgeschlossen!</h2>
+            <p className="text-sm text-white/50">Hier ist deine Zusammenfassung</p>
           </div>
+
+          {/* Stat cards grid */}
+          <div className="grid grid-cols-2 gap-3 w-full max-w-xs">
+            <div className="bg-white/5 rounded-2xl p-3 border border-white/10 flex flex-col items-center gap-1.5">
+              <div className="w-9 h-9 rounded-full bg-sky-500/15 flex items-center justify-center">
+                <Route size={18} className="text-sky-400" />
+              </div>
+              <span className="text-lg font-black text-white leading-tight">{formatDistance(distanceWalked)}</span>
+              <span className="text-[10px] uppercase tracking-widest text-white/40 font-bold">Distanz</span>
+            </div>
+            <div className="bg-white/5 rounded-2xl p-3 border border-white/10 flex flex-col items-center gap-1.5">
+              <div className="w-9 h-9 rounded-full bg-amber-500/15 flex items-center justify-center">
+                <Clock size={18} className="text-amber-400" />
+              </div>
+              <span className="text-lg font-black text-white leading-tight">{formatDuration(duration)}</span>
+              <span className="text-[10px] uppercase tracking-widest text-white/40 font-bold">Dauer</span>
+            </div>
+            <div className="bg-white/5 rounded-2xl p-3 border border-white/10 flex flex-col items-center gap-1.5">
+              <div className="w-9 h-9 rounded-full bg-emerald-500/15 flex items-center justify-center">
+                <MapPin size={18} className="text-emerald-400" />
+              </div>
+              <span className="text-lg font-black text-white leading-tight">{poisVisited}/{selectedPois.length}</span>
+              <span className="text-[10px] uppercase tracking-widest text-white/40 font-bold">Orte</span>
+            </div>
+            <div className="bg-white/5 rounded-2xl p-3 border border-white/10 flex flex-col items-center gap-1.5">
+              <div className="w-9 h-9 rounded-full bg-purple-500/15 flex items-center justify-center">
+                <Footprints size={18} className="text-purple-400" />
+              </div>
+              <span className="text-lg font-black text-white leading-tight">{stepsEstimate.toLocaleString()}</span>
+              <span className="text-[10px] uppercase tracking-widest text-white/40 font-bold">Schritte</span>
+            </div>
+          </div>
+
           <button
             onClick={handleStopTour}
-            className="px-8 py-3 bg-emerald-500 hover:bg-emerald-400 text-white font-bold rounded-2xl transition-all active:scale-95 shadow-lg shadow-emerald-500/30"
+            className="px-8 py-3 bg-emerald-500 hover:bg-emerald-400 text-white font-bold rounded-2xl transition-all active:scale-95 shadow-lg shadow-emerald-500/30 mt-1"
           >
             Zurück zur Karte
           </button>

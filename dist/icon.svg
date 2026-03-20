@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="64" fill="#0a0e1a"/>
+  <!-- City skyline silhouette -->
+  <g fill="#0ea5e9">
+    <!-- Building 1 (left) -->
+    <rect x="80" y="220" width="50" height="160" rx="4"/>
+    <rect x="90" y="240" width="10" height="15" rx="2" fill="#0a0e1a"/>
+    <rect x="110" y="240" width="10" height="15" rx="2" fill="#0a0e1a"/>
+    <rect x="90" y="270" width="10" height="15" rx="2" fill="#0a0e1a"/>
+    <rect x="110" y="270" width="10" height="15" rx="2" fill="#0a0e1a"/>
+    <!-- Building 2 (tall) -->
+    <rect x="145" y="160" width="60" height="220" rx="4"/>
+    <rect x="157" y="180" width="12" height="18" rx="2" fill="#0a0e1a"/>
+    <rect x="180" y="180" width="12" height="18" rx="2" fill="#0a0e1a"/>
+    <rect x="157" y="210" width="12" height="18" rx="2" fill="#0a0e1a"/>
+    <rect x="180" y="210" width="12" height="18" rx="2" fill="#0a0e1a"/>
+    <rect x="157" y="240" width="12" height="18" rx="2" fill="#0a0e1a"/>
+    <rect x="180" y="240" width="12" height="18" rx="2" fill="#0a0e1a"/>
+    <!-- Building 3 (medium) -->
+    <rect x="220" y="200" width="55" height="180" rx="4"/>
+    <rect x="232" y="220" width="10" height="15" rx="2" fill="#0a0e1a"/>
+    <rect x="255" y="220" width="10" height="15" rx="2" fill="#0a0e1a"/>
+    <rect x="232" y="250" width="10" height="15" rx="2" fill="#0a0e1a"/>
+    <rect x="255" y="250" width="10" height="15" rx="2" fill="#0a0e1a"/>
+    <!-- Location pin -->
+    <path d="M350 120 C350 120 310 180 310 220 C310 242 328 260 350 260 C372 260 390 242 390 220 C390 180 350 120 350 120Z" fill="#0ea5e9"/>
+    <circle cx="350" cy="215" r="18" fill="#0a0e1a"/>
+    <circle cx="350" cy="215" r="8" fill="#0ea5e9"/>
+    <!-- Building 4 (right) -->
+    <rect x="400" y="240" width="45" height="140" rx="4"/>
+    <rect x="410" y="260" width="10" height="12" rx="2" fill="#0a0e1a"/>
+    <rect x="425" y="260" width="10" height="12" rx="2" fill="#0a0e1a"/>
+    <rect x="410" y="285" width="10" height="12" rx="2" fill="#0a0e1a"/>
+    <rect x="425" y="285" width="10" height="12" rx="2" fill="#0a0e1a"/>
+  </g>
+  <!-- Ground line -->
+  <rect x="60" y="380" width="400" height="4" rx="2" fill="#0ea5e9" opacity="0.5"/>
+  <!-- Text: CW -->
+  <text x="256" y="450" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="48" fill="#0ea5e9">CityWhisper</text>
+</svg>
