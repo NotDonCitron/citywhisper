@@ -939,3 +939,77 @@ body {
 .animate-slide-up {
   animation: slideUp 350ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* ===== Splash Screen Animations ===== */
+
+@keyframes splashLogo {
+  0% {
+    opacity: 0;
+    transform: scale(0.7) translateY(12px);
+    filter: blur(8px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.04) translateY(-2px);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0);
+  }
+}
+
+.animate-splash-logo {
+  animation: splashLogo 800ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes splashGlow {
+  0%, 100% { opacity: 0.3; transform: scale(0.9); }
+  50% { opacity: 0.6; transform: scale(1.1); }
+}
+
+.animate-splash-glow {
+  animation: splashGlow 2.5s ease-in-out infinite;
+}
+
+/* ===== Onboarding Animations ===== */
+
+@keyframes onboardingFadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.animate-onboarding-fadein {
+  animation: onboardingFadeIn 400ms ease-out forwards;
+}
+
+@keyframes onboardingSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(60px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-onboarding-slidein {
+  animation: onboardingSlideIn 350ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes onboardingSlideOut {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-60px);
+  }
+}
+
+.animate-onboarding-slideout {
+  animation: onboardingSlideOut 300ms ease-in forwards;
+}
