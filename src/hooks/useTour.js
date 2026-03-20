@@ -10,7 +10,7 @@ export const TourPhases = {
   ACTIVE: 'ACTIVE'
 };
 
-const GEOFENCE_RADIUS = 50; // meters
+const GEOFENCE_RADIUS = 100; // meters — generous for POIs in parks/plazas
 
 /**
  * useTour Hook
@@ -37,8 +37,10 @@ export const useTour = () => {
     loadPhase();
   }, [context]);
 
-  // Monitor location for POI triggers
+  // Monitor location for POI triggers (real GPS mode only)
+  // In simulation mode, useSimulation handles POI detection with entry-based logic
   useEffect(() => {
+    if (context.isSimulationActive) return; // useSimulation handles this
     if (context.isTourActive && context.userLocation && context.selectedPois.length > 0) {
       const userPos = {
         lat: context.userLocation.lat,
@@ -55,7 +57,7 @@ export const useTour = () => {
         }
       }
     }
-  }, [context.isTourActive, context.userLocation, context.selectedPois, lastTriggeredPoiId]);
+  }, [context.isTourActive, context.isSimulationActive, context.userLocation, context.selectedPois, lastTriggeredPoiId]);
 
   // Transition to Routing
   const startRouting = useCallback(async (pois) => {

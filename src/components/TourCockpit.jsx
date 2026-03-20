@@ -141,7 +141,7 @@ const TourCockpit = () => {
           } else {
             // Otherwise show current instruction
             setNextInstruction({
-              instruction: currentStep.maneuver.instruction,
+              instruction: (currentStep.maneuver.instruction || '').replace(/\bFahren\b/g, 'Gehen'),
               distance: Math.round(distToStep),
               location: stepPos
             });
@@ -496,6 +496,25 @@ const TourCockpit = () => {
         <>
           {/* Drag Handle */}
           <div className="poi-drag-handle" onClick={handleToggleExpand} />
+
+          {/* Compact nav bar at top of expanded view */}
+          {nearestPoi && (
+            <div className="flex items-center px-5 py-2 border-b border-white/5 gap-3">
+              <div className="bearing-arrow" style={{ transform: `rotate(${bearingToNearest}deg)`, width: 28, height: 28, flexShrink: 0 }}>
+                <Navigation size={16} fill="#0ea5e9" className="text-sky-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                {nextInstruction ? (
+                  <p className="text-xs font-bold text-white truncate">{nextInstruction.instruction}</p>
+                ) : (
+                  <p className="text-xs font-bold text-white truncate">Nächster Halt: {nearestPoi.name}</p>
+                )}
+              </div>
+              <span className="text-[10px] font-black text-sky-400 bg-sky-500/15 px-2 py-0.5 rounded-lg flex-shrink-0">
+                {nextInstruction ? `${nextInstruction.distance}m` : `${distanceToNearest}m`}
+              </span>
+            </div>
+          )}
 
           {/* === HERO IMAGE SECTION === */}
           <div className={`poi-hero ${morphClass}`}>

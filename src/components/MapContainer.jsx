@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, useMap, Polyline } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMap, Polyline, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useTourContext } from '../context/TourContext';
@@ -67,6 +67,25 @@ const MapController = ({ center, zoom, isTourActive, flyTarget }) => {
   return null;
 };
 
+// Fake GPS: click on map to set user location
+const FakeGpsHandler = ({ enabled, onLocationSet }) => {
+  useMapEvents({
+    click(e) {
+      if (enabled) {
+        onLocationSet({
+          lat: e.latlng.lat,
+          lng: e.latlng.lng,
+          accuracy: 10,
+          heading: null,
+          speed: 1.2,
+          timestamp: Date.now()
+        });
+      }
+    }
+  });
+  return null;
+};
+
 // Memoized POI Marker Component to prevent flickering
 const POIMarker = ({ poi, isSelected, stopNumber, isMatch, isNear, markerStyle, onClick }) => {
   const getCategoryColor = (cat) => {
@@ -117,6 +136,7 @@ const MapContainerComponent = () => {
   const {
     pois,
     userLocation,
+    setUserLocation,
     activeRoute,
     isTourActive,
     togglePoiSelection,
@@ -124,7 +144,8 @@ const MapContainerComponent = () => {
     selectedCategories,
     activeDisplayPoi,
     markerStyle,
-    setPreviewPoi
+    setPreviewPoi,
+    fakeGpsEnabled,
   } = useTourContext();
 
   const [mapCenter, setMapCenter] = useState([49.4875, 8.4660]); // Default Mannheim center
@@ -153,6 +174,7 @@ const MapContainerComponent = () => {
         />
         
         <MapController center={mapCenter} zoom={isTourActive ? 19 : 14} isTourActive={isTourActive} flyTarget={activeDisplayPoi} />
+        <FakeGpsHandler enabled={fakeGpsEnabled} onLocationSet={setUserLocation} />
 
         {/* POI Markers */}
         {pois.map((poi) => {

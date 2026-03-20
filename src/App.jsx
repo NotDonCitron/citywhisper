@@ -82,9 +82,35 @@ const PwaInstallBanner = () => {
   );
 };
 
+// Fake GPS Button - tap on map to set your position
+const FakeGpsButton = () => {
+  const { fakeGpsEnabled, setFakeGpsEnabled, userLocation } = useTourContext();
+
+  return (
+    <button
+      onClick={() => {
+        const next = !fakeGpsEnabled;
+        setFakeGpsEnabled(next);
+        showToast(next ? 'Fake GPS an — tippe auf die Karte' : 'Fake GPS aus', next ? 'success' : 'info');
+      }}
+      className={`p-2.5 rounded-full shadow-lg border pointer-events-auto transition-all active:scale-90 flex items-center gap-2 group ${
+        fakeGpsEnabled
+          ? 'bg-emerald-500 border-emerald-400/50 text-white'
+          : 'bg-slate-700 border-white/20 text-white/60 hover:text-white'
+      }`}
+      title="Fake GPS: Tap on map to set position"
+    >
+      <span>📌</span>
+      <span className="text-[10px] font-black uppercase tracking-tighter hidden group-hover:inline">
+        {fakeGpsEnabled ? 'GPS ON' : 'Fake GPS'}
+      </span>
+    </button>
+  );
+};
+
 // Internal component to handle the Auto-Demo logic with access to TourContext
 const AutoDemoButton = () => {
-  const { setSelectedPois, startTour, pois } = useTourContext();
+  const { setSelectedPois, startTour, pois, userLocation } = useTourContext();
   const [isAutoLoading, setIsAutoLoading] = useState(false);
 
   const runAutoDemo = async () => {
@@ -107,14 +133,16 @@ const AutoDemoButton = () => {
       if (testPois.length === 0) {
         testPois = await api.fetchPois();
       }
-      
+
       // 2. Select first 3 POIs
       const selected = testPois.slice(0, 3);
       setSelectedPois(selected);
       console.log(`[Auto-Demo] Selected ${selected.length} POIs`);
 
-      // 3. Fetch Route
-      const routeData = await api.fetchRoute(selected.map(p => p.id));
+      // 3. Fetch Route — start from fake GPS / user position if available
+      const startPos = userLocation ? { lat: userLocation.lat, lng: userLocation.lng } : null;
+      if (startPos) console.log(`[Auto-Demo] Starting from user position: ${startPos.lat.toFixed(5)}, ${startPos.lng.toFixed(5)}`);
+      const routeData = await api.fetchRoute(selected.map(p => p.id), true, startPos);
       console.log("[Auto-Demo] Route fetched successfully");
 
       // 4. Start Tour with Simulation
@@ -186,8 +214,11 @@ function App() {
               <span className="font-bold text-[#0ea5e9]">City</span><span className="text-white">Whisper</span>
             </div>
             
-            {/* Auto-Demo Button */}
-            <AutoDemoButton />
+            {/* Auto-Demo & Fake GPS Buttons */}
+            <div className="flex items-center gap-2 pointer-events-auto">
+              <FakeGpsButton />
+              <AutoDemoButton />
+            </div>
           </div>
 
           {/* Active Tour Cockpit */}

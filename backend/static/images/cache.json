@@ -5,11 +5,8 @@
   "jesuitenkirche": "backend/static/images/jesuitenkirche.jpg",
   "paradeplatz": "backend/static/images/paradeplatz.jpg",
   "luisenpark": "backend/static/images/luisenpark.jpg",
-  "reiss_engelhorn_museen": "backend/static/images/reiss_engelhorn_museen.png",
   "nationaltheater": "backend/static/images/nationaltheater.jpg",
   "kunsthalle": "backend/static/images/kunsthalle.jpg",
-  "water_tower_park": "backend/static/images/water_tower_park.jpg",
-  "jungbusch": "backend/static/images/jungbusch.jpg",
   "torhaus": "backend/static/images/torhaus.jpg",
   "marktplatz": "backend/static/images/marktplatz.jpg",
   "friedrichsplatz": "backend/static/images/friedrichsplatz.jpg",
@@ -18,8 +15,12 @@
   "rem": "backend/static/images/rem.png",
   "planetarium": "backend/static/images/planetarium.jpg",
   "popakademie": "backend/static/images/popakademie.jpg",
-  "hafen": "backend/static/images/hafen.jpg",
   "moschee": "backend/static/images/moschee.jpg",
   "synagoge": "backend/static/images/synagoge.jpg",
-  "kurpfalzbruecke": "backend/static/images/kurpfalzbruecke.jpg"
+  "kurpfalzbruecke": "backend/static/images/kurpfalzbruecke.jpg",
+  "technoseum": "C:\\Users\\pasi\\citywhisper\\backend\\static\\images\\technoseum.jpg",
+  "zeughaus": "C:\\Users\\pasi\\citywhisper\\backend\\static\\images\\zeughaus.jpg",
+  "jungbusch": "C:\\Users\\pasi\\citywhisper\\backend\\static\\images\\jungbusch.jpg",
+  "rosengarten": "C:\\Users\\pasi\\citywhisper\\backend\\static\\images\\rosengarten.jpg",
+  "hafen": "C:\\Users\\pasi\\citywhisper\\backend\\static\\images\\hafen.jpg"
 }

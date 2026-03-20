@@ -19,13 +19,18 @@ export const api = {
     return response.json();
   },
 
-  fetchRoute: async (poiIds, roundtrip = true) => {
+  fetchRoute: async (poiIds, roundtrip = true, startPos = null) => {
+    const body = { poi_ids: poiIds, roundtrip };
+    if (startPos) {
+      body.start_lat = startPos.lat;
+      body.start_lng = startPos.lng;
+    }
     const response = await fetch(`${API_BASE_URL}/route`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ poi_ids: poiIds, roundtrip }),
+      body: JSON.stringify(body),
     });
     if (!response.ok) {
       throw new Error(`Error fetching route: ${response.statusText}`);

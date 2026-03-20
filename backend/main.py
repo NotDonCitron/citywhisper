@@ -100,20 +100,41 @@ def save_image_cache(cache):
         json.dump(cache, f, ensure_ascii=False, indent=2)
 
 def search_wikipedia_image(poi_name: str, city: str = '') -> Optional[str]:
-    try:
-        search_term = poi_name.replace(' ', '_')
-        api_url = f'https://de.wikipedia.org/api/rest_v1/page/summary/{search_term}'
-        headers = {'User-Agent': 'CityWhisper/1.0', 'Accept': 'application/json'}
-        response = requests.get(api_url, headers=headers, timeout=10)
-        if response.status_code == 200:
-            data = response.json()
-            thumbnail = data.get('thumbnail')
-            if thumbnail: return thumbnail.get('source')
-            original = data.get('originalimage')
-            if original: return original.get('source')
-        return None
-    except:
-        return None
+    """Search Wikipedia for a POI image, trying multiple name variations."""
+    headers = {'User-Agent': 'CityWhisper/1.0', 'Accept': 'application/json'}
+
+    # Build ordered list of search variations
+    variations = [poi_name]
+    if city:
+        base = poi_name.replace(f' {city}', '').replace(f' {city.lower()}', '').strip()
+        if base != poi_name:
+            # "Zeughaus Mannheim" -> try "Zeughaus (Mannheim)" before bare "Zeughaus"
+            variations.append(f'{base} ({city})')
+            variations.append(base)
+        else:
+            # City not in name: "Congress Center Rosengarten" -> try "Congress Center Rosengarten (Mannheim)"
+            variations.append(f'{poi_name} ({city})')
+            # Also try last word + (city): "Rosengarten (Mannheim)"
+            last_word = poi_name.split()[-1]
+            if last_word != poi_name:
+                variations.append(f'{last_word} ({city})')
+
+    for term in variations:
+        try:
+            search_term = term.replace(' ', '_')
+            api_url = f'https://de.wikipedia.org/api/rest_v1/page/summary/{quote(search_term)}'
+            response = requests.get(api_url, headers=headers, timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                thumbnail = data.get('thumbnail')
+                if thumbnail and thumbnail.get('source'):
+                    return thumbnail['source']
+                original = data.get('originalimage')
+                if original and original.get('source'):
+                    return original['source']
+        except:
+            continue
+    return None
 
 def search_unsplash_image(poi_name: str, city: str = '') -> Optional[str]:
     if not UNSPLASH_ACCESS_KEY or UNSPLASH_ACCESS_KEY == 'YOUR_UNSPLASH_ACCESS_KEY_HERE':
@@ -288,6 +309,8 @@ async def get_audio(poi_id: str, persona: str = 'insider', categories: str = Que
 class RouteRequest(BaseModel):
     poi_ids: List[str]
     roundtrip: Optional[bool] = True
+    start_lat: Optional[float] = None
+    start_lng: Optional[float] = None
 
 @app.post('/route')
 async def get_optimized_route(req: RouteRequest):
@@ -297,7 +320,11 @@ async def get_optimized_route(req: RouteRequest):
     if len(selected_pois) < 2: raise HTTPException(400, 'At least 2 POIs required')
 
     params = {'access_token': MAPBOX_ACCESS_TOKEN, 'geometries': 'geojson', 'overview': 'full', 'steps': 'true', 'language': 'de'}
-    route_points = [{'id': p['id'], 'lat': p['lat'], 'lng': p['lng'], 'is_poi': True} for p in selected_pois]   
+    route_points = []
+    # If a start position is provided, prepend it as the first waypoint
+    if req.start_lat is not None and req.start_lng is not None:
+        route_points.append({'id': '_start', 'lat': req.start_lat, 'lng': req.start_lng, 'is_poi': False})
+    route_points += [{'id': p['id'], 'lat': p['lat'], 'lng': p['lng'], 'is_poi': True} for p in selected_pois]
     params.update({'roundtrip': 'true' if req.roundtrip else 'false', 'source': 'first'})
 
     coords = ';'.join([f"{p['lng']},{p['lat']}" for p in route_points])

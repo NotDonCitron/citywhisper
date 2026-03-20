@@ -20,6 +20,7 @@ export const TourProvider = ({ children }) => {
   const [markerStyle, setMarkerStyle] = useState(() => localStorage.getItem('cw_markers') || 'minimal');
   const [isSimulationActive, setIsSimulationActive] = useState(false);
   const [simSpeed, setSimSpeed] = useState(20); // Dynamic speed in km/h
+  const [fakeGpsEnabled, setFakeGpsEnabled] = useState(false);
 
   // --- Non-Stop Demo Walk: activeDisplayPoi ---
   // This is the POI whose content (audio/text/image) is currently shown in the cockpit.
@@ -179,6 +180,8 @@ export const TourProvider = ({ children }) => {
     // POI Preview (tap on map)
     previewPoi,
     setPreviewPoi,
+    fakeGpsEnabled,
+    setFakeGpsEnabled,
     simSpeed,
     setSimSpeed,
     // Turn-by-turn navigation steps
@@ -193,6 +196,7 @@ export const TourProvider = ({ children }) => {
     activeRoute,
     isTourActive,
     isSimulationActive,
+    fakeGpsEnabled,
     pauseSimulation,
     startTour,
     stopTour,

@@ -74,7 +74,7 @@ export const findNextStep = (userLocation, steps) => {
     if (dist > 10 && dist < bestDist) {
       bestDist = dist;
       best = {
-        instruction: step.maneuver.instruction || '',
+        instruction: (step.maneuver.instruction || '').replace(/\bFahren\b/g, 'Gehen'),
         distance: Math.round(dist),
         location: stepPos
       };

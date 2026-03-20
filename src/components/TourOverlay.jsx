@@ -7,7 +7,7 @@ import { X, Play, Trash2, Download, CheckCircle, Loader2 } from 'lucide-react';
 import tourTemplates from '../data/tourTemplates';
 
 const TourOverlay = ({ isOpen, onClose }) => {
-  const { selectedPois, setSelectedPois, togglePoiSelection, startTour, persona, selectedCategories, pois } = useTourContext();
+  const { selectedPois, setSelectedPois, togglePoiSelection, startTour, persona, selectedCategories, pois, userLocation } = useTourContext();
   const { preFetchAll } = useAudio();
   const [loading, setLoading] = useState(false);
   const [useSimulation, setUseSimulation] = useState(false);
@@ -77,12 +77,19 @@ const TourOverlay = ({ isOpen, onClose }) => {
     setLoading(true);
     try {
       const poiIds = selectedPois.map(p => p.id);
-      const routeData = await api.fetchRoute(poiIds, isRoundtrip);
+      // Start route from user's current position if available
+      const startPos = userLocation ? { lat: userLocation.lat, lng: userLocation.lng } : null;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+      const routeData = await api.fetchRoute(poiIds, isRoundtrip, startPos);
+      clearTimeout(timeout);
       await startTour(routeData, useSimulation);
       onClose();
     } catch (err) {
       console.error("Failed to start tour:", err);
-      showToast("Fehler beim Berechnen der Route.");
+      showToast(err.name === 'AbortError'
+        ? "Route-Berechnung dauert zu lange. Versuch es nochmal."
+        : "Fehler beim Berechnen der Route.");
     } finally {
       setLoading(false);
     }
