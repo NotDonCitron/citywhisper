@@ -7,6 +7,7 @@ import { API_BASE_URL } from '../services/api';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { X, Map as MapIcon, ChevronUp, Navigation, Play, Pause, Maximize2, MapPin, Square, Loader2, Trophy, Route, Clock, Footprints } from 'lucide-react';
 import { useTourStats } from '../hooks/useTourStats';
+import { useAchievements } from '../hooks/useAchievements';
 
 const CockpitState = {
   EXPANDED: 'EXPANDED',
@@ -52,7 +53,11 @@ const TourCockpit = () => {
   const [imageFailed, setImageFailed] = useState(false);
   const [isArriving, setIsArriving] = useState(false);
   const [showTourComplete, setShowTourComplete] = useState(false);
-  
+
+  // Achievements
+  const { recordTourComplete } = useAchievements();
+  const tourStartTimeRef = useRef(null);
+
   // Navigation states
   const [nearestPoi, setNearestPoi] = useState(null);
   const [distanceToNearest, setDistanceToNearest] = useState(0);
@@ -69,6 +74,16 @@ const TourCockpit = () => {
   useEffect(() => {
     setActiveStepIndex(0);
   }, [activeRoute]);
+
+  // Track tour start time for achievements
+  useEffect(() => {
+    if (isTourActive && !tourStartTimeRef.current) {
+      tourStartTimeRef.current = new Date();
+    }
+    if (!isTourActive) {
+      tourStartTimeRef.current = null;
+    }
+  }, [isTourActive]);
 
   // Calculate navigation data (Nearest POI, distance, bearing)
   useEffect(() => {
@@ -244,10 +259,33 @@ const TourCockpit = () => {
     const lastPoi = selectedPois[selectedPois.length - 1];
     if (lastPlayedPoiId === lastPoi.id && !isPlaying) {
       // Last POI audio finished — show completion after a short delay
-      const timer = setTimeout(() => setShowTourComplete(true), 2000);
+      const timer = setTimeout(() => {
+        setShowTourComplete(true);
+
+        // Record tour completion for achievements
+        const startTime = tourStartTimeRef.current;
+        const durationMinutes = startTime
+          ? (Date.now() - startTime.getTime()) / 60000
+          : null;
+
+        // Estimate distance from route metadata if available
+        let distanceKm = 0;
+        if (activeRoute && activeRoute.legs) {
+          distanceKm = activeRoute.legs.reduce(
+            (sum, leg) => sum + (leg.distance || 0), 0
+          ) / 1000;
+        }
+
+        recordTourComplete({
+          poisVisited: selectedPois,
+          distanceKm,
+          startTime: startTime ? startTime.toISOString() : null,
+          durationMinutes: durationMinutes !== null ? Math.round(durationMinutes) : null,
+        });
+      }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [lastPlayedPoiId, isPlaying, selectedPois, isTourActive]);
+  }, [lastPlayedPoiId, isPlaying, selectedPois, isTourActive, activeRoute, recordTourComplete]);
 
   // Determine display data (before hooks that depend on it)
   const displayPoi = activeDisplayPoi || nearestPoi;

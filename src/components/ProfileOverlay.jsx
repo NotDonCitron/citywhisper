@@ -1,14 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import { useTourContext } from '../context/TourContext';
-import { X, Save, Download, CheckCircle, Loader2 } from 'lucide-react';
+import { X, Save, Download, CheckCircle, Loader2, Trophy } from 'lucide-react';
 import { showToast } from './ToastContainer';
 import { api, API_BASE_URL } from '../services/api';
 import { offlineCache } from '../utils/offlineCache';
+import { useAchievements } from '../hooks/useAchievements';
 
 const ALL_CATEGORIES = ['History', 'Art', 'Subculture', 'Architecture', 'Nature', 'Food', 'Nightlife', 'Religion', 'Urban', 'Views', 'Family', 'Culture'];
 
 const ProfileOverlay = ({ isOpen, onClose }) => {
   const { selectedCategories, toggleCategory, persona, changePersona, markerStyle, changeMarkerStyle, pois } = useTourContext();
+  const { achievements, recordAction, unlockedCount, totalCount } = useAchievements();
 
   const [downloadingCity, setDownloadingCity] = useState(null);
   const [downloadProgress, setDownloadProgress] = useState(0);
@@ -73,6 +75,7 @@ const ProfileOverlay = ({ isOpen, onClose }) => {
       setDownloadProgress(cityPois.length);
       offlineCache.markCityDownloaded(cityName);
       setDownloadedCities(offlineCache.getDownloadedCities());
+      recordAction('offline_download');
       showToast(`${cityName}: ${cityPois.length} POIs offline bereit!`, 'success');
     } catch (err) {
       console.error('City download failed:', err);
@@ -189,6 +192,41 @@ const ProfileOverlay = ({ isOpen, onClose }) => {
               </div>
               <span className="text-xs font-bold text-white">Bunt</span>
             </div>
+          </div>
+        </section>
+
+        {/* Erfolge / Achievements Section */}
+        <section>
+          <div className="flex justify-between items-end mb-6 px-1">
+            <h3 className="text-[11px] font-black tracking-[0.25em] text-sky-500 uppercase flex items-center gap-2">
+              <Trophy size={14} className="text-sky-500" /> Erfolge
+            </h3>
+            <span className="text-[10px] font-bold text-white/30 uppercase">{unlockedCount}/{totalCount} freigeschaltet</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {achievements.map((ach) => (
+              <div
+                key={ach.id}
+                className={`p-4 rounded-2xl border transition-all ${
+                  ach.unlocked
+                    ? 'bg-amber-500/10 border-amber-500/30'
+                    : 'bg-white/[0.02] border-white/5 opacity-50'
+                }`}
+              >
+                <div className="text-2xl mb-2">
+                  {ach.unlocked ? ach.emoji : '?'}
+                </div>
+                <div className={`text-xs font-bold mb-1 ${ach.unlocked ? 'text-white' : 'text-white/40'}`}>
+                  {ach.unlocked ? ach.name : '???'}
+                </div>
+                <div className="text-[10px] text-white/30 leading-tight">
+                  {ach.unlocked
+                    ? new Date(ach.unlockedAt).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                    : ach.description
+                  }
+                </div>
+              </div>
+            ))}
           </div>
         </section>
 
