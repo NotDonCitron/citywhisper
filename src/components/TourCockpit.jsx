@@ -5,7 +5,7 @@ import { useTourContext } from '../context/TourContext';
 import { getDistance, getBearing, findNextStep } from '../utils/geo';
 import { API_BASE_URL } from '../services/api';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
-import { X, Map as MapIcon, ChevronUp, Navigation, Play, Pause, Maximize2, MapPin, Square, Loader2, Trophy } from 'lucide-react';
+import { X, Map as MapIcon, ChevronUp, Navigation, Play, Pause, Maximize2, MapPin, Square, Loader2, Trophy, SkipBack, SkipForward } from 'lucide-react';
 
 const CockpitState = {
   EXPANDED: 'EXPANDED',
@@ -33,7 +33,12 @@ const TourCockpit = () => {
     playPoiAudio,
     togglePlayback,
     preFetchAll,
-    isCaching
+    isCaching,
+    playbackRate,
+    seekTo,
+    setPlaybackRate,
+    skipForward,
+    skipBackward
   } = useAudio();
 
   const {
@@ -63,6 +68,7 @@ const TourCockpit = () => {
   const collapseTimerRef = useRef(null);
   const morphTimerRef = useRef(null);
   const stateRef = useRef({ syncedPoiId: null });
+  const waveformRef = useRef(null);
 
   // Reset step index when a new tour starts or route changes
   useEffect(() => {
@@ -302,6 +308,29 @@ const TourCockpit = () => {
     stopTour();
   };
 
+  // Waveform seek: calculate click/touch position as percentage
+  const handleWaveformSeek = (e) => {
+    const rect = waveformRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const percentage = ((clientX - rect.left) / rect.width) * 100;
+    seekTo(percentage);
+  };
+
+  // Speed control: cycle through rates
+  const speedSteps = [1, 1.25, 1.5, 2, 0.75];
+  const handleCycleSpeed = () => {
+    const currentIndex = speedSteps.indexOf(playbackRate);
+    const nextIndex = (currentIndex + 1) % speedSteps.length;
+    setPlaybackRate(speedSteps[nextIndex]);
+  };
+
+  const formatSpeed = (rate) => {
+    if (rate === 1) return '1x';
+    if (rate === 0.75) return '0.75x';
+    return `${rate}x`;
+  };
+
   // Category helper
   const getCategoryInfo = (cat) => {
     const key = (cat || '').toLowerCase();
@@ -451,10 +480,22 @@ const TourCockpit = () => {
 
           {/* === INLINE WAVEFORM BAR === */}
           <div className={`poi-waveform ${isArriving ? 'morph-reveal morph-reveal-delay-1' : ''}`}>
+            <button className="play-btn-waveform" onClick={(e) => { e.stopPropagation(); skipBackward(15); }} title="15s zurück">
+              <SkipBack size={14} />
+            </button>
             <button className="play-btn-waveform" onClick={togglePlayback}>
               {isPlaying ? <Pause size={18} /> : <Play size={18} style={{ marginLeft: 2 }} />}
             </button>
-            <div className="waveform-visual">
+            <button className="play-btn-waveform" onClick={(e) => { e.stopPropagation(); skipForward(15); }} title="15s vor">
+              <SkipForward size={14} />
+            </button>
+            <div
+              className="waveform-visual"
+              ref={waveformRef}
+              onClick={handleWaveformSeek}
+              onTouchStart={handleWaveformSeek}
+              style={{ cursor: 'pointer' }}
+            >
               {waveformHeights.map((h, i) => {
                 const playedPct = (i / waveformHeights.length) * 100;
                 return (
@@ -472,6 +513,13 @@ const TourCockpit = () => {
             <span className="waveform-time">
               {audioDuration > 0 ? formatTime(audioProgress, audioDuration) : '0:00'}
             </span>
+            <button
+              className="bg-white/10 rounded-full px-2 text-[10px] font-bold text-white/70 hover:bg-white/20 transition-colors"
+              onClick={(e) => { e.stopPropagation(); handleCycleSpeed(); }}
+              title="Geschwindigkeit ändern"
+            >
+              {formatSpeed(playbackRate)}
+            </button>
           </div>
 
           {/* === SCROLLABLE CONTENT === */}

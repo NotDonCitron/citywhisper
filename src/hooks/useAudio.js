@@ -16,6 +16,7 @@ export const useAudio = () => {
   const [audioStatus, setAudioStatus] = useState('Bereit');
   const [isCaching, setIsCaching] = useState(false);
   const [currentScript, setCurrentScript] = useState('');
+  const [playbackRate, setPlaybackRateState] = useState(1.0);
   
   const audioRef = useRef(new Audio());
   const cacheDir = 'audio_cache';
@@ -294,6 +295,44 @@ export const useAudio = () => {
     }
   }, [isPlaying]);
 
+  /**
+   * Seek audio to a position by percentage (0-100).
+   */
+  const seekTo = useCallback((percentage) => {
+    const audio = audioRef.current;
+    if (audio.duration && isFinite(audio.duration)) {
+      const clampedPct = Math.max(0, Math.min(100, percentage));
+      audio.currentTime = (clampedPct / 100) * audio.duration;
+    }
+  }, []);
+
+  /**
+   * Change playback speed.
+   */
+  const setPlaybackRate = useCallback((rate) => {
+    const audio = audioRef.current;
+    audio.playbackRate = rate;
+    setPlaybackRateState(rate);
+  }, []);
+
+  /**
+   * Skip forward by N seconds (default 15).
+   */
+  const skipForward = useCallback((seconds = 15) => {
+    const audio = audioRef.current;
+    if (audio.duration && isFinite(audio.duration)) {
+      audio.currentTime = Math.min(audio.duration, audio.currentTime + seconds);
+    }
+  }, []);
+
+  /**
+   * Skip backward by N seconds (default 15).
+   */
+  const skipBackward = useCallback((seconds = 15) => {
+    const audio = audioRef.current;
+    audio.currentTime = Math.max(0, audio.currentTime - seconds);
+  }, []);
+
   return useMemo(() => ({
     isPlaying,
     progress,
@@ -301,9 +340,14 @@ export const useAudio = () => {
     audioStatus,
     isCaching,
     currentScript,
+    playbackRate,
     playPoiAudio,
     togglePlayback,
-    preFetchAll
+    preFetchAll,
+    seekTo,
+    setPlaybackRate,
+    skipForward,
+    skipBackward
   }), [
     isPlaying,
     progress,
@@ -311,8 +355,13 @@ export const useAudio = () => {
     audioStatus,
     isCaching,
     currentScript,
+    playbackRate,
     playPoiAudio,
     togglePlayback,
-    preFetchAll
+    preFetchAll,
+    seekTo,
+    setPlaybackRate,
+    skipForward,
+    skipBackward
   ]);
 };
