@@ -4,9 +4,10 @@ import { useAudio } from '../hooks/useAudio';
 import { api, API_BASE_URL } from '../services/api';
 import { showToast } from './ToastContainer';
 import { X, Play, Trash2, Download, CheckCircle, Loader2 } from 'lucide-react';
+import tourTemplates from '../data/tourTemplates';
 
 const TourOverlay = ({ isOpen, onClose }) => {
-  const { selectedPois, setSelectedPois, togglePoiSelection, startTour, persona, selectedCategories } = useTourContext();
+  const { selectedPois, setSelectedPois, togglePoiSelection, startTour, persona, selectedCategories, pois } = useTourContext();
   const { preFetchAll } = useAudio();
   const [loading, setLoading] = useState(false);
   const [useSimulation, setUseSimulation] = useState(false);
@@ -118,11 +119,39 @@ const TourOverlay = ({ isOpen, onClose }) => {
         </div>
 
         {selectedPois.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="text-4xl mb-4 opacity-20">🏙️</div>
-            <p className="text-slate-400 text-sm">
-              Noch keine Orte ausgewählt.<br/>
-              Gehe auf "Entdecken", um deine Tour zu planen.
+          <div className="py-6">
+            <h3 className="text-[11px] font-black tracking-[0.2em] text-sky-500 uppercase mb-4 px-1">Fertige Touren</h3>
+            <div className="grid grid-cols-1 gap-3">
+              {tourTemplates.map(t => {
+                const resolvedCount = t.poiIds.filter(id => pois.some(p => p.id === id)).length;
+                return (
+                  <div
+                    key={t.id}
+                    onClick={() => {
+                      const resolved = t.poiIds.map(id => pois.find(p => p.id === id)).filter(Boolean);
+                      if (resolved.length > 0) setSelectedPois(resolved);
+                    }}
+                    className="rounded-2xl border border-white/10 overflow-hidden cursor-pointer transition-all active:scale-[0.98] hover:border-white/20"
+                    style={{ background: `linear-gradient(135deg, ${t.color}15 0%, #0f172a 100%)` }}
+                  >
+                    <div className="h-1 w-full" style={{ background: t.color }} />
+                    <div className="p-4 flex items-center gap-4">
+                      <div className="text-3xl">{t.emoji}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-sm text-white">{t.name}</div>
+                        <div className="text-[10px] text-white/40 line-clamp-1 mt-0.5">{t.description}</div>
+                        <div className="flex items-center gap-3 text-[10px] font-bold text-white/30 mt-1.5">
+                          <span>{resolvedCount} Orte</span>
+                          <span>~{t.estimatedMinutes} Min</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="text-center text-[10px] text-white/20 mt-6">
+              Oder wähle einzelne Orte unter "Entdecken"
             </p>
           </div>
         ) : (

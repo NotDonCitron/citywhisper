@@ -2,7 +2,6 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useTourContext } from '../context/TourContext';
 import { API_BASE_URL } from '../services/api';
 import { X, Search, Plus, Check, MapPin, Filter } from 'lucide-react';
-import tourTemplates from '../data/tourTemplates';
 
 // ── Category metadata ───────────────────────────────────────────────
 const CATEGORY_META = {
@@ -86,11 +85,10 @@ PoiImage.displayName = 'PoiImage';
 // ═══════════════════════════════════════════════════════════════════
 // Main Component
 // ═══════════════════════════════════════════════════════════════════
-const DiscoveryOverlay = ({ isOpen, onClose, onNavigateToTour }) => {
+const DiscoveryOverlay = ({ isOpen, onClose }) => {
   const {
     pois,
     selectedPois,
-    setSelectedPois,
     togglePoiSelection,
     setPreviewPoi,
     userLocation,
@@ -278,41 +276,6 @@ const DiscoveryOverlay = ({ isOpen, onClose, onNavigateToTour }) => {
 
       {/* ── Scrollable content ────────────────────────────── */}
       <div className="flex-1 overflow-y-auto px-5 pb-28">
-
-        {/* ── Tour Templates (horizontal scroll) ──────────── */}
-        {!searchQuery && activeCategories.length === 0 && (
-          <div className="mb-6">
-            <h3 className="text-[11px] font-black tracking-[0.2em] text-sky-500 uppercase mb-3">Fertige Touren</h3>
-            <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-none">
-              {tourTemplates.map(t => (
-                <div
-                  key={t.id}
-                  onClick={() => {
-                    const resolved = t.poiIds.map(id => pois.find(p => p.id === id)).filter(Boolean);
-                    if (resolved.length > 0) {
-                      setSelectedPois(resolved);
-                      onClose();
-                      onNavigateToTour?.();
-                    }
-                  }}
-                  className="flex-shrink-0 w-52 rounded-2xl border border-white/10 overflow-hidden cursor-pointer transition-all active:scale-95 hover:border-white/20"
-                  style={{ background: `linear-gradient(135deg, ${t.color}15 0%, #0f172a 100%)` }}
-                >
-                  <div className="h-1.5 w-full" style={{ background: t.color }} />
-                  <div className="p-4">
-                    <div className="text-2xl mb-2">{t.emoji}</div>
-                    <div className="font-bold text-sm text-white mb-1">{t.name}</div>
-                    <div className="text-[10px] text-white/40 mb-3 line-clamp-2">{t.description}</div>
-                    <div className="flex items-center gap-3 text-[10px] font-bold text-white/30">
-                      <span>{t.poiIds.length} Orte</span>
-                      <span>~{t.estimatedMinutes} Min</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* ── POI cards grid ──────────────────────────────── */}
         {filteredPois.length === 0 ? (
