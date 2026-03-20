@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { ACHIEVEMENTS, getDefaultAchievements, getDefaultStats } from '../utils/achievements';
 import { showToast } from '../components/ToastContainer';
 
@@ -19,11 +19,12 @@ function loadFromStorage(key, defaultFactory) {
 }
 
 /**
- * Save state to localStorage.
+ * Save state to localStorage and notify other hook instances.
  */
 function saveToStorage(key, value) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
+    window.dispatchEvent(new CustomEvent('cw-storage', { detail: { key } }));
   } catch (e) {
     console.warn(`[useAchievements] Failed to save ${key}:`, e);
   }
@@ -80,6 +81,20 @@ export function useAchievements() {
 
   // Guard against rapid duplicate toasts
   const lastToastRef = useRef(null);
+
+  // Sync across hook instances: re-read localStorage when another instance writes
+  useEffect(() => {
+    const onSync = (e) => {
+      if (e.detail?.key === STORAGE_KEY_ACHIEVEMENTS) {
+        setAchievements(mergeAchievements(loadFromStorage(STORAGE_KEY_ACHIEVEMENTS, getDefaultAchievements)));
+      }
+      if (e.detail?.key === STORAGE_KEY_STATS) {
+        setStats(loadFromStorage(STORAGE_KEY_STATS, getDefaultStats));
+      }
+    };
+    window.addEventListener('cw-storage', onSync);
+    return () => window.removeEventListener('cw-storage', onSync);
+  }, []);
 
   /**
    * Check all achievement conditions against current stats.

@@ -296,7 +296,7 @@ async def get_optimized_route(req: RouteRequest):
     selected_pois = [p for p in all_pois if p['id'] in req.poi_ids]
     if len(selected_pois) < 2: raise HTTPException(400, 'At least 2 POIs required')
 
-    params = {'access_token': MAPBOX_ACCESS_TOKEN, 'geometries': 'geojson', 'overview': 'full', 'steps': 'true'}
+    params = {'access_token': MAPBOX_ACCESS_TOKEN, 'geometries': 'geojson', 'overview': 'full', 'steps': 'true', 'language': 'de'}
     route_points = [{'id': p['id'], 'lat': p['lat'], 'lng': p['lng'], 'is_poi': True} for p in selected_pois]   
     params.update({'roundtrip': 'true' if req.roundtrip else 'false', 'source': 'first'})
 

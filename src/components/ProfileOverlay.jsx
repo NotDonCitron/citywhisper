@@ -8,6 +8,12 @@ import { useAchievements } from '../hooks/useAchievements';
 
 const ALL_CATEGORIES = ['History', 'Art', 'Subculture', 'Architecture', 'Nature', 'Food', 'Nightlife', 'Religion', 'Urban', 'Views', 'Family', 'Culture'];
 
+const CATEGORY_LABELS = {
+  History: 'Geschichte', Art: 'Kunst', Subculture: 'Subkultur', Architecture: 'Architektur',
+  Nature: 'Natur', Food: 'Food', Nightlife: 'Nightlife', Religion: 'Religion',
+  Urban: 'Urban', Views: 'Aussicht', Family: 'Familie', Culture: 'Kultur',
+};
+
 const ProfileOverlay = ({ isOpen, onClose }) => {
   const { selectedCategories, toggleCategory, persona, changePersona, markerStyle, changeMarkerStyle, pois } = useTourContext();
   const { achievements, recordAction, unlockedCount, totalCount } = useAchievements();
@@ -154,7 +160,7 @@ const ProfileOverlay = ({ isOpen, onClose }) => {
                     : 'bg-white/5 border-white/10 text-white/40 hover:border-white/20'
                 }`}
               >
-                {cat}
+                {CATEGORY_LABELS[cat] || cat}
               </div>
             ))}
           </div>
